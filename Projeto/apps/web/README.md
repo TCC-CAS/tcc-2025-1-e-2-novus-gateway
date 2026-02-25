@@ -1,87 +1,106 @@
-# Welcome to React Router!
+# VarzeaPro — Web
 
-A modern, production-ready template for building full-stack React applications using React Router.
+Frontend da plataforma **VarzeaPro**, construído com React 19, React Router 7 e Tailwind CSS 4.
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/remix-run/react-router-templates/tree/main/default)
+## Stack
 
-## Features
+| Tecnologia | Uso |
+|---|---|
+| React 19 | UI |
+| React Router 7 | Roteamento e SSR |
+| TypeScript | Tipagem estática |
+| Tailwind CSS 4 | Estilização |
+| shadcn/ui (New York) | Componentes de interface |
+| Lucide React | Ícones |
+| TanStack React Query | Gerenciamento de estado assíncrono |
+| React Hook Form + Zod | Formulários e validação |
+| Vite 7 | Bundler e dev server |
+| MSW | Mock de APIs no desenvolvimento |
 
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
+## Estrutura de pastas
 
-## Getting Started
+```
+web/
+├── app/
+│   ├── components/       # Componentes reutilizáveis
+│   │   └── ui/           # Componentes shadcn/ui
+│   ├── hooks/            # Custom hooks
+│   ├── lib/              # Utilitários, API client, auth, etc.
+│   ├── routes/           # Páginas e layouts
+│   │   ├── admin/        # Painel administrativo
+│   │   ├── jogador/      # Área do jogador
+│   │   └── time/         # Área do time
+│   ├── app.css           # Estilos globais
+│   ├── root.tsx          # Componente raiz
+│   └── routes.ts         # Definição de rotas
+├── mocks/
+│   ├── fixtures/         # Dados de mock
+│   └── handlers/         # Handlers do MSW
+├── shared/
+│   └── contracts/        # Contratos/tipos compartilhados
+└── public/               # Arquivos estáticos
+```
 
-### Installation
+## Rotas
 
-Install the dependencies:
+| Rota | Descrição |
+|---|---|
+| `/` | Landing page |
+| `/login` | Login |
+| `/cadastro` | Cadastro |
+| `/recuperar-senha` | Recuperação de senha |
+| `/onboarding` | Onboarding de novos usuários |
+| `/planos` | Planos de assinatura |
+| `/jogador` | Dashboard do jogador |
+| `/jogador/perfil` | Perfil do jogador |
+| `/jogador/perfil/editar` | Editar perfil do jogador |
+| `/jogador/buscar-times` | Busca de times |
+| `/jogador/mensagens` | Mensagens do jogador |
+| `/time` | Dashboard do time |
+| `/time/perfil` | Perfil do time |
+| `/time/perfil/editar` | Editar perfil do time |
+| `/time/buscar-jogadores` | Busca de jogadores |
+| `/time/mensagens` | Mensagens do time |
+| `/admin` | Painel administrativo |
+| `/admin/usuarios` | Gerenciamento de usuários |
+| `/admin/moderation` | Moderação |
+| `/configuracoes` | Configurações |
+| `/jogadores/:id` | Perfil público de jogador |
+| `/times/:id` | Perfil público de time |
+
+## Scripts
+
+> **Recomendação:** utilize o [Bun](https://bun.sh/) para melhor performance.
+
+| Comando | Descrição |
+|---|---|
+| `bun install` / `npm install` | Instalar dependências |
+| `bun dev` / `npm run dev` | Iniciar servidor de desenvolvimento |
+| `bun run build` / `npm run build` | Build de produção |
+| `bun start` / `npm start` | Servir build de produção |
+| `bun run typecheck` / `npm run typecheck` | Verificação de tipos |
+
+O servidor de desenvolvimento estará disponível em `http://localhost:5173`.
+
+## Path aliases
+
+Configurados no `tsconfig.json`:
+
+| Alias | Caminho |
+|---|---|
+| `~/*` | `./app/*` |
+| `~shared/*` | `./shared/*` |
+
+## Mocks (MSW)
+
+Durante o desenvolvimento, o **MSW** intercepta as chamadas de API e retorna dados mockados. Isso permite desenvolver o frontend sem depender do backend.
+
+- **Handlers:** `mocks/handlers/` — define as rotas mockadas (auth, players, teams, messaging, search, subscription, admin)
+- **Fixtures:** `mocks/fixtures/` — dados estáticos retornados pelos handlers
+
+## Docker
 
 ```bash
-npm install
+docker build -t varzeapro-web .
+docker run -p 3000:3000 varzeapro-web
 ```
-
-### Development
-
-Start the development server with HMR:
-
-```bash
-npm run dev
-```
-
-Your application will be available at `http://localhost:5173`.
-
-## Building for Production
-
-Create a production build:
-
-```bash
-npm run build
-```
-
-## Deployment
-
-### Docker Deployment
-
-To build and run using Docker:
-
-```bash
-docker build -t my-app .
-
-# Run the container
-docker run -p 3000:3000 my-app
-```
-
-The containerized application can be deployed to any platform that supports Docker, including:
-
-- AWS ECS
-- Google Cloud Run
-- Azure Container Apps
-- Digital Ocean App Platform
-- Fly.io
-- Railway
-
-### DIY Deployment
-
-If you're familiar with deploying Node applications, the built-in app server is production-ready.
-
-Make sure to deploy the output of `npm run build`
-
-```
-├── package.json
-├── package-lock.json (or pnpm-lock.yaml, or bun.lockb)
-├── build/
-│   ├── client/    # Static assets
-│   └── server/    # Server-side code
-```
-
-## Styling
-
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
-
----
-
-Built with ❤️ using React Router.
