@@ -1,5 +1,7 @@
 # VarzeaPro — Web
 
+![Hero Section — Landing Page](../../../Imagens/1-desktop-landing-hero-section.png)
+
 Frontend da plataforma **VarzeaPro**, construído com React 19, React Router 7 e Tailwind CSS 4.
 
 ## Stack
@@ -97,6 +99,10 @@ Durante o desenvolvimento, o **MSW** intercepta as chamadas de API e retorna dad
 
 - **Handlers:** `mocks/handlers/` — define as rotas mockadas (auth, players, teams, messaging, search, subscription, admin)
 - **Fixtures:** `mocks/fixtures/` — dados estáticos retornados pelos handlers
+
+## Screenshots
+
+Todas as capturas de tela (desktop) da aplicação estão documentadas em **[SCREENSHOTS.md](./SCREENSHOTS.md)**.
 
 ## Docker
 
