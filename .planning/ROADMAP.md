@@ -47,8 +47,11 @@ Plans:
   3. User can request a password reset; a token is logged to the server console (no live email)
   4. Requests to protected routes without a valid session return `401`; requests with a valid session but wrong role return `403`
   5. Auth routes (`/auth/login`, `/auth/signup`) are rate-limited to 5 requests per 15 minutes per IP
-**Plans**: TBD
-**UI hint**: yes
+**Plans:** 3 plans
+Plans:
+- [ ] 02-01-PLAN.md — Better Auth schema tables, auth instance, type augmentations, env config
+- [ ] 02-02-PLAN.md — Auth Fastify plugin, preHandler hooks, rate limiting, app.ts wiring
+- [ ] 02-03-PLAN.md — Integration tests for sign-up, sign-in, password reset, RBAC, rate limiting
 
 ### Phase 3: Player + Team Profiles
 **Goal**: Players and teams can create, edit, and view profiles through real API endpoints that match the frontend contracts
@@ -117,7 +120,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation + Database Schema | 3/3 | Complete   | 2026-03-24 |
-| 2. Authentication + RBAC | 0/? | Not started | - |
+| 2. Authentication + RBAC | 0/3 | Planned | - |
 | 3. Player + Team Profiles | 0/? | Not started | - |
 | 4. Search + Subscriptions | 0/? | Not started | - |
 | 5. Real-Time Messaging | 0/? | Not started | - |
