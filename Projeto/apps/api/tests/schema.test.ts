@@ -116,7 +116,7 @@ describe("Schema: messages", () => {
 
   it("id column uses bigserial (not text)", () => {
     const idCol = (messages as any).id
-    expect(idCol.columnType).toBe("PgBigSerial")
+    expect(idCol.columnType).toBe("PgBigSerial64")
   })
 })
 
