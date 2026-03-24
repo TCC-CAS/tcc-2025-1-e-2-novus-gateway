@@ -7,10 +7,10 @@
 
 ### Authentication
 
-- [ ] **AUTH-01**: User can log in with email/password and receive a secure session (HttpOnly cookie + JWT via Better Auth)
-- [ ] **AUTH-02**: User can sign up with email/password and choose a role (`player` or `team`) at registration
-- [ ] **AUTH-03**: User can request a password reset (stub/log response — no live email delivery for TCC)
-- [ ] **AUTH-04**: All protected routes validate the session server-side and enforce RBAC by role
+- [x] **AUTH-01**: User can log in with email/password and receive a secure session (HttpOnly cookie + JWT via Better Auth)
+- [x] **AUTH-02**: User can sign up with email/password and choose a role (`player` or `team`) at registration
+- [x] **AUTH-03**: User can request a password reset (stub/log response — no live email delivery for TCC)
+- [x] **AUTH-04**: All protected routes validate the session server-side and enforce RBAC by role
 
 ### Player Profiles
 
@@ -99,10 +99,10 @@
 |-------------|-------|--------|
 | INFRA-01 | Phase 1 | Complete |
 | INFRA-02 | Phase 1 | Complete |
-| AUTH-01 | Phase 2 | Pending |
-| AUTH-02 | Phase 2 | Pending |
-| AUTH-03 | Phase 2 | Pending |
-| AUTH-04 | Phase 2 | Pending |
+| AUTH-01 | Phase 2 | Complete |
+| AUTH-02 | Phase 2 | Complete |
+| AUTH-03 | Phase 2 | Complete |
+| AUTH-04 | Phase 2 | Complete |
 | PLAY-01 | Phase 3 | Pending |
 | PLAY-02 | Phase 3 | Pending |
 | PLAY-03 | Phase 3 | Pending |
