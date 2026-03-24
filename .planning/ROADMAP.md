@@ -31,10 +31,10 @@
   2. Docker Compose brings up `web`, `api`, and `postgres` containers without errors
   3. Drizzle migrations run cleanly and all tables exist in the database (users, players, teams, conversations, messages, subscriptions, audit_logs)
   4. Invalid or missing environment variables cause the server to fail fast with a descriptive error on startup
-**Plans:** 3 plans
+**Plans:** 2/3 plans executed
 Plans:
-- [ ] 01-01-PLAN.md — Fastify server scaffold with env validation, health endpoint, response helpers, and Vitest setup
-- [ ] 01-02-PLAN.md — Complete Drizzle ORM schema (8 tables) with enums, foreign keys, and indexes
+- [x] 01-01-PLAN.md — Fastify server scaffold with env validation, health endpoint, response helpers, and Vitest setup
+- [x] 01-02-PLAN.md — Complete Drizzle ORM schema (8 tables) with enums, foreign keys, and indexes
 - [ ] 01-03-PLAN.md — DB plugin wiring, Docker Compose stack, API Dockerfile, and GitHub Actions CI/CD stubs
 
 ### Phase 2: Authentication + RBAC
@@ -116,7 +116,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation + Database Schema | 0/3 | Planning complete | - |
+| 1. Foundation + Database Schema | 2/3 | In Progress|  |
 | 2. Authentication + RBAC | 0/? | Not started | - |
 | 3. Player + Team Profiles | 0/? | Not started | - |
 | 4. Search + Subscriptions | 0/? | Not started | - |
