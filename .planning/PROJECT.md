@@ -25,17 +25,18 @@ VarzeaPro is a social platform for e-sports that connects competitive players an
 - ✓ MSW mock layer covering every backend endpoint — existing
 - ✓ React Router v7 framework mode with client-side auth — existing
 - ✓ shadcn/ui component library (50+ components) — existing
+- ✓ Fastify 5 server scaffold with Zod env validation, CORS, health endpoint, error handler — Validated in Phase 1
+- ✓ PostgreSQL schema (8 Drizzle ORM tables: users, players, teams, conversations, messages, subscriptions, audit_logs, moderation_reports) — Validated in Phase 1
+- ✓ Docker Compose stack (postgres + api + web with healthchecks) — Validated in Phase 1
+- ✓ CI/CD pipeline stubs (test.yml, build.yml, deploy.yml) — Validated in Phase 1
+- ✓ Vitest test infrastructure (28 passing tests across scaffold + schema) — Validated in Phase 1
 
 ### Active
 
 - [ ] Fastify + Node.js backend API (`apps/api/`) with all endpoints matching client contracts
-- [ ] PostgreSQL database with schema for users, players, teams, conversations, messages, subscriptions, audit_logs
 - [ ] Better Auth integration — JWT sessions, RBAC enforcement (`player` / `team` / `admin`), HttpOnly cookies
 - [ ] Real-time messaging via WebSockets (Socket.io) — live message delivery, typing indicators, presence
 - [ ] Security hardening — rate limiting, DDoS protection, input validation, XSS prevention, race condition guards
-- [ ] Automated test suite — backend unit + integration tests (Vitest or Jest)
-- [ ] CI/CD pipeline — GitHub Actions (test.yml, build.yml, deploy.yml)
-- [ ] Docker Compose deployment — `apps/web` + `apps/api` + PostgreSQL on a single VPS
 
 ### Out of Scope
 
@@ -68,12 +69,13 @@ VarzeaPro is a social platform for e-sports that connects competitive players an
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Fastify over Express/NestJS | Faster, leaner, TypeScript-native, good plugin ecosystem | — Pending |
-| Better Auth for backend auth | Modern library, built-in RBAC, JWT + session management | — Pending |
-| PostgreSQL over MongoDB | Relational data model (users↔teams↔subscriptions↔messages) | — Pending |
-| Socket.io for WebSockets | Room management, reconnection, fallback — simplifies real-time chat | — Pending |
-| Docker Compose for deployment | Single-server TCC deployment, matches academic constraints | — Pending |
-| Keep frontend contracts stable | Frontend is done — backend adapts to frontend types, not vice versa | — Pending |
+| Fastify over Express/NestJS | Faster, leaner, TypeScript-native, good plugin ecosystem | ✓ Fastify 5 scaffold proven in Phase 1 — plugin system, ZodTypeProvider, env validation all working |
+| Better Auth for backend auth | Modern library, built-in RBAC, JWT + session management | — Phase 2 |
+| PostgreSQL over MongoDB | Relational data model (users↔teams↔subscriptions↔messages) | ✓ Drizzle ORM schema with 8 tables and initial migration proven in Phase 1 |
+| Socket.io for WebSockets | Room management, reconnection, fallback — simplifies real-time chat | — Phase 5 |
+| Docker Compose for deployment | Single-server TCC deployment, matches academic constraints | ✓ docker-compose.yml with healthchecks working in Phase 1 |
+| Keep frontend contracts stable | Frontend is done — backend adapts to frontend types, not vice versa | ✓ Drizzle schema derived directly from shared contracts in Phase 1 |
+| `messages.id` uses bigserial | Race condition prevention for message IDs (DB sequence, not app-generated) | ✓ Implemented in Phase 1 — PgBigSerial64 with mode: "bigint" |
 
 ## Evolution
 
@@ -93,4 +95,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-23 after initialization*
+*Last updated: 2026-03-24 — Phase 1 complete (Foundation + Database Schema)*
