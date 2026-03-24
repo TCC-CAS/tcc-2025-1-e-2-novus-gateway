@@ -8,6 +8,7 @@ describe("Fastify server", () => {
   beforeEach(async () => {
     process.env.DATABASE_URL = "postgres://user:pass@localhost:5432/testdb"
     process.env.JWT_SECRET = "test-secret-that-is-long-enough-for-validation"
+    process.env.BETTER_AUTH_SECRET = "test-better-auth-secret-long-enough-32chars"
     process.env.NODE_ENV = "test"
     app = await buildApp()
     await app.ready()
