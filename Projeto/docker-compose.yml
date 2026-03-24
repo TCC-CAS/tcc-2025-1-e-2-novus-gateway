@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: varzeapro
+      POSTGRES_USER: varzeapro
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-varzeapro_dev}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U varzeapro"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  api:
+    build: ./apps/api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://varzeapro:${POSTGRES_PASSWORD:-varzeapro_dev}@postgres:5432/varzeapro
+    ports:
+      - "3000:3000"
+
+  web:
+    build: ./apps/web
+    depends_on:
+      - api
+    environment:
+      VITE_API_URL: http://api:3000
+    ports:
+      - "5173:3000"
+
+volumes:
+  postgres_data:

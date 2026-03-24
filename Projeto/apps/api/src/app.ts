@@ -12,6 +12,7 @@ export async function buildApp() {
 
   // Order matters: env first, then plugins, then routes
   await fastify.register(import("./config/env.js"))
+  await fastify.register(import("./plugins/db.js"))
   await fastify.register(import("./plugins/cors.js"))
   await fastify.register(import("@fastify/sensible"))
 
