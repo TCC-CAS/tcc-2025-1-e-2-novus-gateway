@@ -10,7 +10,7 @@
 
 ## Phases
 
-- [ ] **Phase 1: Foundation + Database Schema** - Fastify server running with full Drizzle schema and Docker environment
+- [x] **Phase 1: Foundation + Database Schema** - Fastify server running with full Drizzle schema and Docker environment (completed 2026-03-24)
 - [ ] **Phase 2: Authentication + RBAC** - Users can securely log in, register, and all routes enforce role-based access
 - [ ] **Phase 3: Player + Team Profiles** - Players and teams can manage and view public profiles via real API
 - [ ] **Phase 4: Search + Subscriptions** - Users can discover players/teams and manage subscription plans
@@ -31,11 +31,11 @@
   2. Docker Compose brings up `web`, `api`, and `postgres` containers without errors
   3. Drizzle migrations run cleanly and all tables exist in the database (users, players, teams, conversations, messages, subscriptions, audit_logs)
   4. Invalid or missing environment variables cause the server to fail fast with a descriptive error on startup
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 Plans:
 - [x] 01-01-PLAN.md — Fastify server scaffold with env validation, health endpoint, response helpers, and Vitest setup
 - [x] 01-02-PLAN.md — Complete Drizzle ORM schema (8 tables) with enums, foreign keys, and indexes
-- [ ] 01-03-PLAN.md — DB plugin wiring, Docker Compose stack, API Dockerfile, and GitHub Actions CI/CD stubs
+- [x] 01-03-PLAN.md — DB plugin wiring, Docker Compose stack, API Dockerfile, and GitHub Actions CI/CD stubs
 
 ### Phase 2: Authentication + RBAC
 **Goal**: Users can register, log in, and log out securely; all protected routes enforce role-based access server-side
@@ -116,7 +116,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation + Database Schema | 2/3 | In Progress|  |
+| 1. Foundation + Database Schema | 3/3 | Complete   | 2026-03-24 |
 | 2. Authentication + RBAC | 0/? | Not started | - |
 | 3. Player + Team Profiles | 0/? | Not started | - |
 | 4. Search + Subscriptions | 0/? | Not started | - |

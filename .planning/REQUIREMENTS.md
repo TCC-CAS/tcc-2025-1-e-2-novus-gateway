@@ -52,7 +52,7 @@
 ### Infrastructure
 
 - [x] **INFRA-01**: Application runs via Docker Compose — `web` + `api` + `postgres` containers on a single VPS
-- [ ] **INFRA-02**: GitHub Actions CI/CD pipelines for test, build, and deploy (`test.yml`, `build.yml`, `deploy.yml`)
+- [x] **INFRA-02**: GitHub Actions CI/CD pipelines for test, build, and deploy (`test.yml`, `build.yml`, `deploy.yml`)
 - [ ] **INFRA-03**: Automated backend test suite — Vitest unit + integration tests covering all API domains
 - [ ] **INFRA-04**: Security hardening — rate limiting, helmet, Zod input validation, CORS, DDoS protection, WebSocket auth
 
@@ -98,7 +98,7 @@
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | INFRA-01 | Phase 1 | Complete |
-| INFRA-02 | Phase 1 | Pending |
+| INFRA-02 | Phase 1 | Complete |
 | AUTH-01 | Phase 2 | Pending |
 | AUTH-02 | Phase 2 | Pending |
 | AUTH-03 | Phase 2 | Pending |
