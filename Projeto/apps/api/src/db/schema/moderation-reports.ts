@@ -1,5 +1,5 @@
 import { pgTable, text, timestamp, pgEnum } from "drizzle-orm/pg-core"
-import { users } from "./users"
+import { users } from "./users.js"
 
 export const reportedEntityTypeEnum = pgEnum("reported_entity_type", ["player", "team", "message"])
 export const reportReasonEnum = pgEnum("report_reason", ["inappropriate", "spam", "harassment", "fake", "other"])

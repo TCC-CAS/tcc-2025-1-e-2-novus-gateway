@@ -1,5 +1,5 @@
 import { pgTable, text, timestamp, pgEnum } from "drizzle-orm/pg-core"
-import { users } from "./users"
+import { users } from "./users.js"
 
 export const teamLevelEnum = pgEnum("team_level", ["amador", "recreativo", "semi-profissional", "outro"])
 

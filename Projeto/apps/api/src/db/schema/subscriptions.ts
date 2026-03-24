@@ -1,6 +1,6 @@
 import { pgTable, text, timestamp, boolean, pgEnum } from "drizzle-orm/pg-core"
-import { users } from "./users"
-import { planIdEnum } from "./users"
+import { users } from "./users.js"
+import { planIdEnum } from "./users.js"
 
 export const subscriptionStatusEnum = pgEnum("subscription_status", ["active", "canceled", "past_due", "trialing"])
 

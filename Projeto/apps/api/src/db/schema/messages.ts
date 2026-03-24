@@ -1,6 +1,6 @@
 import { pgTable, text, timestamp, bigserial, index } from "drizzle-orm/pg-core"
-import { conversations } from "./conversations"
-import { users } from "./users"
+import { conversations } from "./conversations.js"
+import { users } from "./users.js"
 
 export const messages = pgTable("messages", {
   id: bigserial("id", { mode: "bigint" }).primaryKey(),
