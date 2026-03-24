@@ -51,7 +51,7 @@ Plans:
 Plans:
 - [x] 02-01-PLAN.md — Better Auth schema tables, auth instance, type augmentations, env config
 - [x] 02-02-PLAN.md — Auth Fastify plugin, preHandler hooks, rate limiting, app.ts wiring
-- [ ] 02-03-PLAN.md — Integration tests for sign-up, sign-in, password reset, RBAC, rate limiting
+- [x] 02-03-PLAN.md — Integration tests for sign-up, sign-in, password reset, RBAC, rate limiting
 
 ### Phase 3: Player + Team Profiles
 **Goal**: Players and teams can create, edit, and view profiles through real API endpoints that match the frontend contracts
