@@ -33,6 +33,9 @@ VarzeaPro is a social platform for e-sports that connects competitive players an
 - ✓ Better Auth integration — HttpOnly cookie sessions, email/password, admin plugin, role injection hook (AUTH-01–04) — Validated in Phase 2
 - ✓ Fastify auth + rate-limit plugins, `requireAuth`/`requireRole` preHandler hooks, auth routes at `/api/auth/*` — Validated in Phase 2
 - ✓ Integration test suite covering sign-up, sign-in, password reset stub, RBAC enforcement, rate limiting — Validated in Phase 2
+- ✓ Player profile REST endpoints (GET/PUT /api/players/me, GET /api/players/:id) with RBAC, upsert, 404 handling — Validated in Phase 3
+- ✓ Team profile REST endpoints (GET/PUT /api/teams/me, GET /api/teams/:id) with RBAC, upsert, 404 handling — Validated in Phase 3
+- ✓ 20 profile integration tests passing (PLAY-01/02/03, TEAM-01/02/03) — Validated in Phase 3
 
 ### Active
 
@@ -97,4 +100,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-24 — Phase 2 complete (Authentication + RBAC)*
+*Last updated: 2026-03-25
