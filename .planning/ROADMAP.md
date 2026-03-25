@@ -12,7 +12,7 @@
 
 - [x] **Phase 1: Foundation + Database Schema** - Fastify server running with full Drizzle schema and Docker environment (completed 2026-03-24)
 - [ ] **Phase 2: Authentication + RBAC** - Users can securely log in, register, and all routes enforce role-based access
-- [ ] **Phase 3: Player + Team Profiles** - Players and teams can manage and view public profiles via real API
+- [x] **Phase 3: Player + Team Profiles** - Players and teams can manage and view public profiles via real API (completed 2026-03-25)
 - [ ] **Phase 4: Search + Subscriptions** - Users can discover players/teams and manage subscription plans
 - [ ] **Phase 5: Real-Time Messaging** - Users can chat in real-time via WebSocket with typing indicators and presence
 - [ ] **Phase 6: Admin Panel** - Admins can manage users, ban accounts, and resolve moderation reports
@@ -62,11 +62,11 @@ Plans:
   2. Authenticated team user can `PUT /teams/me` and the update persists; `GET /teams/me` returns updated data
   3. Any authenticated user can `GET /players/:id` or `GET /teams/:id` and receive the public profile in `{ data: T }` shape
   4. Unauthenticated requests to profile endpoints return `401`
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 Plans:
 - [x] 03-01-PLAN.md — Test scaffolding (Wave 0): profile helpers + 18 integration test cases (RED)
 - [x] 03-02-PLAN.md — Player profile routes (GET/PUT /players/me, GET /players/:id) + app.ts registration
-- [ ] 03-03-PLAN.md — Team profile routes (GET/PUT /teams/me, GET /teams/:id) + app.ts registration
+- [x] 03-03-PLAN.md — Team profile routes (GET/PUT /teams/me, GET /teams/:id) + app.ts registration
 
 ### Phase 4: Search + Subscriptions
 **Goal**: Users can discover players and teams via filtered search, and subscription plan limits are enforced server-side
@@ -124,7 +124,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Foundation + Database Schema | 3/3 | Complete   | 2026-03-24 |
 | 2. Authentication + RBAC | 2/3 | In Progress|  |
-| 3. Player + Team Profiles | 2/3 | In Progress|  |
+| 3. Player + Team Profiles | 3/3 | Complete   | 2026-03-25 |
 | 4. Search + Subscriptions | 0/? | Not started | - |
 | 5. Real-Time Messaging | 0/? | Not started | - |
 | 6. Admin Panel | 0/? | Not started | - |
