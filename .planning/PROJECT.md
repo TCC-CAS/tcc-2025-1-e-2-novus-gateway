@@ -36,6 +36,10 @@ VarzeaPro is a social platform for e-sports that connects competitive players an
 - ✓ Player profile REST endpoints (GET/PUT /api/players/me, GET /api/players/:id) with RBAC, upsert, 404 handling — Validated in Phase 3
 - ✓ Team profile REST endpoints (GET/PUT /api/teams/me, GET /api/teams/:id) with RBAC, upsert, 404 handling — Validated in Phase 3
 - ✓ 20 profile integration tests passing (PLAY-01/02/03, TEAM-01/02/03) — Validated in Phase 3
+- ✓ Search endpoints (`GET /api/search/players`, `GET /api/search/teams`) with role gates, plan limits, self-exclusion, filtering, pagination (SRCH-01, SRCH-02) — Validated in Phase 4
+- ✓ Subscription endpoints (`GET /api/subscription/usage`, `POST /api/subscription/upgrade`) with upsert, role-plan validation (SUB-01, SUB-02) — Validated in Phase 4
+- ✓ Plan-based search result limits enforced server-side (free team capped at 10) (SUB-03) — Validated in Phase 4
+- ✓ Email-keyed rate limiting (preHandler hook) — avoids IP collisions in test suites — Validated in Phase 4
 
 ### Active
 
@@ -100,4 +104,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-25
+*Last updated: 2026-03-25 — Phase 4 (search-subscriptions) complete*
