@@ -14,15 +14,15 @@
 
 ### Player Profiles
 
-- [ ] **PLAY-01**: Player can create and edit their own profile (`PUT /players/me`)
-- [ ] **PLAY-02**: Player can view their own profile (`GET /players/me`)
-- [ ] **PLAY-03**: Anyone (authenticated) can view a player's public profile (`GET /players/:id`)
+- [x] **PLAY-01**: Player can create and edit their own profile (`PUT /players/me`)
+- [x] **PLAY-02**: Player can view their own profile (`GET /players/me`)
+- [x] **PLAY-03**: Anyone (authenticated) can view a player's public profile (`GET /players/:id`)
 
 ### Team Profiles
 
-- [ ] **TEAM-01**: Team user can create and edit their own team profile (`PUT /teams/me`)
-- [ ] **TEAM-02**: Team user can view their own profile (`GET /teams/me`)
-- [ ] **TEAM-03**: Anyone (authenticated) can view a team's public profile (`GET /teams/:id`)
+- [x] **TEAM-01**: Team user can create and edit their own team profile (`PUT /teams/me`)
+- [x] **TEAM-02**: Team user can view their own profile (`GET /teams/me`)
+- [x] **TEAM-03**: Anyone (authenticated) can view a team's public profile (`GET /teams/:id`)
 
 ### Search
 
@@ -103,12 +103,12 @@
 | AUTH-02 | Phase 2 | Complete |
 | AUTH-03 | Phase 2 | Complete |
 | AUTH-04 | Phase 2 | Complete |
-| PLAY-01 | Phase 3 | Pending |
-| PLAY-02 | Phase 3 | Pending |
-| PLAY-03 | Phase 3 | Pending |
-| TEAM-01 | Phase 3 | Pending |
-| TEAM-02 | Phase 3 | Pending |
-| TEAM-03 | Phase 3 | Pending |
+| PLAY-01 | Phase 3 | Complete |
+| PLAY-02 | Phase 3 | Complete |
+| PLAY-03 | Phase 3 | Complete |
+| TEAM-01 | Phase 3 | Complete |
+| TEAM-02 | Phase 3 | Complete |
+| TEAM-03 | Phase 3 | Complete |
 | SRCH-01 | Phase 4 | Pending |
 | SRCH-02 | Phase 4 | Pending |
 | SUB-01 | Phase 4 | Pending |

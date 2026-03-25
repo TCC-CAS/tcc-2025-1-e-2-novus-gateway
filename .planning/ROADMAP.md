@@ -62,10 +62,10 @@ Plans:
   2. Authenticated team user can `PUT /teams/me` and the update persists; `GET /teams/me` returns updated data
   3. Any authenticated user can `GET /players/:id` or `GET /teams/:id` and receive the public profile in `{ data: T }` shape
   4. Unauthenticated requests to profile endpoints return `401`
-**Plans:** 1/3 plans executed
+**Plans:** 2/3 plans executed
 Plans:
 - [x] 03-01-PLAN.md — Test scaffolding (Wave 0): profile helpers + 18 integration test cases (RED)
-- [ ] 03-02-PLAN.md — Player profile routes (GET/PUT /players/me, GET /players/:id) + app.ts registration
+- [x] 03-02-PLAN.md — Player profile routes (GET/PUT /players/me, GET /players/:id) + app.ts registration
 - [ ] 03-03-PLAN.md — Team profile routes (GET/PUT /teams/me, GET /teams/:id) + app.ts registration
 
 ### Phase 4: Search + Subscriptions
@@ -124,7 +124,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Foundation + Database Schema | 3/3 | Complete   | 2026-03-24 |
 | 2. Authentication + RBAC | 2/3 | In Progress|  |
-| 3. Player + Team Profiles | 1/3 | In Progress|  |
+| 3. Player + Team Profiles | 2/3 | In Progress|  |
 | 4. Search + Subscriptions | 0/? | Not started | - |
 | 5. Real-Time Messaging | 0/? | Not started | - |
 | 6. Admin Panel | 0/? | Not started | - |
