@@ -1,3 +1,4 @@
+import fp from "fastify-plugin"
 import type { FastifyPluginAsync } from "fastify"
 import fastifySocketIO, { type FastifySocketioOptions } from "fastify-socket.io"
 import { eq, or } from "drizzle-orm"
@@ -74,6 +75,9 @@ const socketIOPlugin: FastifyPluginAsync = async (fastify) => {
       await socket.join(id)
     }
 
+    // Signal client that all rooms are joined — client waits for this before emitting events
+    socket.emit("rooms_joined")
+
     // Emit user_online to all OTHER participants in user's conversation rooms (MSG-04c)
     for (const { id } of userConversations) {
       socket.to(id).emit("user_online", { userId })
@@ -98,4 +102,4 @@ const socketIOPlugin: FastifyPluginAsync = async (fastify) => {
   })
 }
 
-export default socketIOPlugin
+export default fp(socketIOPlugin, { name: "socket-io" })

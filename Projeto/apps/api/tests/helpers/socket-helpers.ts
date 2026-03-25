@@ -19,7 +19,9 @@ export function createSocketClient(
 }
 
 /**
- * Creates an authenticated socket and waits for the connection event.
+ * Creates an authenticated socket and waits until the server has finished
+ * joining all rooms (rooms_joined event). This ensures the socket is ready
+ * to send/receive events before the test proceeds.
  * Rejects if connection fails (unauthenticated session).
  */
 export function createAuthenticatedSocket(
@@ -28,7 +30,7 @@ export function createAuthenticatedSocket(
 ): Promise<Socket> {
   return new Promise((resolve, reject) => {
     const socket = createSocketClient(app, sessionCookie)
-    socket.on("connect", () => resolve(socket))
+    socket.on("rooms_joined", () => resolve(socket))
     socket.on("connect_error", (err) => reject(err))
     socket.connect()
   })

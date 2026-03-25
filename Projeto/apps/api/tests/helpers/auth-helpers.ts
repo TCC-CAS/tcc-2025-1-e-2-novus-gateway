@@ -10,6 +10,8 @@ export async function createTestApp(): Promise<FastifyInstance> {
   process.env.NODE_ENV = "test"
   const app = await buildApp()
   await app.ready()
+  // Listen on a random port so socket.io can accept WebSocket connections in tests
+  await app.listen({ port: 0, host: "127.0.0.1" })
   return app
 }
 

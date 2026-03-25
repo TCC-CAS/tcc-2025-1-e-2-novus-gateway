@@ -18,6 +18,7 @@ export async function buildApp() {
   await fastify.register(import("@fastify/sensible"))
   await fastify.register(import("./plugins/rate-limit.js"))
   await fastify.register(import("./plugins/auth.js"))
+  await fastify.register(import("./plugins/socket-io.js"))
 
   registerErrorHandler(fastify)
 
