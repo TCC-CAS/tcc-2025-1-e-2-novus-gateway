@@ -22,6 +22,7 @@ export async function buildApp() {
   registerErrorHandler(fastify)
 
   await fastify.register(import("./routes/health.js"), { prefix: "/health" })
+  await fastify.register(import("./routes/players.js"), { prefix: "/api/players" })
 
   // Protected test route for AUTH-04 verification (401 without session, 403 with wrong role)
   fastify.get("/api/me", { preHandler: [requireSession] }, async (request, reply) => {

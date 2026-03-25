@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, pgEnum } from "drizzle-orm/pg-core"
+import { pgTable, text, timestamp, boolean, pgEnum } from "drizzle-orm/pg-core"
 
 export const roleEnum = pgEnum("role", ["player", "team", "admin"])
 export const planIdEnum = pgEnum("plan_id", ["free", "craque", "titular", "campeao"])
@@ -6,11 +6,12 @@ export const planIdEnum = pgEnum("plan_id", ["free", "craque", "titular", "campe
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
   email: text("email").notNull().unique(),
+  emailVerified: boolean("email_verified").notNull().default(false),
   name: text("name").notNull(),
-  passwordHash: text("password_hash").notNull(),
+  passwordHash: text("password_hash"),
   role: roleEnum("role").notNull(),
   planId: planIdEnum("plan_id").notNull().default("free"),
-  banned: text("banned"),
+  banned: boolean("banned").default(false),
   banReason: text("ban_reason"),
   banExpires: timestamp("ban_expires", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
