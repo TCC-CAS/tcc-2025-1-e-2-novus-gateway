@@ -42,6 +42,17 @@ async function handleAuthRequest(
     reply.header(key, value)
   })
   const responseBody = await response.text()
+  // Strip token from JSON responses — token must only live in the HttpOnly cookie (AUTH-02)
+  const contentType = response.headers.get("content-type") ?? ""
+  if (contentType.includes("application/json")) {
+    try {
+      const json = JSON.parse(responseBody)
+      if ("token" in json) delete json.token
+      return reply.send(JSON.stringify(json))
+    } catch {
+      // not valid JSON — send as-is
+    }
+  }
   return reply.send(responseBody)
 }
 

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, vi } from "vitest"
 import type { FastifyInstance } from "fastify"
 import { createTestApp, signUpUser } from "../helpers/auth-helpers.js"
 
-describe("POST /api/auth/forget-password", () => {
+describe("POST /api/auth/request-password-reset", () => {
   let app: FastifyInstance
   const testEmail = `reset-${Date.now()}@example.com`
 
@@ -20,7 +20,7 @@ describe("POST /api/auth/forget-password", () => {
 
     const response = await app.inject({
       method: "POST",
-      url: "/api/auth/forget-password",
+      url: "/api/auth/request-password-reset",
       payload: { email: testEmail },
     })
 
