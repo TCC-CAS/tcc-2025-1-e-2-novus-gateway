@@ -33,8 +33,8 @@
 
 - [x] **MSG-01**: User can create a conversation thread and list all their conversations (`GET/POST /conversations`)
 - [x] **MSG-02**: User can send and retrieve messages within a conversation (`GET/POST /conversations/:id/messages`)
-- [ ] **MSG-03**: Messages are delivered in real-time via WebSocket (Socket.io) — no polling required
-- [ ] **MSG-04**: Users see typing indicators and online presence via Socket.io events
+- [x] **MSG-03**: Messages are delivered in real-time via WebSocket (Socket.io) — no polling required
+- [x] **MSG-04**: Users see typing indicators and online presence via Socket.io events
 
 ### Subscriptions
 
@@ -116,8 +116,8 @@
 | SUB-03 | Phase 4 | Complete |
 | MSG-01 | Phase 5 | Complete |
 | MSG-02 | Phase 5 | Complete |
-| MSG-03 | Phase 5 | Pending |
-| MSG-04 | Phase 5 | Pending |
+| MSG-03 | Phase 5 | Complete |
+| MSG-04 | Phase 5 | Complete |
 | ADM-01 | Phase 6 | Pending |
 | ADM-02 | Phase 6 | Pending |
 | ADM-03 | Phase 6 | Pending |
