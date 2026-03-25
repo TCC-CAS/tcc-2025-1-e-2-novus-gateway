@@ -1,7 +1,8 @@
 ---
 phase: 3
 slug: player-team-profiles
-status: draft
+status: approved
+reviewed_at: 2026-03-24
 shadcn_initialized: true
 preset: new-york
 created: 2026-03-24
