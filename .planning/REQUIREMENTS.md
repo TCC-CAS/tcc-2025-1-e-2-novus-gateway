@@ -26,8 +26,8 @@
 
 ### Search
 
-- [ ] **SRCH-01**: User can search players by filters with paginated results (`GET /search/players`)
-- [ ] **SRCH-02**: User can search teams by filters with paginated results (`GET /search/teams`)
+- [x] **SRCH-01**: User can search players by filters with paginated results (`GET /search/players`)
+- [x] **SRCH-02**: User can search teams by filters with paginated results (`GET /search/teams`)
 
 ### Messaging
 
@@ -38,9 +38,9 @@
 
 ### Subscriptions
 
-- [ ] **SUB-01**: User can view their current plan and usage limits (`GET /subscription/usage`)
-- [ ] **SUB-02**: User can upgrade their subscription plan via API (`POST /subscription/upgrade`) — no payment gateway
-- [ ] **SUB-03**: Backend enforces plan limits server-side via middleware on protected endpoints
+- [x] **SUB-01**: User can view their current plan and usage limits (`GET /subscription/usage`)
+- [x] **SUB-02**: User can upgrade their subscription plan via API (`POST /subscription/upgrade`) — no payment gateway
+- [x] **SUB-03**: Backend enforces plan limits server-side via middleware on protected endpoints
 
 ### Admin
 
@@ -109,11 +109,11 @@
 | TEAM-01 | Phase 3 | Complete |
 | TEAM-02 | Phase 3 | Complete |
 | TEAM-03 | Phase 3 | Complete |
-| SRCH-01 | Phase 4 | Pending |
-| SRCH-02 | Phase 4 | Pending |
-| SUB-01 | Phase 4 | Pending |
-| SUB-02 | Phase 4 | Pending |
-| SUB-03 | Phase 4 | Pending |
+| SRCH-01 | Phase 4 | Complete |
+| SRCH-02 | Phase 4 | Complete |
+| SUB-01 | Phase 4 | Complete |
+| SUB-02 | Phase 4 | Complete |
+| SUB-03 | Phase 4 | Complete |
 | MSG-01 | Phase 5 | Pending |
 | MSG-02 | Phase 5 | Pending |
 | MSG-03 | Phase 5 | Pending |
