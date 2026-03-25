@@ -15,6 +15,27 @@
       "when": 1774373030254,
       "tag": "0001_bitter_terror",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1774405977969,
+      "tag": "0002_confused_rafael_vega",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1774406029002,
+      "tag": "0003_funny_chamber",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1774406080841,
+      "tag": "0004_cute_zombie",
+      "breakpoints": true
     }
   ]
 }

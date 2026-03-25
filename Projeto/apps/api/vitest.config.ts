@@ -5,5 +5,12 @@ export default defineConfig({
     globals: true,
     environment: "node",
     include: ["tests/**/*.test.ts"],
+    env: {
+      DATABASE_URL: "postgresql://varzeapro:varzeapro_dev@localhost:5432/varzeapro",
+      BETTER_AUTH_SECRET: "test-better-auth-secret-long-enough-32chars",
+      BETTER_AUTH_URL: "http://localhost:3000",
+      JWT_SECRET: "test-secret-that-is-long-enough-for-validation",
+      CORS_ORIGIN: "http://localhost:5173",
+    },
   },
 })
