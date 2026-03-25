@@ -25,7 +25,7 @@ describe("Rate limiting on auth routes", () => {
       })
     }
 
-    // 6th request should be rate-limited
+    // Next request should be rate-limited
     const response = await app.inject({
       method: "POST",
       url: "/api/auth/sign-in/email",
@@ -35,30 +35,27 @@ describe("Rate limiting on auth routes", () => {
   })
 
   it("returns 429 after 5 sign-up attempts within 15 minutes", async () => {
-    // Each sign-up uses the same IP (127.0.0.1) via inject()
+    // Use the same email repeatedly — rate limit is keyed by email, so the same
+    // address exhausts its bucket after 5 requests
+    const payload = {
+      email: "ratelimit-signup@example.com",
+      password: "Password123!",
+      name: "Rate Test",
+      role: "player",
+    }
     for (let i = 0; i < 5; i++) {
       await app.inject({
         method: "POST",
         url: "/api/auth/sign-up/email",
-        payload: {
-          email: `rate-${i}-${Date.now()}@example.com`,
-          password: "Password123!",
-          name: "Rate Test",
-          role: "player",
-        },
+        payload,
       })
     }
 
-    // 6th request should be rate-limited
+    // Next request with same email should be rate-limited
     const response = await app.inject({
       method: "POST",
       url: "/api/auth/sign-up/email",
-      payload: {
-        email: `rate-final-${Date.now()}@example.com`,
-        password: "Password123!",
-        name: "Rate Test",
-        role: "player",
-      },
+      payload,
     })
     expect(response.statusCode).toBe(429)
   })
