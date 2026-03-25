@@ -78,8 +78,11 @@ Plans:
   3. `GET /subscription/usage` returns the authenticated user's current plan and usage counters
   4. `POST /subscription/upgrade` updates the user's plan in the database
   5. Plan-gated endpoints reject requests that exceed the user's plan limit with `403` — this check runs server-side, not client-side
-**Plans**: TBD
-**UI hint**: yes
+**Plans:** 3 plans
+Plans:
+- [ ] 04-01-PLAN.md — Test scaffolding (Wave 0): search.test.ts + subscription.test.ts RED stubs (SRCH-01, SRCH-02, SUB-01, SUB-02, SUB-03)
+- [ ] 04-02-PLAN.md — Search routes (GET /search/players, GET /search/teams) with filters, pagination, role gates, plan enforcement
+- [ ] 04-03-PLAN.md — Subscription routes (GET /subscription/usage, POST /subscription/upgrade) with upsert + role-plan validation
 
 ### Phase 5: Real-Time Messaging
 **Goal**: Users can send and receive messages in real-time via WebSocket; typing indicators and online presence work without polling
@@ -125,7 +128,7 @@ Plans:
 | 1. Foundation + Database Schema | 3/3 | Complete   | 2026-03-24 |
 | 2. Authentication + RBAC | 2/3 | In Progress|  |
 | 3. Player + Team Profiles | 3/3 | Complete   | 2026-03-25 |
-| 4. Search + Subscriptions | 0/? | Not started | - |
+| 4. Search + Subscriptions | 0/3 | Not started | - |
 | 5. Real-Time Messaging | 0/? | Not started | - |
 | 6. Admin Panel | 0/? | Not started | - |
 | 7. Security Hardening + Testing + CI/CD | 0/? | Not started | - |
