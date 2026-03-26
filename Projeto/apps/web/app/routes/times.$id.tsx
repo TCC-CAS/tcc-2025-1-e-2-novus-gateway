@@ -1,7 +1,7 @@
-import { useParams, Link } from "react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useParams, useNavigate } from "react-router";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "~/lib/auth/auth-context";
-import { teamsApi } from "~/lib/api-client";
+import { teamsApi, messagingApi } from "~/lib/api-client";
 import { canSearchTeams } from "~/lib/auth";
 import { Button } from "~/components/ui/button";
 import {
@@ -21,11 +21,23 @@ export default function TimePublicProfile() {
   const { id } = useParams();
   const { role } = useAuth();
   const canContact = canSearchTeams(role);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["team", id],
     queryFn: () => teamsApi.getById(id!),
     enabled: !!id,
+  });
+
+  const contactMutation = useMutation({
+    mutationFn: () => messagingApi.createConversation({ teamId: id! }),
+    onSuccess: (conversation) => {
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      const dest =
+        role === "player" ? "/jogador/mensagens" : "/time/mensagens";
+      navigate(`${dest}?conversationId=${conversation.id}`);
+    },
   });
 
   if (isLoading || !profile) {
@@ -76,16 +88,12 @@ export default function TimePublicProfile() {
 
             {canContact && (
               <Button
-                asChild
-                className="hidden sm:flex h-16 w-16 shrink-0 rounded-none border-4 border-foreground bg-primary p-0 transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_var(--color-foreground)] dark:hover:shadow-[4px_4px_0px_0px_var(--color-foreground)] self-start mt-4"
+                type="button"
+                onClick={() => contactMutation.mutate()}
+                disabled={contactMutation.isPending}
+                className="hidden sm:flex h-16 w-16 shrink-0 rounded-none border-4 border-foreground bg-primary p-0 transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_var(--color-foreground)] dark:hover:shadow-[4px_4px_0px_0px_var(--color-foreground)] self-start mt-4 disabled:opacity-50"
               >
-                <Link
-                  to={
-                    role === "player" ? "/jogador/mensagens" : "/time/mensagens"
-                  }
-                >
-                  <MessageCircle className="size-8 text-foreground" />
-                </Link>
+                <MessageCircle className="size-8 text-foreground" />
               </Button>
             )}
           </div>
@@ -168,17 +176,13 @@ export default function TimePublicProfile() {
         {canContact && (
           <div className="sm:hidden border-t-4 border-foreground p-6 bg-primary/10">
             <Button
-              asChild
-              className="w-full h-16 rounded-none border-4 border-foreground bg-primary px-6 font-display text-xl tracking-widest text-foreground hover:bg-foreground hover:text-background hover:shadow-[4px_4px_0px_0px_var(--color-primary)] transition-all uppercase gap-3"
+              type="button"
+              onClick={() => contactMutation.mutate()}
+              disabled={contactMutation.isPending}
+              className="w-full h-16 rounded-none border-4 border-foreground bg-primary px-6 font-display text-xl tracking-widest text-foreground hover:bg-foreground hover:text-background hover:shadow-[4px_4px_0px_0px_var(--color-primary)] transition-all uppercase gap-3 disabled:opacity-50"
             >
-              <Link
-                to={
-                  role === "player" ? "/jogador/mensagens" : "/time/mensagens"
-                }
-              >
-                <MessageCircle className="size-5" />
-                ENTRAR EM CONTATO
-              </Link>
+              <MessageCircle className="size-5" />
+              ENTRAR EM CONTATO
             </Button>
           </div>
         )}

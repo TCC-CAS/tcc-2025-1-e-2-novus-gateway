@@ -1,7 +1,7 @@
-import { useParams, Link } from "react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useParams, useNavigate } from "react-router";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "~/lib/auth/auth-context";
-import { playersApi } from "~/lib/api-client";
+import { playersApi, messagingApi } from "~/lib/api-client";
 import { canSearchPlayers } from "~/lib/auth";
 import { Button } from "~/components/ui/button";
 import { MessageCircle, User, MapPin, Activity, Trophy } from "lucide-react";
@@ -14,11 +14,22 @@ export default function JogadorPublicProfile() {
   const { id } = useParams();
   const { role } = useAuth();
   const canContact = canSearchPlayers(role);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["player", id],
     queryFn: () => playersApi.getById(id!),
     enabled: !!id,
+  });
+
+  const contactMutation = useMutation({
+    mutationFn: () => messagingApi.createConversation({ playerId: id! }),
+    onSuccess: (conversation) => {
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      const dest = role === "team" ? "/time/mensagens" : "/jogador/mensagens";
+      navigate(`${dest}?conversationId=${conversation.id}`);
+    },
   });
 
   if (isLoading || !profile) {
@@ -80,16 +91,14 @@ export default function JogadorPublicProfile() {
 
           {canContact && (
             <Button
-              asChild
+              type="button"
               size="lg"
-              className="absolute top-6 right-6 h-12 rounded-none border-2 border-foreground bg-background px-6 font-display text-xl tracking-widest text-primary hover:bg-foreground hover:text-background hover:shadow-[4px_4px_0px_0px_var(--color-primary)] transition-all uppercase hidden sm:flex items-center gap-2"
+              onClick={() => contactMutation.mutate()}
+              disabled={contactMutation.isPending}
+              className="absolute top-6 right-6 h-12 rounded-none border-2 border-foreground bg-background px-6 font-display text-xl tracking-widest text-primary hover:bg-foreground hover:text-background hover:shadow-[4px_4px_0px_0px_var(--color-primary)] transition-all uppercase hidden sm:flex items-center gap-2 disabled:opacity-50"
             >
-              <Link
-                to={role === "team" ? "/time/mensagens" : "/jogador/mensagens"}
-              >
-                <MessageCircle className="size-5" />
-                MANDAR PROPOSTA
-              </Link>
+              <MessageCircle className="size-5" />
+              MANDAR PROPOSTA
             </Button>
           )}
         </div>
@@ -194,15 +203,13 @@ export default function JogadorPublicProfile() {
         {canContact && (
           <div className="border-t-4 border-foreground p-6 sm:hidden bg-primary/10">
             <Button
-              asChild
-              className="w-full h-16 rounded-none border-4 border-foreground bg-primary px-6 font-display text-2xl tracking-widest text-primary-foreground hover:bg-foreground hover:text-background hover:shadow-[4px_4px_0px_0px_var(--color-primary)] transition-all uppercase"
+              type="button"
+              onClick={() => contactMutation.mutate()}
+              disabled={contactMutation.isPending}
+              className="w-full h-16 rounded-none border-4 border-foreground bg-primary px-6 font-display text-2xl tracking-widest text-primary-foreground hover:bg-foreground hover:text-background hover:shadow-[4px_4px_0px_0px_var(--color-primary)] transition-all uppercase disabled:opacity-50"
             >
-              <Link
-                to={role === "team" ? "/time/mensagens" : "/jogador/mensagens"}
-              >
-                <MessageCircle className="size-6 mr-2" />
-                MANDAR PROPOSTA
-              </Link>
+              <MessageCircle className="size-6 mr-2" />
+              MANDAR PROPOSTA
             </Button>
           </div>
         )}

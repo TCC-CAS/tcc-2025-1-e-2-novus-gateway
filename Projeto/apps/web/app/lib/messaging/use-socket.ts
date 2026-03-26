@@ -34,7 +34,19 @@ export function useSocket({
     if (!conversationId) return
 
     // D-08: withCredentials sends session cookie, no token in URL
-    const socket = io(import.meta.env.VITE_API_URL || "", {
+    // Derive socket origin only (strip path like /api) so socket.io connects to the
+    // default namespace "/" instead of treating "/api" as a namespace.
+    const apiUrl = import.meta.env.VITE_API_URL || ""
+    let socketOrigin = ""
+    if (apiUrl) {
+      try {
+        socketOrigin = new URL(apiUrl).origin
+      } catch {
+        // relative URL or empty — same-origin connection
+        socketOrigin = ""
+      }
+    }
+    const socket = io(socketOrigin, {
       withCredentials: true,
       transports: ["websocket"],
     })
