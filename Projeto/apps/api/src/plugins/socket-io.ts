@@ -1,8 +1,8 @@
 import fp from "fastify-plugin"
 import type { FastifyPluginAsync } from "fastify"
-import fastifySocketIO, { type FastifySocketioOptions } from "fastify-socket.io"
+import { Server } from "socket.io"
 import { eq, or } from "drizzle-orm"
-import type { Server, Socket } from "socket.io"
+import type { Socket } from "socket.io"
 import { conversations } from "../db/schema/conversations.js"
 import { auth } from "../lib/auth.js"
 
@@ -18,14 +18,18 @@ declare module "fastify" {
  * Must be registered BEFORE route plugins so fastify.io is decorated before routes use it.
  */
 const socketIOPlugin: FastifyPluginAsync = async (fastify) => {
-  const socketOpts: FastifySocketioOptions = {
+  const io = new Server(fastify.server, {
     cors: {
       origin: process.env.CORS_ORIGIN || "*",
       credentials: true,
     },
-  }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await fastify.register(fastifySocketIO as any, socketOpts)
+  })
+
+  fastify.decorate("io", io)
+  fastify.addHook("onClose", (_instance, done) => {
+    io.close()
+    done()
+  })
 
   // io.use() — authentication middleware
   // Runs for EVERY connection before "connection" event fires
