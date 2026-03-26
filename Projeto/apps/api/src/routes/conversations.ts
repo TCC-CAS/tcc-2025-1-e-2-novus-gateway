@@ -6,6 +6,8 @@ import { nanoid } from "nanoid"
 import { conversations } from "../db/schema/conversations.js"
 import { messages } from "../db/schema/messages.js"
 import { users } from "../db/schema/users.js"
+import { players } from "../db/schema/players.js"
+import { teams } from "../db/schema/teams.js"
 import { subscriptions } from "../db/schema/subscriptions.js"
 import { requireSession } from "../hooks/require-auth.js"
 import { ok } from "../lib/response.js"
@@ -33,7 +35,31 @@ const conversationRoutes: FastifyPluginAsync = async (fastify) => {
     async (request, reply) => {
       const userId = request.session!.user.id
       const role = (request.session!.user as Record<string, unknown>).role as "player" | "team"
-      const participantId = request.body.participantId ?? request.body.teamId ?? request.body.playerId!
+
+      // Resolve teamId/playerId (profile entity IDs) to their owner's users.id
+      // The conversations table FK references users.id, not profile entity IDs
+      let participantId: string
+      if (request.body.participantId) {
+        participantId = request.body.participantId
+      } else if (request.body.teamId) {
+        const [team] = await fastify.db
+          .select({ userId: teams.userId })
+          .from(teams)
+          .where(eq(teams.id, request.body.teamId))
+        if (!team) {
+          throw new AppError(404, "NOT_FOUND", "Team not found")
+        }
+        participantId = team.userId
+      } else {
+        const [player] = await fastify.db
+          .select({ userId: players.userId })
+          .from(players)
+          .where(eq(players.id, request.body.playerId!))
+        if (!player) {
+          throw new AppError(404, "NOT_FOUND", "Player not found")
+        }
+        participantId = player.userId
+      }
 
       // Look up user's subscription plan (auto-create free if missing)
       const now = new Date()
