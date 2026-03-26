@@ -44,4 +44,6 @@ jobs:
           NODE_ENV: test
           DATABASE_URL: postgresql://varzeapro:test_password@localhost:5432/varzeapro_test
           JWT_SECRET: test-secret-that-is-at-least-32-characters-long
+          BETTER_AUTH_SECRET: test-better-auth-secret-long-enough-32chars
+          BETTER_AUTH_URL: http://localhost:3000
           CORS_ORIGIN: http://localhost:5173
