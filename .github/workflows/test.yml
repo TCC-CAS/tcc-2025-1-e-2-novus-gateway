@@ -24,18 +24,21 @@ jobs:
           --health-retries 5
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: Projeto/apps/api/package-lock.json
-      - run: npm ci
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: Projeto/apps/api/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
         working-directory: Projeto/apps/api
-      - run: npx drizzle-kit migrate
+      - run: pnpm drizzle-kit migrate
         working-directory: Projeto/apps/api
         env:
           DATABASE_URL: postgresql://varzeapro:test_password@localhost:5432/varzeapro_test
-      - run: npm test
+      - run: pnpm test
         working-directory: Projeto/apps/api
         env:
           NODE_ENV: test
