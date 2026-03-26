@@ -4,8 +4,16 @@ import { registerErrorHandler } from "./lib/errors.js"
 import { requireSession, requireRole } from "./hooks/require-auth.js"
 
 export async function buildApp() {
+  const isDev = process.env.NODE_ENV !== "production" && process.env.NODE_ENV !== "test"
   const fastify = Fastify({
-    logger: process.env.NODE_ENV !== "test",
+    logger: process.env.NODE_ENV !== "test"
+      ? {
+          level: "info",
+          transport: isDev
+            ? { target: "pino-pretty", options: { colorize: true, translateTime: "HH:MM:ss", ignore: "pid,hostname" } }
+            : undefined,
+        }
+      : false,
   }).withTypeProvider<ZodTypeProvider>()
 
   fastify.setValidatorCompiler(validatorCompiler)

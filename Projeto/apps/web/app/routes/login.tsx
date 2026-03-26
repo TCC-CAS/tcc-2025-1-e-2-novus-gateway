@@ -4,10 +4,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { LoginRequestSchema, type LoginRequest } from "~shared/contracts";
-import { authApi } from "~/lib/api-client";
+import { authApi, playersApi, teamsApi } from "~/lib/api-client";
 import { useAuth } from "~/lib/auth/auth-context";
 import { getHomeForRole } from "~/lib/auth/permissions";
-import { getOnboardingCompleted } from "~/lib/auth/session";
 import { ApiError } from "~/lib/api-client";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -34,10 +33,24 @@ export default function Login() {
     setIsSubmitting(true);
     try {
       const res = await authApi.login(data);
-      login(res.user as Parameters<typeof login>[0], res.token);
+      const sessionUser = { ...res.user, planId: res.user.planId ?? "free" } as Parameters<typeof login>[0];
+      login(sessionUser, "");
+
+      let hasProfile = false;
+      if (res.user.role === "admin") {
+        hasProfile = true;
+      } else {
+        try {
+          if (res.user.role === "player") await playersApi.getMe();
+          else await teamsApi.getMe();
+          hasProfile = true;
+        } catch {
+          hasProfile = false;
+        }
+      }
+
       const home = getHomeForRole(res.user.role as "player" | "team" | "admin");
-      const next =
-        redirectTo ?? (getOnboardingCompleted() ? home : "/onboarding");
+      const next = redirectTo ?? (hasProfile ? home : "/onboarding");
       navigate(next, { replace: true });
     } catch (e) {
       const message =

@@ -5,7 +5,8 @@ import { usePlan } from "~/lib/plan";
 import { PlanGate, UpsellCard } from "~/lib/plan/plan-gate";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
-import { mockPlayerSummaries } from "../../../mocks/fixtures/players";
+import { searchApi } from "~/lib/api-client";
+import type { PlayerSummary } from "~shared/contracts";
 import {
   Users,
   ArrowRight,
@@ -27,11 +28,13 @@ const PROFILE_COMPLETED = 2;
 export default function TimeHome() {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
-  const suggested = mockPlayerSummaries.slice(0, 4);
+  const [suggested, setSuggested] = useState<PlayerSummary[]>([]);
 
   useEffect(() => {
-    const t = setTimeout(() => setIsLoading(false), 600);
-    return () => clearTimeout(t);
+    searchApi.players({ pageSize: 4 } as Parameters<typeof searchApi.players>[0])
+      .then((res) => setSuggested(res.data.slice(0, 4)))
+      .catch(() => setSuggested([]))
+      .finally(() => setIsLoading(false));
   }, []);
 
   return (

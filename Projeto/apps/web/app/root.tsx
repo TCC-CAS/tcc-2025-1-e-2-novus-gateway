@@ -13,7 +13,6 @@ import type { Route } from "./+types/root";
 import { Toaster } from "./components/ui/sonner";
 import { AuthProvider } from "./lib/auth/auth-context";
 import { PlanProvider } from "./lib/plan";
-import { MockBootstrap } from "./lib/mock-bootstrap";
 import "./app.css";
 
 const queryClient = new QueryClient();
@@ -33,7 +32,7 @@ export const links: Route.LinksFunction = () => [
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -52,16 +51,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <MockBootstrap>
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-          <AuthProvider>
-            <PlanProvider>
-              <Outlet />
-              <Toaster richColors />
-            </PlanProvider>
-          </AuthProvider>
-        </ThemeProvider>
-      </MockBootstrap>
+      <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+        <AuthProvider>
+          <PlanProvider>
+            <Outlet />
+            <Toaster richColors />
+          </PlanProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

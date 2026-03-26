@@ -6,6 +6,6 @@ declare module "fastify" {
     auth: Auth
   }
   interface FastifyRequest {
-    session?: { session: Session; user: User }
+    session?: { session: Session; user: User & { role: string; planId?: string } }
   }
 }

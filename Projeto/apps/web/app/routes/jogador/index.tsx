@@ -5,7 +5,8 @@ import { usePlan } from "~/lib/plan";
 import { PlanGate, UpsellCard } from "~/lib/plan/plan-gate";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
-import { mockTeamSummaries } from "../../../mocks/fixtures/teams";
+import { searchApi } from "~/lib/api-client";
+import type { TeamSummary } from "~shared/contracts";
 import {
   UserPlus,
   ArrowRight,
@@ -27,11 +28,13 @@ const PROFILE_COMPLETED = 3;
 export default function JogadorHome() {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
-  const suggested = mockTeamSummaries.slice(0, 4);
+  const [suggested, setSuggested] = useState<TeamSummary[]>([]);
 
   useEffect(() => {
-    const t = setTimeout(() => setIsLoading(false), 600);
-    return () => clearTimeout(t);
+    searchApi.teams({ pageSize: 4 } as Parameters<typeof searchApi.teams>[0])
+      .then((res) => setSuggested(res.data.slice(0, 4)))
+      .catch(() => setSuggested([]))
+      .finally(() => setIsLoading(false));
   }, []);
 
   return (

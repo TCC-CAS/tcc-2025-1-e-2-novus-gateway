@@ -21,7 +21,7 @@ export function requireRole(...roles: string[]) {
   return async (request: FastifyRequest, reply: FastifyReply) => {
     await requireSession(request, reply)
     if (reply.sent) return
-    const role = (request.session?.user as Record<string, unknown> | undefined)?.role as string | undefined
+    const role = request.session?.user.role
     if (!role || !roles.includes(role)) {
       return reply.status(403).send({
         error: { code: "FORBIDDEN", message: "Insufficient permissions" },

@@ -29,18 +29,3 @@ export function hasSession(): boolean {
   return !!getAuthToken() && !!getStoredUser();
 }
 
-const ONBOARDING_STORAGE_KEY = "varzeapro_onboarding_done";
-
-export function getOnboardingCompleted(): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    return sessionStorage.getItem(ONBOARDING_STORAGE_KEY) === "true";
-  } catch {
-    return false;
-  }
-}
-
-export function setOnboardingCompleted(): void {
-  if (typeof window === "undefined") return;
-  sessionStorage.setItem(ONBOARDING_STORAGE_KEY, "true");
-}
