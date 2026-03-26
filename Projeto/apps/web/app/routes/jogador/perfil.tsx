@@ -1,6 +1,6 @@
-import { Link } from "react-router";
+import { Link, Navigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { playersApi } from "~/lib/api-client";
+import { playersApi, ApiError } from "~/lib/api-client";
 import { Button } from "~/components/ui/button";
 import {
   User,
@@ -17,10 +17,23 @@ export function meta() {
 }
 
 export default function JogadorPerfil() {
-  const { data: profile, isLoading } = useQuery({
+  const { data: profile, isLoading, isError, error } = useQuery({
     queryKey: ["player", "me"],
     queryFn: () => playersApi.getMe(),
   });
+
+  if (isError) {
+    if (error instanceof ApiError && error.status === 404) {
+      return <Navigate to="/jogador/perfil/editar" replace />;
+    }
+    return (
+      <div className="container px-4 py-8 flex flex-col items-center justify-center min-h-[50vh]">
+        <p className="font-display tracking-widest text-2xl text-destructive uppercase">
+          ERRO AO CARREGAR PERFIL
+        </p>
+      </div>
+    );
+  }
 
   if (isLoading || !profile) {
     return (
@@ -84,7 +97,7 @@ export default function JogadorPerfil() {
               </h2>
 
               <div className="mt-6 flex flex-wrap gap-2">
-                {profile.positions.map((p) => (
+                {(profile.positions ?? []).map((p) => (
                   <span
                     key={p}
                     className="border-2 border-foreground bg-primary px-3 py-1.5 font-display text-lg tracking-widest text-primary-foreground uppercase shadow-[2px_2px_0px_0px_var(--color-foreground)] dark:shadow-[2px_2px_0px_0px_var(--color-foreground)]"
@@ -92,7 +105,7 @@ export default function JogadorPerfil() {
                     {p}
                   </span>
                 ))}
-                {profile.positions.length === 0 && (
+                {(profile.positions ?? []).length === 0 && (
                   <span className="border-2 border-destructive bg-destructive/10 px-3 py-1.5 font-display text-lg tracking-widest text-destructive uppercase">
                     SEM POSIÇÃO DEFINIDA
                   </span>
@@ -124,18 +137,18 @@ export default function JogadorPerfil() {
                     HABILIDADES
                   </span>
                 </div>
-                {profile.skills.length > 0 ? (
+                {(profile.skills ?? []).length > 0 ? (
                   <div className="flex flex-wrap gap-1">
-                    {profile.skills.slice(0, 3).map((skill, i) => (
+                    {(profile.skills ?? []).slice(0, 3).map((skill, i) => (
                       <span
                         key={i}
                         className="text-sm font-bold tracking-widest text-foreground uppercase"
                       >
                         {skill}
-                        {i < profile.skills.length - 1 && i < 2 ? "," : ""}
+                        {i < (profile.skills ?? []).length - 1 && i < 2 ? "," : ""}
                       </span>
                     ))}
-                    {profile.skills.length > 3 && (
+                    {(profile.skills ?? []).length > 3 && (
                       <span className="text-sm font-bold tracking-widest text-primary uppercase">
                         +{profile.skills.length - 3}
                       </span>

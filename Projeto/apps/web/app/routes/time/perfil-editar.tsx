@@ -71,7 +71,7 @@ export default function TimePerfilEditar() {
         region: profile.region ?? "",
         city: profile.city ?? "",
         description: profile.description ?? "",
-        openPositions: profile.openPositions,
+        openPositions: profile.openPositions ?? [],
         matchDays: profile.matchDays ?? [],
       });
       setMatchDays(profile.matchDays ?? []);

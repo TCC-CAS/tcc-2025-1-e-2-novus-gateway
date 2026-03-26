@@ -57,9 +57,9 @@ export default function JogadorPerfilEditar() {
     if (profile) {
       form.reset({
         name: profile.name,
-        positions: profile.positions,
+        positions: profile.positions ?? [],
         bio: profile.bio ?? "",
-        skills: profile.skills,
+        skills: profile.skills ?? [],
         height: profile.height,
         weight: profile.weight,
         birthDate: profile.birthDate ?? "",
@@ -94,8 +94,8 @@ export default function JogadorPerfilEditar() {
     },
   });
 
-  const positions = form.watch("positions");
-  const skills = form.watch("skills");
+  const positions = form.watch("positions") ?? [];
+  const skills = form.watch("skills") ?? [];
 
   function togglePosition(pos: string) {
     const current = form.getValues("positions");
@@ -222,12 +222,6 @@ export default function JogadorPerfilEditar() {
           </div>
 
           <div className="pt-2 relative z-10">
-            {form.formState.errors.positions ? (
-              <p className="text-sm mb-4 font-bold tracking-widest text-destructive uppercase">
-                {form.formState.errors.positions.message}
-              </p>
-            ) : null}
-
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               {POSITIONS.map((pos) => (
                 <button

@@ -125,9 +125,9 @@ export default function TimePerfil() {
                     POSIÇÕES ABERTAS
                   </span>
                 </div>
-                {profile.openPositions.length > 0 ? (
+                {(profile.openPositions ?? []).length > 0 ? (
                   <div className="flex flex-wrap gap-2">
-                    {profile.openPositions.map((pos) => (
+                    {(profile.openPositions ?? []).map((pos) => (
                       <span
                         key={pos}
                         className="border-2 border-foreground bg-primary/10 px-2 py-1 font-display text-sm tracking-widest text-primary uppercase"

@@ -3,10 +3,6 @@ import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { useAuth } from "~/lib/auth/auth-context";
 import { getHomeForRole } from "~/lib/auth/permissions";
-import {
-  getOnboardingCompleted,
-  setOnboardingCompleted,
-} from "~/lib/auth/session";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
@@ -21,6 +17,8 @@ import {
 } from "~/components/ui/select";
 import { POSITIONS } from "~shared/contracts";
 import { TEAM_LEVELS } from "~shared/contracts";
+import type { Position, TeamLevel } from "~shared/contracts";
+import { playersApi, teamsApi } from "~/lib/api-client";
 import { Check, ChevronLeft, ChevronRight, Trophy } from "lucide-react";
 
 export function meta() {
@@ -75,10 +73,6 @@ export default function Onboarding() {
   useEffect(() => {
     if (!user || !role) {
       navigate("/login", { replace: true });
-      return;
-    }
-    if (getOnboardingCompleted()) {
-      navigate(getHomeForRole(role), { replace: true });
     }
   }, [user, role, navigate]);
 
@@ -86,8 +80,33 @@ export default function Onboarding() {
   const steps = isPlayer ? PLAYER_STEPS : TEAM_STEPS;
   const totalSteps = steps.length;
 
-  function handleFinish() {
-    setOnboardingCompleted();
+  async function handleFinish() {
+    try {
+      if (isPlayer) {
+        await playersApi.upsert({
+          name: user!.name,
+          positions: playerPositions as Position[],
+          bio: playerBio || undefined,
+          skills: playerSkills,
+          height: playerHeight ? Number(playerHeight) : undefined,
+          weight: playerWeight ? Number(playerWeight) : undefined,
+          phone: playerPhone || undefined,
+          availability: playerAvailability.length > 0 ? playerAvailability.join(", ") : undefined,
+        });
+      } else {
+        await teamsApi.upsert({
+          name: teamName.trim() || user!.name,
+          level: teamLevel as TeamLevel,
+          region: teamRegion || undefined,
+          city: teamCity || undefined,
+          description: teamDescription || undefined,
+          openPositions: teamOpenPositions,
+          matchDays: teamMatchDays.length > 0 ? teamMatchDays : undefined,
+        });
+      }
+    } catch {
+      toast.error("Não foi possível salvar o perfil. Edite depois no seu vestiário.");
+    }
     toast.success("Perfil configurado!");
     navigate(getHomeForRole(role!), { replace: true });
   }

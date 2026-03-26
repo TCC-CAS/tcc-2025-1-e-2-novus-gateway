@@ -1,6 +1,6 @@
 /**
  * Typed API client for VárzeaPro.
- * Uses VITE_API_URL; when VITE_USE_MOCK is true, MSW intercepts same URL.
+ * Uses VITE_API_URL as base URL; all requests include credentials (cookies).
  */
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "/api";
@@ -24,16 +24,24 @@ async function request<T>(
   }
   const res = await fetch(url.toString(), {
     ...init,
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...init.headers,
     },
   });
   const text = await res.text();
-  const body = text ? (JSON.parse(text) as T | ApiErrorBody) : null;
+  const body = text ? (JSON.parse(text) as unknown) : null;
   if (!res.ok) {
-    const err = body && "error" in (body as ApiErrorBody) ? (body as ApiErrorBody).error : { code: "UNKNOWN", message: res.statusText };
+    const err = body && typeof body === "object" && "error" in (body as ApiErrorBody) ? (body as ApiErrorBody).error : { code: "UNKNOWN", message: res.statusText };
     throw new ApiError(res.status, err.code, err.message, (err as { details?: unknown[] }).details);
+  }
+  // Unwrap { data: T } envelope returned by all backend ok() responses.
+  // Paginated responses have shape { data: T[], meta: {...} } — those are NOT envelopes,
+  // so only unwrap when there is no "meta" sibling key.
+  const bodyObj = body as Record<string, unknown>;
+  if (body && typeof body === "object" && "data" in bodyObj && !("meta" in bodyObj)) {
+    return bodyObj.data as T;
   }
   return body as T;
 }
@@ -71,16 +79,18 @@ function authHeaders(): HeadersInit {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+type BetterAuthUser = { id: string; email: string; name: string; role: string; planId?: string }
+
 // --- Auth ---
 export const authApi = {
   login: (body: { email: string; password: string }) =>
-    request<{ user: { id: string; email: string; name: string; role: string }; token: string }>(
-      "/auth/login",
+    request<{ user: BetterAuthUser; token?: string }>(
+      "/auth/sign-in/email",
       { method: "POST", body: JSON.stringify(body) }
     ),
-  signUp: (body: { name: string; email: string; password: string; confirmPassword: string; role: string }) =>
-    request<{ user: { id: string; email: string; name: string; role: string }; token: string }>(
-      "/auth/signup",
+  signUp: (body: { name: string; email: string; password: string; role: string }) =>
+    request<{ user: BetterAuthUser; token?: string }>(
+      "/auth/sign-up/email",
       { method: "POST", body: JSON.stringify(body) }
     ),
   forgotPassword: (body: { email: string }) =>
@@ -104,7 +114,7 @@ export const playersApi = {
     ),
   upsert: (body: import("~shared/contracts").UpsertPlayerProfileRequest) =>
     request<import("~shared/contracts").PlayerProfile>(
-      "/players",
+      "/players/me",
       { method: "PUT", body: JSON.stringify(body), headers: authHeaders() }
     ),
 };
@@ -123,7 +133,7 @@ export const teamsApi = {
     ),
   upsert: (body: import("~shared/contracts").UpsertTeamProfileRequest) =>
     request<import("~shared/contracts").TeamProfile>(
-      "/teams",
+      "/teams/me",
       { method: "PUT", body: JSON.stringify(body), headers: authHeaders() }
     ),
 };
