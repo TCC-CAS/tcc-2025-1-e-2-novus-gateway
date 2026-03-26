@@ -99,7 +99,7 @@ Plans:
 - [x] 05-01-PLAN.md — Test scaffolding (Wave 0): messaging.test.ts + messaging.socket.test.ts RED stubs + helpers (MSG-01, MSG-02, MSG-03, MSG-04)
 - [x] 05-02-PLAN.md — Conversation + message HTTP routes (POST/GET /conversations, GET/POST /conversations/:id/messages) + app.ts registration
 - [x] 05-03-PLAN.md — Socket.io plugin (fastify-socket.io): auth middleware (io.use()), room joins, typing relay, presence events
-- [ ] 05-04-PLAN.md — Frontend: socket.io-client install, use-socket.ts hook, additive wiring into both mensagens.tsx routes
+- [x] 05-04-PLAN.md — Frontend: socket.io-client install, use-socket.ts hook, additive wiring into both mensagens.tsx routes
 
 ### Phase 6: Admin Panel
 **Goal**: Admins can list users, ban accounts, view moderation reports, and take action — all gated behind role enforcement
