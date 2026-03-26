@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { messagingApi } from "~/lib/api-client";
+import { useSocket } from "~/lib/messaging/use-socket";
 import { useAuth } from "~/lib/auth/auth-context";
 import { usePlan } from "~/lib/plan";
 import { MessageLimitBanner } from "~/lib/plan/plan-gate";
@@ -46,6 +47,10 @@ export default function JogadorMensagens() {
       setMessage("");
     },
   });
+
+  const { emitTypingStart, emitTypingStop } = useSocket({
+    conversationId: selectedId ?? null,
+  })
 
   const list = conversations?.data ?? [];
   const current = list.find((c) => c.id === selectedId);
@@ -217,7 +222,8 @@ export default function JogadorMensagens() {
                 <Input
                   placeholder="DIGITE SUA MENSAGEM..."
                   value={message}
-                  onChange={(e) => setMessage(e.target.value)}
+                  onChange={(e) => { setMessage(e.target.value); emitTypingStart() }}
+                  onBlur={() => emitTypingStop()}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
