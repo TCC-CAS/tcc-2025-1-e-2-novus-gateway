@@ -20,12 +20,20 @@ const conversationRoutes: FastifyPluginAsync = async (fastify) => {
     "/conversations",
     {
       preHandler: [requireSession],
-      schema: { body: z.object({ participantId: z.string() }) },
+      schema: {
+        body: z.object({
+          participantId: z.string().optional(),
+          teamId: z.string().optional(),
+          playerId: z.string().optional(),
+        }).refine((d) => d.participantId != null || d.teamId != null || d.playerId != null, {
+          message: "Informe participantId, teamId ou playerId",
+        }),
+      },
     },
     async (request, reply) => {
       const userId = request.session!.user.id
       const role = (request.session!.user as Record<string, unknown>).role as "player" | "team"
-      const { participantId } = request.body
+      const participantId = request.body.participantId ?? request.body.teamId ?? request.body.playerId!
 
       // Look up user's subscription plan (auto-create free if missing)
       const now = new Date()
