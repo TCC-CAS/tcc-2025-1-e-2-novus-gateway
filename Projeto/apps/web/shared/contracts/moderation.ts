@@ -46,6 +46,21 @@ export const ListReportsResponseSchema = z.object({
 });
 export type ListReportsResponse = z.infer<typeof ListReportsResponseSchema>;
 
+/** Create report request (user-facing) */
+export const CreateReportRequestSchema = z.object({
+  reportedEntityType: z.enum(["player", "team", "message"]),
+  reportedEntityId: z.string(),
+  reason: ReportReasonSchema,
+  description: z.string().optional(),
+});
+export type CreateReportRequest = z.infer<typeof CreateReportRequestSchema>;
+
+/** Create report response */
+export const CreateReportResponseSchema = z.object({
+  data: z.object({ id: z.string() }),
+});
+export type CreateReportResponse = z.infer<typeof CreateReportResponseSchema>;
+
 /** Moderate action request */
 export const ModerateReportRequestSchema = z.object({
   action: z.enum(["dismiss", "remove", "warn"]),

@@ -1,3 +1,4 @@
+import { ReportButton } from "~/components/report-button";
 import { useParams, useNavigate } from "react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "~/lib/auth/auth-context";
@@ -87,14 +88,17 @@ export default function TimePublicProfile() {
             </div>
 
             {canContact && (
-              <Button
-                type="button"
-                onClick={() => contactMutation.mutate()}
-                disabled={contactMutation.isPending}
-                className="hidden sm:flex h-16 w-16 shrink-0 rounded-none border-4 border-foreground bg-primary p-0 transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_var(--color-foreground)] dark:hover:shadow-[4px_4px_0px_0px_var(--color-foreground)] self-start mt-4 disabled:opacity-50"
-              >
-                <MessageCircle className="size-8 text-foreground" />
-              </Button>
+              <div className="flex flex-col gap-4 self-start mt-4">
+                <Button
+                  type="button"
+                  onClick={() => contactMutation.mutate()}
+                  disabled={contactMutation.isPending}
+                  className="hidden sm:flex h-16 w-16 shrink-0 rounded-none border-4 border-foreground bg-primary p-0 transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_var(--color-foreground)] dark:hover:shadow-[4px_4px_0px_0px_var(--color-foreground)] disabled:opacity-50"
+                >
+                  <MessageCircle className="size-8 text-foreground" />
+                </Button>
+                <ReportButton entityType="team" entityId={id!} />
+              </div>
             )}
           </div>
         </div>

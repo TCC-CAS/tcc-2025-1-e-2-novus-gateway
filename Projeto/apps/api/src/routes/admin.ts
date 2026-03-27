@@ -12,7 +12,6 @@ import { teams } from "../db/schema/teams.js"
 import { messages } from "../db/schema/messages.js"
 import {
   ListUsersQuerySchema,
-  BanUserRequestSchema,
 } from "../../../../apps/web/shared/contracts/users.js"
 import {
   ListReportsQuerySchema,
@@ -136,12 +135,11 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
       preHandler: [requireRole("admin")],
       schema: {
         params: z.object({ id: z.string() }),
-        body: BanUserRequestSchema,
       },
     },
     async (request, reply) => {
       const { id } = request.params
-      const { reason } = request.body
+      const reason = (request.body as any)?.reason as string | undefined
       const adminId = request.session!.user.id
 
       const [user] = await fastify.db

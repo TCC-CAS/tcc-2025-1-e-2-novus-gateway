@@ -209,6 +209,15 @@ export const subscriptionApi = {
     ),
 };
 
+// --- Reports (user-facing) ---
+export const reportApi = {
+  create: (body: import("~shared/contracts").CreateReportRequest) =>
+    request<import("~shared/contracts").CreateReportResponse>(
+      "/reports",
+      { method: "POST", body: JSON.stringify(body), headers: authHeaders() }
+    ),
+};
+
 // --- Admin: Moderation ---
 export const adminModerationApi = {
   listReports: (params?: import("~shared/contracts").ListReportsQuery) =>

@@ -1,3 +1,4 @@
+import { ReportButton } from "~/components/report-button";
 import { useParams, useNavigate } from "react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "~/lib/auth/auth-context";
@@ -86,6 +87,10 @@ export default function JogadorPublicProfile() {
                   </span>
                 )}
               </div>
+            </div>
+            {/* Report Button */}
+            <div className="absolute top-0 right-0 p-6 sm:p-8">
+                <ReportButton entityType="player" entityId={id!} />
             </div>
           </div>
 
