@@ -15,7 +15,7 @@
 - [x] **Phase 3: Player + Team Profiles** - Players and teams can manage and view public profiles via real API (completed 2026-03-25)
 - [x] **Phase 4: Search + Subscriptions** - Users can discover players/teams and manage subscription plans (completed 2026-03-25)
 - [ ] **Phase 5: Real-Time Messaging** - Users can chat in real-time via WebSocket with typing indicators and presence
-- [ ] **Phase 6: Admin Panel** - Admins can manage users, ban accounts, and resolve moderation reports
+- [x] **Phase 6: Admin Panel** - Admins can manage users, ban accounts, and resolve moderation reports (completed 2026-03-27)
 - [ ] **Phase 7: Security Hardening + Testing + CI/CD** - Platform passes security checklist and ships with automated tests and CI/CD
 
 ---
@@ -111,11 +111,11 @@ Plans:
   3. Admin can `GET /admin/moderation/reports` to view the report queue
   4. Admin can `POST /admin/moderation/reports/:id` to dismiss or remove a report; the action is written to the audit_log table
   5. All `/admin/*` routes return `403` for non-admin sessions
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 Plans:
 - [x] 06-01-PLAN.md — Wave 0: warnCount schema field, ban enforcement in requireSession, RED test stubs for ADM-01–ADM-04
 - [x] 06-02-PLAN.md — User management routes: GET /admin/users, GET /admin/users/:id, POST /admin/users/:id/ban, POST /admin/users/:id/unban
-- [ ] 06-03-PLAN.md — Moderation routes: GET /admin/moderation/reports, POST /admin/moderation/reports/:id (dismiss/remove/warn)
+- [x] 06-03-PLAN.md — Moderation routes: GET /admin/moderation/reports, POST /admin/moderation/reports/:id (dismiss/remove/warn)
 
 ### Phase 7: Security Hardening + Testing + CI/CD
 **Goal**: Platform passes the full security checklist, has automated test coverage, and ships through a CI/CD pipeline
@@ -139,7 +139,7 @@ Plans:
 | 3. Player + Team Profiles | 3/3 | Complete   | 2026-03-25 |
 | 4. Search + Subscriptions | 3/3 | Complete   | 2026-03-25 |
 | 5. Real-Time Messaging | 1/4 | In Progress|  |
-| 6. Admin Panel | 2/3 | In Progress|  |
+| 6. Admin Panel | 3/3 | Complete   | 2026-03-27 |
 | 7. Security Hardening + Testing + CI/CD | 0/? | Not started | - |
 
 ---
