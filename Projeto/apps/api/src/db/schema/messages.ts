@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, bigserial, index } from "drizzle-orm/pg-core"
+import { pgTable, text, timestamp, bigserial, index, boolean } from "drizzle-orm/pg-core"
 import { conversations } from "./conversations.js"
 import { users } from "./users.js"
 
@@ -8,6 +8,7 @@ export const messages = pgTable("messages", {
   senderId: text("sender_id").notNull().references(() => users.id),
   content: text("content").notNull(),
   readAt: timestamp("read_at", { withTimezone: true }),
+  deleted: boolean("deleted").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   index("messages_conversation_id_idx").on(t.conversationId),
