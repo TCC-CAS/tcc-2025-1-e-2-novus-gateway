@@ -1,42 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest"
-import { eq } from "drizzle-orm"
 import type { FastifyInstance } from "fastify"
-import { createTestApp, signUpUser, signInUser, extractSessionCookie } from "../helpers/auth-helpers.js"
-import { users } from "../../src/db/schema/index.js"
-import { seedReport } from "../helpers/admin-helpers.js"
-
-/** Sign up and get an admin session cookie */
-async function signUpAndGetAdminCookie(
-  app: FastifyInstance
-): Promise<{ sessionCookie: string; userId: string; email: string }> {
-  const password = "Password123!"
-  const { response, payload } = await signUpUser(app)
-  const body = response.json()
-  const userId: string = body.user?.id ?? body.id
-  // Patch role to admin directly in DB
-  await (app as any).db
-    .update(users)
-    .set({ role: "admin" })
-    .where(eq(users.id, userId))
-  // Re-sign-in to get fresh session with updated role
-  const signInRes = await signInUser(app, payload.email, password)
-  const sessionCookie = extractSessionCookie(signInRes as any)
-  if (!sessionCookie) throw new Error(`Admin re-sign-in failed: ${signInRes.body}`)
-  return { sessionCookie, userId, email: payload.email }
-}
-
-/** Sign up a player and return id + cookie */
-async function signUpPlayer(
-  app: FastifyInstance
-): Promise<{ sessionCookie: string; userId: string; email: string }> {
-  const password = "Password123!"
-  const { response, payload } = await signUpUser(app)
-  const body = response.json()
-  const userId: string = body.user?.id ?? body.id
-  const sessionCookie = extractSessionCookie(response as any)
-  if (!sessionCookie) throw new Error(`Player sign-up failed: ${response.body}`)
-  return { sessionCookie, userId, email: payload.email }
-}
+import { createTestApp } from "../helpers/auth-helpers.js"
+import { createAdminUser, createRegularUser, seedReport } from "../helpers/admin-helpers.js"
 
 describe("Admin user management routes", () => {
   let app: FastifyInstance
@@ -48,25 +13,15 @@ describe("Admin user management routes", () => {
   beforeAll(async () => {
     app = await createTestApp()
 
-    const admin = await signUpAndGetAdminCookie(app)
+    const admin = await createAdminUser(app)
     adminCookie = admin.sessionCookie
 
-    const player = await signUpPlayer(app)
+    const player = await createRegularUser(app, "player")
     playerCookie = player.sessionCookie
     targetUserId = player.userId
 
-    // Create a team user
-    const { response: teamRes, payload: teamPayload } = await signUpUser(app)
-    const teamBody = teamRes.json()
-    const teamUserId: string = teamBody.user?.id ?? teamBody.id
-    await (app as any).db
-      .update(users)
-      .set({ role: "team" })
-      .where(eq(users.id, teamUserId))
-    const teamSignIn = await signInUser(app, teamPayload.email, "Password123!")
-    const tc = extractSessionCookie(teamSignIn as any)
-    if (!tc) throw new Error("Team re-sign-in failed")
-    teamCookie = tc
+    const team = await createRegularUser(app, "team")
+    teamCookie = team.sessionCookie
   })
 
   afterAll(async () => {
@@ -123,7 +78,7 @@ describe("Admin user management routes", () => {
     it("ADM-01d: filters by search (name/email ilike)", async () => {
       const res = await app.inject({
         method: "GET",
-        url: "/api/admin/users?search=test-",
+        url: "/api/admin/users?search=admin-",
         headers: { cookie: adminCookie },
       })
       expect(res.statusCode).toBe(200)
@@ -210,7 +165,7 @@ describe("Admin user management routes", () => {
     })
 
     it("ADM-02b: banned user gets 403 on subsequent requests (D-02)", async () => {
-      // Ban the player first (may already be banned from previous test)
+      // Ensure user is banned
       await app.inject({
         method: "POST",
         url: `/api/admin/users/${targetUserId}/ban`,
@@ -271,19 +226,13 @@ describe("Admin user management routes", () => {
       expect(body.data.status).toBe("active")
     })
 
-    it("ADM-02g: unbanned user can access routes again (D-04)", async () => {
-      // Unban first
+    it("ADM-02g: unbanned user has active status in admin view (D-04)", async () => {
+      // Ensure unbanned
       await app.inject({
         method: "POST",
         url: `/api/admin/users/${targetUserId}/unban`,
         headers: { cookie: adminCookie },
       })
-      // Re-sign-in to get fresh cookie since previous was invalidated
-      const { response: signUpRes, payload } = await signUpUser(app)
-      const newUserId: string = signUpRes.json().user?.id ?? signUpRes.json().id
-      const newCookie = extractSessionCookie(signUpRes as any)
-      if (!newCookie) return // skip if no cookie
-      // Just verify the unban itself returned active status
       const checkRes = await app.inject({
         method: "GET",
         url: `/api/admin/users/${targetUserId}`,
@@ -330,28 +279,12 @@ describe("Admin moderation routes", () => {
   beforeAll(async () => {
     app = await createTestApp()
 
-    // Create admin
-    const password = "Password123!"
-    const { response: adminRes, payload: adminPayload } = await signUpUser(app)
-    const adminBody = adminRes.json()
-    const adminId: string = adminBody.user?.id ?? adminBody.id
-    await (app as any).db
-      .update(users)
-      .set({ role: "admin" })
-      .where(eq(users.id, adminId))
-    const adminSignIn = await signInUser(app, adminPayload.email, password)
-    const ac = extractSessionCookie(adminSignIn as any)
-    if (!ac) throw new Error("Admin sign-in failed")
-    adminCookie = ac
+    const admin = await createAdminUser(app)
+    adminCookie = admin.sessionCookie
 
-    // Create a player as reporter
-    const { response: playerRes, payload: playerPayload } = await signUpUser(app)
-    const playerBody = playerRes.json()
-    reporterUserId = playerBody.user?.id ?? playerBody.id
-    const playerSignIn = await signInUser(app, playerPayload.email, password)
-    const pc = extractSessionCookie(playerSignIn as any)
-    if (!pc) throw new Error("Player sign-in failed")
-    playerCookie = pc
+    const player = await createRegularUser(app, "player")
+    playerCookie = player.sessionCookie
+    reporterUserId = player.userId
   })
 
   afterAll(async () => {
