@@ -1,1 +1,0 @@
-ALTER TABLE "users" ADD COLUMN "warn_count" integer DEFAULT 0 NOT NULL;

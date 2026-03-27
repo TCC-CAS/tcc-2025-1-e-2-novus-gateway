@@ -105,4 +105,10 @@ None. All routes return real data from DB.
 
 ---
 
-## Self-Check
+## Self-Check: PASSED
+
+- admin.ts: FOUND
+- 0005_funny_mandroid.sql: FOUND
+- commit 410172b (test RED phase): FOUND
+- commit ebfb771 (feat GREEN phase): FOUND
+- commit 6a71fcf (docs metadata): FOUND
