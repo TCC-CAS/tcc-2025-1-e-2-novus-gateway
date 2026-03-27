@@ -111,9 +111,9 @@ Plans:
   3. Admin can `GET /admin/moderation/reports` to view the report queue
   4. Admin can `POST /admin/moderation/reports/:id` to dismiss or remove a report; the action is written to the audit_log table
   5. All `/admin/*` routes return `403` for non-admin sessions
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 Plans:
-- [ ] 06-01-PLAN.md — Wave 0: warnCount schema field, ban enforcement in requireSession, RED test stubs for ADM-01–ADM-04
+- [x] 06-01-PLAN.md — Wave 0: warnCount schema field, ban enforcement in requireSession, RED test stubs for ADM-01–ADM-04
 - [ ] 06-02-PLAN.md — User management routes: GET /admin/users, GET /admin/users/:id, POST /admin/users/:id/ban, POST /admin/users/:id/unban
 - [ ] 06-03-PLAN.md — Moderation routes: GET /admin/moderation/reports, POST /admin/moderation/reports/:id (dismiss/remove/warn)
 
@@ -139,7 +139,7 @@ Plans:
 | 3. Player + Team Profiles | 3/3 | Complete   | 2026-03-25 |
 | 4. Search + Subscriptions | 3/3 | Complete   | 2026-03-25 |
 | 5. Real-Time Messaging | 1/4 | In Progress|  |
-| 6. Admin Panel | 0/3 | Not started | - |
+| 6. Admin Panel | 1/3 | In Progress|  |
 | 7. Security Hardening + Testing + CI/CD | 0/? | Not started | - |
 
 ---

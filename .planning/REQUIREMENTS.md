@@ -44,10 +44,10 @@
 
 ### Admin
 
-- [ ] **ADM-01**: Admin can list all users and view individual user detail (`GET /admin/users`, `GET /admin/users/:id`)
-- [ ] **ADM-02**: Admin can ban a user account (`POST /admin/users/:id/ban`)
-- [ ] **ADM-03**: Admin can view content moderation reports (`GET /admin/moderation/reports`)
-- [ ] **ADM-04**: Admin can take action on moderation reports — dismiss or remove (`POST /admin/moderation/reports/:id`)
+- [x] **ADM-01**: Admin can list all users and view individual user detail (`GET /admin/users`, `GET /admin/users/:id`)
+- [x] **ADM-02**: Admin can ban a user account (`POST /admin/users/:id/ban`)
+- [x] **ADM-03**: Admin can view content moderation reports (`GET /admin/moderation/reports`)
+- [x] **ADM-04**: Admin can take action on moderation reports — dismiss or remove (`POST /admin/moderation/reports/:id`)
 
 ### Infrastructure
 
@@ -118,10 +118,10 @@
 | MSG-02 | Phase 5 | Complete |
 | MSG-03 | Phase 5 | Complete |
 | MSG-04 | Phase 5 | Complete |
-| ADM-01 | Phase 6 | Pending |
-| ADM-02 | Phase 6 | Pending |
-| ADM-03 | Phase 6 | Pending |
-| ADM-04 | Phase 6 | Pending |
+| ADM-01 | Phase 6 | Complete |
+| ADM-02 | Phase 6 | Complete |
+| ADM-03 | Phase 6 | Complete |
+| ADM-04 | Phase 6 | Complete |
 | INFRA-03 | Phase 7 | Pending |
 | INFRA-04 | Phase 7 | Pending |
 
