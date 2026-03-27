@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean, pgEnum } from "drizzle-orm/pg-core"
+import { pgTable, text, timestamp, boolean, integer, pgEnum } from "drizzle-orm/pg-core"
 
 export const roleEnum = pgEnum("role", ["player", "team", "admin"])
 export const planIdEnum = pgEnum("plan_id", ["free", "craque", "titular", "campeao"])
@@ -14,6 +14,7 @@ export const users = pgTable("users", {
   banned: boolean("banned").default(false),
   banReason: text("ban_reason"),
   banExpires: timestamp("ban_expires", { withTimezone: true }),
+  warnCount: integer("warn_count").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 })
