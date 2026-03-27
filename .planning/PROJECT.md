@@ -40,6 +40,9 @@ VarzeaPro is a social platform for e-sports that connects competitive players an
 - ✓ Subscription endpoints (`GET /api/subscription/usage`, `POST /api/subscription/upgrade`) with upsert, role-plan validation (SUB-01, SUB-02) — Validated in Phase 4
 - ✓ Plan-based search result limits enforced server-side (free team capped at 10) (SUB-03) — Validated in Phase 4
 - ✓ Email-keyed rate limiting (preHandler hook) — avoids IP collisions in test suites — Validated in Phase 4
+- ✓ Admin user management routes (list, detail, ban, unban) with RBAC and audit logging (ADM-01, ADM-02) — Validated in Phase 6
+- ✓ Content moderation routes (list reports, dismiss/remove/warn actions) with soft-delete and warnCount (ADM-03, ADM-04) — Validated in Phase 6
+- ✓ Ban enforcement in requireSession hook — banned users blocked on every request (D-02) — Validated in Phase 6
 
 ### Active
 
@@ -104,4 +107,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-25 — Phase 4 (search-subscriptions) complete*
+*Last updated: 2026-03-26 — Phase 6 (admin-panel) complete*
