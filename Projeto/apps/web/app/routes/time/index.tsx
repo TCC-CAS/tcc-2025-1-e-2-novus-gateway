@@ -1,11 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "~/lib/auth/auth-context";
 import { usePlan } from "~/lib/plan";
 import { PlanGate, UpsellCard } from "~/lib/plan/plan-gate";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
-import { searchApi } from "~/lib/api-client";
+import { searchApi, teamsApi } from "~/lib/api-client";
 import type { PlayerSummary } from "~shared/contracts";
 import {
   Users,
@@ -22,13 +23,32 @@ export function meta() {
   return [{ title: "Início - VárzeaPro" }];
 }
 
-const PROFILE_STEPS = ["Nome do time", "Região", "Nível", "Logo", "Descrição"];
-const PROFILE_COMPLETED = 2;
-
 export default function TimeHome() {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [suggested, setSuggested] = useState<PlayerSummary[]>([]);
+
+  // Fetch team profile for dynamic completion calculation
+  const { data: profile } = useQuery({
+    queryKey: ["team", "me"],
+    queryFn: () => teamsApi.getMe(),
+    retry: false,
+  });
+
+  const PROFILE_STEPS = useMemo(() => {
+    if (!profile) return { labels: ["Nome do time", "Região", "Nível", "Logo", "Descrição"], completed: 0 };
+    const checks = [
+      { label: "Nome do time", done: !!profile.name && profile.name.length > 0 },
+      { label: "Região", done: !!profile.region },
+      { label: "Nível", done: !!profile.level },
+      { label: "Logo", done: !!profile.logoUrl },
+      { label: "Descrição", done: !!profile.description && profile.description.length > 0 },
+    ];
+    return { labels: checks.map((c) => c.label), completed: checks.filter((c) => c.done).length };
+  }, [profile]);
+
+  const profileCompleted = PROFILE_STEPS.completed;
+  const profileTotal = PROFILE_STEPS.labels.length;
 
   useEffect(() => {
     searchApi.players({ pageSize: 4 } as Parameters<typeof searchApi.players>[0])
@@ -68,14 +88,14 @@ export default function TimeHome() {
               ESCUDO DE PESO
             </h3>
             <p className="mt-1 font-bold tracking-widest text-primary-foreground/80 uppercase text-sm">
-              PERFIL DE TIME COMPLETO ATRAI OS BONS CRAQUES. {PROFILE_COMPLETED}
-              /{PROFILE_STEPS.length} PASSOS.
+              PERFIL DE TIME COMPLETO ATRAI OS BONS CRAQUES. {profileCompleted}
+              /{profileTotal} PASSOS.
             </p>
             <div className="mt-4 flex h-6 w-full max-w-sm border-2 border-foreground bg-primary-foreground/20 p-0.5">
               <div
                 className="h-full bg-foreground transition-all"
                 style={{
-                  width: `${(PROFILE_COMPLETED / PROFILE_STEPS.length) * 100}%`,
+                  width: `${(profileCompleted / profileTotal) * 100}%`,
                 }}
               />
             </div>

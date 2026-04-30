@@ -2,10 +2,11 @@ import { ReportButton } from "~/components/report-button";
 import { useParams, useNavigate } from "react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "~/lib/auth/auth-context";
-import { playersApi, messagingApi } from "~/lib/api-client";
+import { playersApi, messagingApi, favoritesApi } from "~/lib/api-client";
 import { canSearchPlayers } from "~/lib/auth";
 import { Button } from "~/components/ui/button";
-import { MessageCircle, User, MapPin, Activity, Trophy } from "lucide-react";
+import { MessageCircle, User, MapPin, Activity, Trophy, Heart } from "lucide-react";
+import { toast } from "sonner";
 
 export function meta() {
   return [{ title: "Perfil do jogador - VárzeaPro" }];
@@ -13,7 +14,7 @@ export function meta() {
 
 export default function JogadorPublicProfile() {
   const { id } = useParams();
-  const { role } = useAuth();
+  const { user, role } = useAuth();
   const canContact = canSearchPlayers(role);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -30,6 +31,29 @@ export default function JogadorPublicProfile() {
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
       const dest = role === "team" ? "/time/mensagens" : "/jogador/mensagens";
       navigate(`${dest}?conversationId=${conversation.id}`);
+    },
+  });
+
+  const { data: favorites } = useQuery({
+    queryKey: ["favorites"],
+    queryFn: () => favoritesApi.list(),
+    enabled: !!user,
+  });
+
+  const isFavorited = !!favorites?.some((f) => f.targetUser.id === profile?.userId);
+  const isOwnProfile = !!user && !!profile && user.id === profile.userId;
+
+  const favoriteMutation = useMutation({
+    mutationFn: () =>
+      isFavorited
+        ? favoritesApi.remove(profile!.userId)
+        : favoritesApi.add(profile!.userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["favorites"] });
+      toast.success(isFavorited ? "Favorito removido." : "Jogador favoritado!");
+    },
+    onError: () => {
+      toast.error("Erro ao atualizar favoritos.");
     },
   });
 
@@ -88,24 +112,43 @@ export default function JogadorPublicProfile() {
                 )}
               </div>
             </div>
-            {/* Report Button */}
-            <div className="absolute top-0 right-0 p-6 sm:p-8">
-                <ReportButton entityType="player" entityId={id!} />
-            </div>
           </div>
 
-          {canContact && (
-            <Button
-              type="button"
-              size="lg"
-              onClick={() => contactMutation.mutate()}
-              disabled={contactMutation.isPending}
-              className="absolute top-6 right-6 h-12 rounded-none border-2 border-foreground bg-background px-6 font-display text-xl tracking-widest text-primary hover:bg-foreground hover:text-background hover:shadow-[4px_4px_0px_0px_var(--color-primary)] transition-all uppercase hidden sm:flex items-center gap-2 disabled:opacity-50"
-            >
-              <MessageCircle className="size-5" />
-              MANDAR PROPOSTA
-            </Button>
-          )}
+          {/* Desktop Action Buttons */}
+          <div className="absolute top-6 right-6 hidden sm:flex flex-col items-end gap-3 z-20">
+            <div className="flex items-start gap-2">
+              {user && !isOwnProfile && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => favoriteMutation.mutate()}
+                  disabled={favoriteMutation.isPending}
+                  className={`rounded-none border-2 border-foreground font-display tracking-widest uppercase transition-all ${
+                    isFavorited
+                      ? "bg-primary text-primary-foreground hover:bg-primary/80"
+                      : "bg-background text-foreground hover:bg-primary hover:text-primary-foreground"
+                  }`}
+                >
+                  <Heart className={`size-4 mr-1 ${isFavorited ? "fill-current" : ""}`} />
+                  {isFavorited ? "FAVORITADO" : "FAVORITAR"}
+                </Button>
+              )}
+              <ReportButton entityType="player" entityId={id!} />
+            </div>
+            {canContact && (
+              <Button
+                type="button"
+                size="lg"
+                onClick={() => contactMutation.mutate()}
+                disabled={contactMutation.isPending}
+                className="h-12 rounded-none border-2 border-foreground bg-background px-6 font-display text-xl tracking-widest text-primary hover:bg-foreground hover:text-background hover:shadow-[4px_4px_0px_0px_var(--color-primary)] transition-all uppercase flex items-center gap-2 disabled:opacity-50"
+              >
+                <MessageCircle className="size-5" />
+                MANDAR PROPOSTA
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Info Grid */}
@@ -205,17 +248,34 @@ export default function JogadorPublicProfile() {
         </div>
 
         {/* Mobile Action Area */}
-        {canContact && (
-          <div className="border-t-4 border-foreground p-6 sm:hidden bg-primary/10">
-            <Button
-              type="button"
-              onClick={() => contactMutation.mutate()}
-              disabled={contactMutation.isPending}
-              className="w-full h-16 rounded-none border-4 border-foreground bg-primary px-6 font-display text-2xl tracking-widest text-primary-foreground hover:bg-foreground hover:text-background hover:shadow-[4px_4px_0px_0px_var(--color-primary)] transition-all uppercase disabled:opacity-50"
-            >
-              <MessageCircle className="size-6 mr-2" />
-              MANDAR PROPOSTA
-            </Button>
+        {(canContact || (user && !isOwnProfile)) && (
+          <div className="border-t-4 border-foreground p-6 sm:hidden bg-primary/10 space-y-3">
+            {canContact && (
+              <Button
+                type="button"
+                onClick={() => contactMutation.mutate()}
+                disabled={contactMutation.isPending}
+                className="w-full h-16 rounded-none border-4 border-foreground bg-primary px-6 font-display text-2xl tracking-widest text-primary-foreground hover:bg-foreground hover:text-background hover:shadow-[4px_4px_0px_0px_var(--color-primary)] transition-all uppercase disabled:opacity-50"
+              >
+                <MessageCircle className="size-6 mr-2" />
+                MANDAR PROPOSTA
+              </Button>
+            )}
+            {user && !isOwnProfile && (
+              <Button
+                type="button"
+                onClick={() => favoriteMutation.mutate()}
+                disabled={favoriteMutation.isPending}
+                className={`w-full h-14 rounded-none border-4 border-foreground px-6 font-display text-xl tracking-widest uppercase transition-all disabled:opacity-50 ${
+                  isFavorited
+                    ? "bg-primary text-primary-foreground hover:bg-primary/80"
+                    : "bg-background text-foreground hover:bg-primary hover:text-primary-foreground hover:shadow-[4px_4px_0px_0px_var(--color-primary)]"
+                }`}
+              >
+                <Heart className={`size-5 mr-2 ${isFavorited ? "fill-current" : ""}`} />
+                {isFavorited ? "FAVORITADO" : "FAVORITAR"}
+              </Button>
+            )}
           </div>
         )}
       </div>

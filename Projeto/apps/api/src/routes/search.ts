@@ -38,6 +38,9 @@ const searchRoutes: FastifyPluginAsync = async (fastify) => {
       // D-10: self-exclusion
       filters.push(ne(players.userId, userId) as unknown as ReturnType<typeof sql>)
 
+      // Exclude hidden profiles (removed by moderation)
+      filters.push(sql`${players.hidden} = false` as unknown as ReturnType<typeof sql>)
+
       // Skills filter (D-03, OR/ANY logic): comma-separated
       if (skills) {
         const skillArray = skills.split(",").map((s) => s.trim()).filter(Boolean)
@@ -115,6 +118,9 @@ const searchRoutes: FastifyPluginAsync = async (fastify) => {
 
       // D-10: self-exclusion
       filters.push(ne(teams.userId, userId) as unknown as ReturnType<typeof sql>)
+
+      // Exclude hidden profiles (removed by moderation)
+      filters.push(sql`${teams.hidden} = false` as unknown as ReturnType<typeof sql>)
 
       // Level filter: enum — exact match
       if (level) {

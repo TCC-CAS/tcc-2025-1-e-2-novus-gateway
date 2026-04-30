@@ -25,7 +25,11 @@ export function getAuth() {
         },
       }),
       basePath: "/api/auth",
-      trustedOrigins: [process.env.CORS_ORIGIN ?? "http://localhost:5173"],
+      trustedOrigins: [
+        process.env.CORS_ORIGIN ?? "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:5173",
+      ],
       emailAndPassword: {
         enabled: true,
         sendResetPassword: async ({ user, url, token }) => {

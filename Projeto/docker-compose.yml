@@ -15,25 +15,28 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql
 
-  # api:
-  #   build: ./apps/api
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #   env_file: .env
-  #   environment:
-  #     DATABASE_URL: postgresql://varzeapro:${POSTGRES_PASSWORD:-varzeapro_dev}@postgres:5432/varzeapro
-  #   ports:
-  #     - "3000:3000"
+  api:
+    build: ./apps/api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://varzeapro:${POSTGRES_PASSWORD:-varzeapro_dev}@postgres:5432/varzeapro
+    ports:
+      - "3000:3000"
+    volumes:
+      - uploads_data:/app/uploads
 
-  # web:
-  #   build: ./apps/web
-  #   depends_on:
-  #     - api
-  #   environment:
-  #     VITE_API_URL: http://api:3000
-  #   ports:
-  #     - "5173:3000"
+  web:
+    build: ./apps/web
+    depends_on:
+      - api
+    environment:
+      VITE_API_URL: http://api:3000
+    ports:
+      - "5173:3000"
 
 volumes:
   postgres_data:
+  uploads_data:

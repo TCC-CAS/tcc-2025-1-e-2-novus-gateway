@@ -1,12 +1,13 @@
-import { useState, useEffect } from "react";
-import { Link } from "react-router";
-import { useAuth } from "~/lib/auth/auth-context";
-import { usePlan } from "~/lib/plan";
-import { PlanGate, UpsellCard } from "~/lib/plan/plan-gate";
-import { Button } from "~/components/ui/button";
-import { Skeleton } from "~/components/ui/skeleton";
-import { searchApi } from "~/lib/api-client";
-import type { TeamSummary } from "~shared/contracts";
+import { useState, useEffect, useMemo } from "react"
+import { Link } from "react-router"
+import { useQuery } from "@tanstack/react-query"
+import { useAuth } from "~/lib/auth/auth-context"
+import { usePlan } from "~/lib/plan"
+import { PlanGate, UpsellCard } from "~/lib/plan/plan-gate"
+import { Button } from "~/components/ui/button"
+import { Skeleton } from "~/components/ui/skeleton"
+import { searchApi, playersApi } from "~/lib/api-client"
+import type { TeamSummary } from "~shared/contracts"
 import {
   UserPlus,
   ArrowRight,
@@ -16,26 +17,45 @@ import {
   Trophy,
   Eye,
   BadgeCheck,
-} from "lucide-react";
+} from "lucide-react"
 
 export function meta() {
-  return [{ title: "Início - VárzeaPro" }];
+  return [{ title: "Início - VárzeaPro" }]
 }
 
-const PROFILE_STEPS = ["Nome", "Posição", "Região", "Foto", "Bio"];
-const PROFILE_COMPLETED = 3;
-
 export default function JogadorHome() {
-  const { user } = useAuth();
-  const [isLoading, setIsLoading] = useState(true);
-  const [suggested, setSuggested] = useState<TeamSummary[]>([]);
+  const { user } = useAuth()
+  const [isLoading, setIsLoading] = useState(true)
+  const [suggested, setSuggested] = useState<TeamSummary[]>([])
+
+  // Fetch player profile for dynamic completion calculation
+  const { data: profile } = useQuery({
+    queryKey: ["player", "me"],
+    queryFn: () => playersApi.getMe(),
+    retry: false,
+  })
+
+  const PROFILE_STEPS = useMemo(() => {
+    if (!profile) return { labels: ["Nome", "Posição", "Região", "Foto", "Bio"], completed: 0 }
+    const checks = [
+      { label: "Nome", done: !!profile.name && profile.name.length > 0 },
+      { label: "Posição", done: (profile.positions?.length ?? 0) > 0 },
+      { label: "Região", done: !!profile.availability },
+      { label: "Foto", done: !!profile.photoUrl },
+      { label: "Bio", done: !!profile.bio && profile.bio.length > 0 },
+    ]
+    return { labels: checks.map((c) => c.label), completed: checks.filter((c) => c.done).length }
+  }, [profile])
+
+  const profileCompleted = PROFILE_STEPS.completed
+  const profileTotal = PROFILE_STEPS.labels.length
 
   useEffect(() => {
     searchApi.teams({ pageSize: 4 } as Parameters<typeof searchApi.teams>[0])
       .then((res) => setSuggested(res.data.slice(0, 4)))
       .catch(() => setSuggested([]))
-      .finally(() => setIsLoading(false));
-  }, []);
+      .finally(() => setIsLoading(false))
+  }, [])
 
   return (
     <div className="space-y-12 px-4 py-8 sm:px-6">
@@ -71,14 +91,14 @@ export default function JogadorHome() {
               NÃO SE ESCONDA
             </h3>
             <p className="mt-1 font-bold tracking-widest text-primary-foreground/80 uppercase text-sm">
-              PERFIL COMPLETO É CONVOCAÇÃO CERTA. {PROFILE_COMPLETED}/
-              {PROFILE_STEPS.length} PASSOS.
+              PERFIL COMPLETO É CONVOCAÇÃO CERTA. {profileCompleted}/
+              {profileTotal} PASSOS.
             </p>
             <div className="mt-4 flex h-6 w-full max-w-sm border-2 border-foreground bg-primary-foreground/20 p-0.5">
               <div
                 className="h-full bg-foreground transition-all"
                 style={{
-                  width: `${(PROFILE_COMPLETED / PROFILE_STEPS.length) * 100}%`,
+                  width: `${(profileCompleted / profileTotal) * 100}%`,
                 }}
               />
             </div>
@@ -111,7 +131,7 @@ export default function JogadorHome() {
 
         <Link
           to="/jogador/buscar-times"
-          className="group relative flex flex-col items-center gap-4 border-4 border-foreground bg-background p-8 text-center shadow-[4px_4px_0px_0px_var(--color-primary)] dark:shadow-[4px_4px_0px_0px_var(--color-primary)] transition-all hover:-translate-y-1 hover:shadow-[8px_8px_0px_0px_var(--color-foreground)] dark:hover:shadow-[8px_8px_0px_0px_var(--color-foreground)]"
+          className="group relative flex flex-col items-center gap-4 border-4 border-foreground bg-background p-8 text-center shadow-[4px_4px_0px_0px_var(--color-primary)] dark:shadow-[4px_4px_0px_0px_var(--color-primary)] transition-all hover:-translate-y-1 hover:shadow-[8px_8px_0px_0px_var(--color-foreground)]"
         >
           <div className="flex size-16 items-center justify-center border-2 border-foreground bg-primary transition-transform group-hover:scale-110 group-hover:bg-foreground">
             <Search className="size-8 text-foreground group-hover:text-background" />
@@ -123,7 +143,7 @@ export default function JogadorHome() {
 
         <Link
           to="/jogador/mensagens"
-          className="group relative flex flex-col items-center gap-4 border-4 border-foreground bg-background p-8 text-center shadow-[4px_4px_0px_0px_var(--color-primary)] dark:shadow-[4px_4px_0px_0px_var(--color-primary)] transition-all hover:-translate-y-1 hover:shadow-[8px_8px_0px_0px_var(--color-foreground)] dark:hover:shadow-[8px_8px_0px_0px_var(--color-foreground)]"
+          className="group relative flex flex-col items-center gap-4 border-4 border-foreground bg-background p-8 text-center shadow-[4px_4px_0px_0px_var(--color-primary)] dark:shadow-[4px_4px_0px_0px_var(--color-primary)] transition-all hover:-translate-y-1 hover:shadow-[8px_8px_0px_0px_var(--color-foreground)]"
         >
           <div className="flex size-16 items-center justify-center border-2 border-foreground bg-primary transition-transform group-hover:scale-110 group-hover:bg-foreground">
             <MessageCircle className="size-8 text-foreground group-hover:text-background" />
@@ -288,5 +308,5 @@ export default function JogadorHome() {
         </PlanGate>
       </section>
     </div>
-  );
+  )
 }

@@ -1,8 +1,11 @@
+import { useState } from "react";
 import { Link } from "react-router";
+import { toast } from "sonner";
 import { useAuth } from "~/lib/auth/auth-context";
 import { usePlan } from "~/lib/plan";
 import { getPlansForRole, isUnlimited, PLAN_CONFIGS } from "~shared/contracts";
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 import {
   Settings,
   User,
@@ -13,6 +16,8 @@ import {
   MessageCircle,
   Search,
   Crown,
+  Lock,
+  Loader2,
 } from "lucide-react";
 
 export function meta() {
@@ -25,6 +30,47 @@ export default function Configuracoes() {
   const role = user?.role === "team" ? "team" : "player";
   const plans = getPlansForRole(role);
   const currentPlan = plans.find((p) => p.id === planId) ?? plans[0];
+
+  // Password change state
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  async function handlePasswordChange(e: React.FormEvent) {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      toast.error("As senhas não coincidem");
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast.error("A nova senha deve ter no mínimo 8 caracteres");
+      return;
+    }
+    setIsChangingPassword(true);
+    try {
+      const baseUrl = import.meta.env.VITE_API_URL ?? "/api";
+      const base = baseUrl.startsWith("http") ? baseUrl : `${window.location.origin}${baseUrl}`;
+      const res = await fetch(`${base.replace(/\/$/, "")}/auth/change-password`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.error?.message ?? "Erro ao alterar senha");
+      }
+      toast.success("Senha alterada com sucesso!");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao alterar senha");
+    } finally {
+      setIsChangingPassword(false);
+    }
+  }
 
   return (
     <div className="container max-w-3xl space-y-10 px-4 py-8 sm:px-6 sm:py-12 relative overflow-hidden">
@@ -83,15 +129,47 @@ export default function Configuracoes() {
               </div>
             </div>
 
-            {/* Helper Notice */}
-            <div className="mt-8 flex items-start gap-3 border-l-4 border-primary bg-primary/10 p-4">
-              <ShieldAlert className="size-5 text-primary shrink-0 mt-0.5" />
-              <p className="font-bold tracking-widest text-xs sm:text-sm text-foreground uppercase leading-relaxed">
-                ALTERAÇÃO DE E-MAIL, SENHA E EXCLUSÃO DE CONTA ESTARÃO
-                DISPONÍVEIS NA PRÓXIMA ATUALIZAÇÃO DO SISTEMA. MANTEREMOS VOCÊ
-                INFORMADO.
-              </p>
-            </div>
+            {/* Password Change */}
+            <form onSubmit={handlePasswordChange} className="space-y-4 border-t-2 border-dashed border-foreground/20 pt-6">
+              <label className="flex items-center gap-2 font-display text-xl tracking-wider uppercase text-foreground">
+                <Lock className="size-5 text-primary" />
+                ALTERAR SENHA
+              </label>
+              <Input
+                type="password"
+                placeholder="SENHA ATUAL"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                required
+                className="h-12 rounded-none border-2 border-foreground bg-muted/30 font-bold tracking-widest text-sm uppercase focus:ring-0 focus:border-primary"
+              />
+              <Input
+                type="password"
+                placeholder="NOVA SENHA (mín. 8 caracteres)"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+                minLength={8}
+                className="h-12 rounded-none border-2 border-foreground bg-muted/30 font-bold tracking-widest text-sm uppercase focus:ring-0 focus:border-primary"
+              />
+              <Input
+                type="password"
+                placeholder="CONFIRMAR NOVA SENHA"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                minLength={8}
+                className="h-12 rounded-none border-2 border-foreground bg-muted/30 font-bold tracking-widest text-sm uppercase focus:ring-0 focus:border-primary"
+              />
+              <Button
+                type="submit"
+                disabled={isChangingPassword}
+                className="h-12 gap-2 rounded-none border-2 border-foreground bg-foreground font-display text-lg tracking-widest text-background uppercase transition-all hover:bg-primary hover:border-primary hover:text-primary-foreground hover:shadow-[4px_4px_0px_0px_var(--color-foreground)] disabled:opacity-50"
+              >
+                {isChangingPassword ? <Loader2 className="size-5 animate-spin" /> : <Lock className="size-5" />}
+                {isChangingPassword ? "SALVANDO..." : "ALTERAR SENHA"}
+              </Button>
+            </form>
           </div>
         </section>
 

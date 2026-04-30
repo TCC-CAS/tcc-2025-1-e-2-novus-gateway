@@ -1,5 +1,7 @@
 import Fastify from "fastify"
 import { serializerCompiler, validatorCompiler, ZodTypeProvider } from "fastify-type-provider-zod"
+import fastifyStatic from "@fastify/static"
+import { join } from "node:path"
 import { registerErrorHandler } from "./lib/errors.js"
 import { requireSession, requireRole } from "./hooks/require-auth.js"
 
@@ -28,6 +30,17 @@ export async function buildApp() {
   await fastify.register(import("./plugins/auth.js"))
   await fastify.register(import("./plugins/socket-io.js"))
 
+  // Serve uploaded files statically
+  await fastify.register(fastifyStatic, {
+    root: join(process.cwd(), "uploads"),
+    prefix: "/uploads/",
+  })
+
+  // Multipart support for file uploads
+  await fastify.register(import("@fastify/multipart"), {
+    limits: { fileSize: 5 * 1024 * 1024 },
+  })
+
   registerErrorHandler(fastify)
 
   await fastify.register(import("./routes/health.js"), { prefix: "/health" })
@@ -37,6 +50,8 @@ export async function buildApp() {
   await fastify.register(import("./routes/subscription.js"), { prefix: "/api/subscription" })
   await fastify.register(import("./routes/conversations.js"), { prefix: "/api" })
   await fastify.register(import("./routes/reports.js"), { prefix: "/api" })
+  await fastify.register(import("./routes/favorites.js"), { prefix: "/api" })
+  await fastify.register(import("./routes/upload.js"), { prefix: "/api" })
   await fastify.register(import("./routes/admin.js"), { prefix: "/api/admin" })
 
   // Protected test route for AUTH-04 verification (401 without session, 403 with wrong role)

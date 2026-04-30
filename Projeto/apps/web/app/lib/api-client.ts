@@ -231,3 +231,54 @@ export const adminModerationApi = {
       { method: "POST", body: JSON.stringify(body), headers: authHeaders() }
     ),
 };
+
+// --- Favorites ---
+type FavoriteItem = {
+  id: string;
+  targetUser: {
+    id: string;
+    name: string;
+    role: string;
+    avatarUrl: string | null;
+    profileId: string | null;
+  };
+  createdAt: string;
+};
+
+export const favoritesApi = {
+  list: () =>
+    request<FavoriteItem[]>(
+      "/favorites",
+      { headers: authHeaders() }
+    ),
+  add: (targetUserId: string) =>
+    request<{ id: string; favorited: boolean }>(
+      "/favorites",
+      { method: "POST", body: JSON.stringify({ targetUserId }), headers: authHeaders() }
+    ),
+  remove: (targetUserId: string) =>
+    request<{ favorited: boolean }>(
+      `/favorites/${targetUserId}`,
+      { method: "DELETE", headers: authHeaders() }
+    ),
+};
+
+// --- Upload ---
+export const uploadApi = {
+  avatar: async (file: File) => {
+    const base = BASE_URL.startsWith("http") ? BASE_URL : `${window.location.origin}${BASE_URL}`;
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch(`${base.replace(/\/$/, "")}/upload/avatar`, {
+      method: "POST",
+      body: formData,
+      credentials: "include",
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new ApiError(res.status, body?.error?.code ?? "UPLOAD_FAILED", body?.error?.message ?? "Upload failed");
+    }
+    const body = await res.json();
+    return (body as { data: { url: string } }).data;
+  },
+};

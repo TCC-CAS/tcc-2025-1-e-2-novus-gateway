@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { searchApi } from "~/lib/api-client";
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -10,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { TEAM_LEVELS } from "~shared/contracts";
+import { TEAM_LEVELS, POSITIONS } from "~shared/contracts";
 import {
   Filter,
   ArrowRight,
@@ -25,10 +26,12 @@ export function meta() {
 
 export default function JogadorBuscarTimes() {
   const [level, setLevel] = useState<string | undefined>(undefined);
+  const [region, setRegion] = useState<string>("");
+  const [openPosition, setOpenPosition] = useState<string | undefined>(undefined);
   const [page, setPage] = useState(1);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["search", "teams", { level, page }],
+    queryKey: ["search", "teams", { level, region, openPosition, page }],
     queryFn: () =>
       searchApi.teams({
         page,
@@ -39,6 +42,8 @@ export default function JogadorBuscarTimes() {
           | "semi-profissional"
           | "outro"
           | undefined,
+        region: region || undefined,
+        openPosition: openPosition || undefined,
       }),
   });
 
@@ -57,35 +62,44 @@ export default function JogadorBuscarTimes() {
           </p>
         </div>
 
-        <div className="flex items-center gap-4 bg-background border-4 border-foreground p-2 shadow-[4px_4px_0px_0px_var(--color-primary)] dark:shadow-[4px_4px_0px_0px_var(--color-primary)]">
+        <div className="flex flex-wrap items-center gap-3 bg-background border-4 border-foreground p-2 shadow-[4px_4px_0px_0px_var(--color-primary)]">
           <div className="flex items-center gap-2 pl-2">
             <Filter className="size-5 text-foreground" />
-            <span className="font-display text-lg tracking-widest text-foreground uppercase pt-1 hidden sm:inline">
-              NÍVEL:
+            <span className="font-display text-sm tracking-widest text-foreground uppercase hidden sm:inline">
+              FILTROS:
             </span>
           </div>
           <Select
             value={level ?? "all"}
-            onValueChange={(v) => setLevel(v === "all" ? undefined : v)}
+            onValueChange={(v) => { setLevel(v === "all" ? undefined : v); setPage(1) }}
           >
-            <SelectTrigger className="w-[180px] h-12 rounded-none border-2 border-foreground bg-muted/50 font-bold tracking-widest uppercase focus:ring-0 focus:border-primary transition-colors">
-              <SelectValue placeholder="QUALQUER UM" />
+            <SelectTrigger className="w-[160px] h-10 rounded-none border-2 border-foreground bg-muted/50 font-bold tracking-widest text-xs uppercase focus:ring-0 focus:border-primary">
+              <SelectValue placeholder="NÍVEL" />
             </SelectTrigger>
-            <SelectContent className="rounded-none border-4 border-foreground shadow-[4px_4px_0px_0px_var(--color-foreground)] dark:shadow-[4px_4px_0px_0px_var(--color-foreground)]">
-              <SelectItem
-                value="all"
-                className="font-bold tracking-widest uppercase cursor-pointer rounded-none focus:bg-primary focus:text-primary-foreground"
-              >
-                TODOS OS NÍVEIS
-              </SelectItem>
+            <SelectContent className="rounded-none border-4 border-foreground">
+              <SelectItem value="all" className="font-bold tracking-widest uppercase text-xs">TODOS</SelectItem>
               {levels.map((l) => (
-                <SelectItem
-                  key={l}
-                  value={l}
-                  className="font-bold tracking-widest uppercase cursor-pointer rounded-none focus:bg-primary focus:text-primary-foreground"
-                >
-                  {l}
-                </SelectItem>
+                <SelectItem key={l} value={l} className="font-bold tracking-widest uppercase text-xs">{l}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Input
+            placeholder="REGIÃO..."
+            value={region}
+            onChange={(e) => { setRegion(e.target.value); setPage(1) }}
+            className="w-[140px] h-10 rounded-none border-2 border-foreground bg-muted/50 font-bold tracking-widest text-xs uppercase focus:ring-0 focus:border-primary"
+          />
+          <Select
+            value={openPosition ?? "all"}
+            onValueChange={(v) => { setOpenPosition(v === "all" ? undefined : v); setPage(1) }}
+          >
+            <SelectTrigger className="w-[160px] h-10 rounded-none border-2 border-foreground bg-muted/50 font-bold tracking-widest text-xs uppercase focus:ring-0 focus:border-primary">
+              <SelectValue placeholder="VAGA" />
+            </SelectTrigger>
+            <SelectContent className="rounded-none border-4 border-foreground">
+              <SelectItem value="all" className="font-bold tracking-widest uppercase text-xs">QUALQUER</SelectItem>
+              {POSITIONS.map((p) => (
+                <SelectItem key={p} value={p} className="font-bold tracking-widest uppercase text-xs">{p}</SelectItem>
               ))}
             </SelectContent>
           </Select>

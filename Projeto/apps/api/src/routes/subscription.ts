@@ -1,11 +1,14 @@
 import type { FastifyPluginAsync } from "fastify"
 import { ZodTypeProvider } from "fastify-type-provider-zod"
 import { z } from "zod"
-import { eq } from "drizzle-orm"
+import { eq, or, sql } from "drizzle-orm"
 import { nanoid } from "nanoid"
 import { requireSession } from "../hooks/require-auth.js"
 import { ok } from "../lib/response.js"
 import { subscriptions } from "../db/schema/subscriptions.js"
+import { conversations } from "../db/schema/conversations.js"
+import { players } from "../db/schema/players.js"
+import { teams } from "../db/schema/teams.js"
 import {
   PlanIdSchema,
   getPlanLimits,
@@ -45,14 +48,39 @@ const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
       // D-13: Per-request DB lookup (already have sub from upsert)
       const limits = getPlanLimits(sub.planId, role)
 
-      // D-17: conversationsUsed = 0 (Phase 5+), openPositionsUsed = 0, favoritesUsed = 0
+      // Count actual conversations for this user
+      const [convRow] = await fastify.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(conversations)
+        .where(
+          or(
+            eq(conversations.participantA, userId),
+            eq(conversations.participantB, userId)
+          )
+        )
+      const conversationsUsed = convRow?.count ?? 0
+
+      // Count open positions for team profiles
+      let openPositionsUsed = 0
+      if (role === "team") {
+        const [teamRow] = await fastify.db
+          .select({ positions: teams.openPositions })
+          .from(teams)
+          .where(eq(teams.userId, userId))
+          .limit(1)
+        openPositionsUsed = teamRow?.positions?.length ?? 0
+      }
+
+      // Count favorites (placeholder until favorites feature is built)
+      const favoritesUsed = 0
+
       return ok({
-        conversationsUsed: 0,
+        conversationsUsed,
         conversationsLimit: limits.conversations,
         searchResultsLimit: limits.searchResults,
-        openPositionsUsed: 0,
+        openPositionsUsed,
         openPositionsLimit: limits.openPositions,
-        favoritesUsed: 0,
+        favoritesUsed,
         favoritesLimit: limits.favorites,
         periodResetAt: sub.currentPeriodEnd.toISOString(),
       })

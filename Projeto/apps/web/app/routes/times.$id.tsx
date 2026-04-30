@@ -2,7 +2,7 @@ import { ReportButton } from "~/components/report-button";
 import { useParams, useNavigate } from "react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "~/lib/auth/auth-context";
-import { teamsApi, messagingApi } from "~/lib/api-client";
+import { teamsApi, messagingApi, favoritesApi } from "~/lib/api-client";
 import { canSearchTeams } from "~/lib/auth";
 import { Button } from "~/components/ui/button";
 import {
@@ -12,7 +12,9 @@ import {
   Trophy,
   Search,
   Calendar,
+  Heart,
 } from "lucide-react";
+import { toast } from "sonner";
 
 export function meta() {
   return [{ title: "Perfil do time - VárzeaPro" }];
@@ -20,7 +22,7 @@ export function meta() {
 
 export default function TimePublicProfile() {
   const { id } = useParams();
-  const { role } = useAuth();
+  const { user, role } = useAuth();
   const canContact = canSearchTeams(role);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -38,6 +40,29 @@ export default function TimePublicProfile() {
       const dest =
         role === "player" ? "/jogador/mensagens" : "/time/mensagens";
       navigate(`${dest}?conversationId=${conversation.id}`);
+    },
+  });
+
+  const { data: favorites } = useQuery({
+    queryKey: ["favorites"],
+    queryFn: () => favoritesApi.list(),
+    enabled: !!user,
+  });
+
+  const isFavorited = !!favorites?.some((f) => f.targetUser.id === profile?.userId);
+  const isOwnProfile = !!user && !!profile && user.id === profile.userId;
+
+  const favoriteMutation = useMutation({
+    mutationFn: () =>
+      isFavorited
+        ? favoritesApi.remove(profile!.userId)
+        : favoritesApi.add(profile!.userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["favorites"] });
+      toast.success(isFavorited ? "Favorito removido." : "Time favoritado!");
+    },
+    onError: () => {
+      toast.error("Erro ao atualizar favoritos.");
     },
   });
 
@@ -87,16 +112,32 @@ export default function TimePublicProfile() {
               </div>
             </div>
 
-            {canContact && (
+            {(canContact || (user && !isOwnProfile)) && (
               <div className="flex flex-col gap-4 self-start mt-4">
-                <Button
-                  type="button"
-                  onClick={() => contactMutation.mutate()}
-                  disabled={contactMutation.isPending}
-                  className="hidden sm:flex h-16 w-16 shrink-0 rounded-none border-4 border-foreground bg-primary p-0 transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_var(--color-foreground)] dark:hover:shadow-[4px_4px_0px_0px_var(--color-foreground)] disabled:opacity-50"
-                >
-                  <MessageCircle className="size-8 text-foreground" />
-                </Button>
+                {canContact && (
+                  <Button
+                    type="button"
+                    onClick={() => contactMutation.mutate()}
+                    disabled={contactMutation.isPending}
+                    className="hidden sm:flex h-16 w-16 shrink-0 rounded-none border-4 border-foreground bg-primary p-0 transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_var(--color-foreground)] dark:hover:shadow-[4px_4px_0px_0px_var(--color-foreground)] disabled:opacity-50"
+                  >
+                    <MessageCircle className="size-8 text-foreground" />
+                  </Button>
+                )}
+                {user && !isOwnProfile && (
+                  <Button
+                    type="button"
+                    onClick={() => favoriteMutation.mutate()}
+                    disabled={favoriteMutation.isPending}
+                    className={`hidden sm:flex h-16 w-16 shrink-0 rounded-none border-4 border-foreground p-0 transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_var(--color-foreground)] dark:hover:shadow-[4px_4px_0px_0px_var(--color-foreground)] disabled:opacity-50 ${
+                      isFavorited
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-background text-foreground hover:bg-primary hover:text-primary-foreground"
+                    }`}
+                  >
+                    <Heart className={`size-8 ${isFavorited ? "fill-current" : ""}`} />
+                  </Button>
+                )}
                 <ReportButton entityType="team" entityId={id!} />
               </div>
             )}
@@ -177,17 +218,34 @@ export default function TimePublicProfile() {
         </div>
 
         {/* Mobile Contact Action */}
-        {canContact && (
-          <div className="sm:hidden border-t-4 border-foreground p-6 bg-primary/10">
-            <Button
-              type="button"
-              onClick={() => contactMutation.mutate()}
-              disabled={contactMutation.isPending}
-              className="w-full h-16 rounded-none border-4 border-foreground bg-primary px-6 font-display text-xl tracking-widest text-foreground hover:bg-foreground hover:text-background hover:shadow-[4px_4px_0px_0px_var(--color-primary)] transition-all uppercase gap-3 disabled:opacity-50"
-            >
-              <MessageCircle className="size-5" />
-              ENTRAR EM CONTATO
-            </Button>
+        {(canContact || (user && !isOwnProfile)) && (
+          <div className="sm:hidden border-t-4 border-foreground p-6 bg-primary/10 space-y-3">
+            {canContact && (
+              <Button
+                type="button"
+                onClick={() => contactMutation.mutate()}
+                disabled={contactMutation.isPending}
+                className="w-full h-16 rounded-none border-4 border-foreground bg-primary px-6 font-display text-xl tracking-widest text-foreground hover:bg-foreground hover:text-background hover:shadow-[4px_4px_0px_0px_var(--color-primary)] transition-all uppercase gap-3 disabled:opacity-50"
+              >
+                <MessageCircle className="size-5" />
+                ENTRAR EM CONTATO
+              </Button>
+            )}
+            {user && !isOwnProfile && (
+              <Button
+                type="button"
+                onClick={() => favoriteMutation.mutate()}
+                disabled={favoriteMutation.isPending}
+                className={`w-full h-14 rounded-none border-4 border-foreground px-6 font-display text-xl tracking-widest uppercase transition-all disabled:opacity-50 ${
+                  isFavorited
+                    ? "bg-primary text-primary-foreground hover:bg-primary/80"
+                    : "bg-background text-foreground hover:bg-primary hover:text-primary-foreground hover:shadow-[4px_4px_0px_0px_var(--color-primary)]"
+                }`}
+              >
+                <Heart className={`size-5 mr-2 ${isFavorited ? "fill-current" : ""}`} />
+                {isFavorited ? "FAVORITADO" : "FAVORITAR"}
+              </Button>
+            )}
           </div>
         )}
       </div>

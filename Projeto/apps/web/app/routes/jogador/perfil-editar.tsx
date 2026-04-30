@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,13 +9,13 @@ import {
   type UpsertPlayerProfileRequest,
   POSITIONS,
 } from "~shared/contracts";
-import { playersApi, ApiError } from "~/lib/api-client";
+import { playersApi, uploadApi, ApiError } from "~/lib/api-client";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Label } from "~/components/ui/label";
 import { cn } from "~/lib/utils";
-import { Check, Save, X, User, Edit3 } from "lucide-react";
+import { Check, Save, X, User, Camera } from "lucide-react";
 
 const POSITION_LABELS: Record<string, string> = {
   goleiro: "GOLEIRO",
@@ -111,6 +111,35 @@ export default function JogadorPerfilEditar() {
     );
   }
 
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
+
+  const handleAvatarChange = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      if (!file) return
+
+      if (!file.type.startsWith("image/")) {
+        toast.error("Selecione uma imagem válida.")
+        return
+      }
+
+      setIsUploadingAvatar(true)
+      try {
+        await uploadApi.avatar(file)
+        await queryClient.invalidateQueries({ queryKey: ["player", "me"] })
+        toast.success("Foto atualizada!")
+      } catch (err) {
+        const msg = err instanceof ApiError ? err.message : "Erro ao enviar foto."
+        toast.error(msg)
+      } finally {
+        setIsUploadingAvatar(false)
+        if (fileInputRef.current) fileInputRef.current.value = ""
+      }
+    },
+    [queryClient],
+  )
+
   if (isLoadingProfile) {
     return (
       <div className="container max-w-2xl px-4 py-8">
@@ -127,9 +156,39 @@ export default function JogadorPerfilEditar() {
       <div className="pointer-events-none absolute -left-20 top-0 h-64 w-64 rounded-full bg-primary/20 blur-[100px]" />
 
       <div className="mb-10 flex flex-col items-center text-center sm:flex-row sm:items-end sm:text-left sm:gap-6 border-b-4 border-foreground pb-8 relative z-10">
-        <div className="flex size-20 shrink-0 items-center justify-center border-4 border-foreground bg-primary shadow-[4px_4px_0px_0px_var(--color-foreground)] dark:shadow-[4px_4px_0px_0px_var(--color-foreground)] mb-4 sm:mb-0">
-          <Edit3 className="size-10 text-primary-foreground" />
-        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleAvatarChange}
+        />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isUploadingAvatar}
+          className="group relative size-20 shrink-0 border-4 border-foreground bg-primary shadow-[4px_4px_0px_0px_var(--color-foreground)] dark:shadow-[4px_4px_0px_0px_var(--color-foreground)] mb-4 sm:mb-0 overflow-hidden transition-all hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_var(--color-foreground)] dark:hover:shadow-[6px_6px_0px_0px_var(--color-foreground)] disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {profile?.photoUrl ? (
+            <img
+              src={profile.photoUrl}
+              alt="Sua foto"
+              className="size-full object-cover"
+            />
+          ) : (
+            <div className="flex size-full items-center justify-center">
+              <User className="size-10 text-primary-foreground" />
+            </div>
+          )}
+          <div className="absolute inset-0 flex items-center justify-center bg-foreground/60 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Camera className="size-8 text-background" />
+          </div>
+          {isUploadingAvatar && (
+            <div className="absolute inset-0 flex items-center justify-center bg-foreground/80">
+              <div className="size-6 animate-spin rounded-full border-2 border-background border-t-transparent" />
+            </div>
+          )}
+        </button>
         <div>
           <h1 className="font-display text-5xl tracking-wide text-foreground uppercase">
             EDITAR PERFIL

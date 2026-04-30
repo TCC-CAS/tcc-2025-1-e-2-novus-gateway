@@ -135,6 +135,22 @@ body {
   font-family: var(--font-display);
 }
 
+/* Typing indicator — bouncing dots */
+@keyframes typing-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-6px); opacity: 1; }
+}
+
+.typing-bounce {
+  animation: typing-bounce 1.4s ease-in-out infinite;
+}
+.typing-bounce:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.typing-bounce:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

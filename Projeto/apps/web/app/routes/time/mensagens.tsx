@@ -58,8 +58,9 @@ export default function TimeMensagens() {
     },
   })
 
-  const { emitTypingStart, emitTypingStop } = useSocket({
+  const { emitTypingStart, emitTypingStop, isTyping, isUserOnline } = useSocket({
     conversationId: selectedId ?? null,
+    currentUserId: user?.id,
   })
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -122,12 +123,20 @@ export default function TimeMensagens() {
                 >
                   <div
                     className={cn(
-                      "flex size-12 shrink-0 items-center justify-center border-2 border-foreground bg-background group-hover:bg-primary transition-colors",
+                      "flex size-12 shrink-0 items-center justify-center border-2 border-foreground bg-background group-hover:bg-primary transition-colors relative",
                       selectedId === c.id &&
                         "bg-primary text-primary-foreground",
                     )}
                   >
                     <User className="size-6" />
+                    <span
+                      className={cn(
+                        "absolute -bottom-1 -right-1 size-3 border-2 border-background",
+                        isUserOnline(c.otherParticipant.id)
+                          ? "bg-green-500"
+                          : "bg-muted"
+                      )}
+                    />
                   </div>
                   <div className="flex-1 min-w-0">
                     <span className="font-display text-xl tracking-wide uppercase text-foreground leading-none block truncate pb-1">
@@ -180,12 +189,22 @@ export default function TimeMensagens() {
               >
                 <ArrowLeft className="size-5" />
               </button>
-              <div className="flex size-12 items-center justify-center border-2 border-foreground bg-primary shadow-[2px_2px_0px_0px_var(--color-foreground)] dark:shadow-[2px_2px_0px_0px_var(--color-foreground)]">
+              <div className="flex size-12 items-center justify-center border-2 border-foreground bg-primary shadow-[2px_2px_0px_0px_var(--color-foreground)] dark:shadow-[2px_2px_0px_0px_var(--color-foreground)] relative">
                 <User className="size-6 text-primary-foreground" />
+                <span
+                  className={cn(
+                    "absolute -bottom-1 -right-1 size-3 border-2 border-background",
+                    current && isUserOnline(current.otherParticipant.id)
+                      ? "bg-green-500"
+                      : "bg-muted"
+                  )}
+                />
               </div>
-              <p className="font-display text-3xl tracking-wide text-foreground uppercase pt-1">
-                {current?.otherParticipant.name}
-              </p>
+              <div className="flex flex-col justify-center min-w-0">
+                <p className="font-display text-3xl tracking-wide text-foreground uppercase pt-1 leading-none">
+                  {current?.otherParticipant.name}
+                </p>
+              </div>
             </div>
 
             {/* Messages */}
@@ -235,6 +254,17 @@ export default function TimeMensagens() {
                     </div>
                   )
                 })}
+                {isTyping && (
+                  <div className="flex justify-start">
+                    <div className="border-2 border-foreground bg-muted/80 px-5 py-3 shadow-[4px_4px_0px_0px_var(--color-primary)] dark:shadow-[4px_4px_0px_0px_var(--color-primary)]">
+                      <div className="flex items-center gap-[6px]">
+                        <span className="typing-bounce inline-block size-2 rounded-full bg-foreground/60" />
+                        <span className="typing-bounce inline-block size-2 rounded-full bg-foreground/60" />
+                        <span className="typing-bounce inline-block size-2 rounded-full bg-foreground/60" />
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div ref={messagesEndRef} />
               </div>
             </ScrollArea>
