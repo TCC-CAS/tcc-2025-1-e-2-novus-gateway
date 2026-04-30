@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState, useCallback } from "react"
 import { io, type Socket } from "socket.io-client"
 import { useQueryClient } from "@tanstack/react-query"
 import type { Message } from "~shared/contracts"
@@ -14,94 +14,149 @@ interface PresenceEvent {
 
 interface UseSocketOptions {
   conversationId: string | null
-  onTypingStart?: (event: TypingEvent) => void
-  onTypingStop?: (event: TypingEvent) => void
-  onUserOnline?: (event: PresenceEvent) => void
-  onUserOffline?: (event: PresenceEvent) => void
+  /** The current user's id — used to filter out self-typing events */
+  currentUserId?: string
 }
 
 export function useSocket({
   conversationId,
-  onTypingStart,
-  onTypingStop,
-  onUserOnline,
-  onUserOffline,
+  currentUserId,
 }: UseSocketOptions) {
   const queryClient = useQueryClient()
   const socketRef = useRef<Socket | null>(null)
+
+  // Track whether the other participant in this conversation is typing
+  const [isTyping, setIsTyping] = useState(false)
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Track online user ids across all conversations the socket hears about
+  const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set())
+
+  // Clear typing state when switching conversations
+  useEffect(() => {
+    setIsTyping(false)
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current)
+      typingTimeoutRef.current = null
+    }
+  }, [conversationId])
 
   useEffect(() => {
     if (!conversationId) return
 
     // D-08: withCredentials sends session cookie, no token in URL
-    // Derive socket origin only (strip path like /api) so socket.io connects to the
-    // default namespace "/" instead of treating "/api" as a namespace.
+    // When VITE_API_URL is relative (e.g. "/api") or unset, the Vite dev proxy
+    // forwards /socket.io to the API server. Socket.IO connects to same origin.
+    // When VITE_API_URL is absolute (e.g. "http://api:3000"), we extract its origin.
     const apiUrl = import.meta.env.VITE_API_URL || ""
     let socketOrigin = ""
-    if (apiUrl) {
+    if (apiUrl && apiUrl.startsWith("http")) {
       try {
         socketOrigin = new URL(apiUrl).origin
       } catch {
-        // relative URL or empty — same-origin connection
         socketOrigin = ""
       }
     }
+    // If socketOrigin is empty, Socket.IO will connect to window.location.origin
+    // which is the Vite dev server — and Vite proxies /socket.io to the API.
     const socket = io(socketOrigin, {
       withCredentials: true,
-      transports: ["websocket"],
+      transports: ["websocket", "polling"],
+      path: "/socket.io",
     })
 
     socketRef.current = socket
 
     // D-06: optimistic append to React Query cache — no full refetch
-    // Query key matches what mensagens.tsx uses: ["messages", conversationId]
+    // Only append to thread cache if the message belongs to the currently viewed conversation
     socket.on("new_message", (message: Message) => {
-      queryClient.setQueryData(
-        ["messages", conversationId],
-        (old: { data: Message[]; meta?: unknown } | undefined) => {
-          if (!old) return { data: [message] }
-          // Deduplicate: don't append if message already in cache (sender already sees it via HTTP response)
-          const exists = old.data.some((m) => String(m.id) === String(message.id))
-          if (exists) return old
-          return { ...old, data: [...old.data, message] }
-        }
-      )
+      const msgConvId = String(message.conversationId)
+      const activeConvId = String(conversationId)
+
+      if (msgConvId === activeConvId) {
+        queryClient.setQueryData(
+          ["messages", conversationId],
+          (old: { data: Message[]; meta?: unknown } | undefined) => {
+            if (!old) return { data: [message] }
+            const exists = old.data.some((m) => String(m.id) === String(message.id))
+            if (exists) return old
+            return { ...old, data: [...old.data, message] }
+          }
+        )
+      } else {
+        // Message from another conversation — just refresh the conversation list
+        queryClient.invalidateQueries({ queryKey: ["conversations"] })
+      }
+
+      if (String(message.senderId) !== String(currentUserId)) {
+        setIsTyping(false)
+      }
     })
 
     socket.on("typing_start", (event: TypingEvent) => {
-      onTypingStart?.(event)
+      // Ignore own typing events
+      if (String(event.userId) === String(currentUserId)) return
+      // Only care about typing in the current conversation
+      if (event.conversationId !== conversationId) return
+      setIsTyping(true)
+      // Auto-clear after 3 seconds of no new typing_start
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
+      typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 3000)
     })
 
     socket.on("typing_stop", (event: TypingEvent) => {
-      onTypingStop?.(event)
+      if (String(event.userId) === String(currentUserId)) return
+      if (event.conversationId !== conversationId) return
+      setIsTyping(false)
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current)
+        typingTimeoutRef.current = null
+      }
     })
 
     socket.on("user_online", (event: PresenceEvent) => {
-      onUserOnline?.(event)
+      setOnlineUsers((prev) => {
+        const next = new Set(prev)
+        next.add(String(event.userId))
+        return next
+      })
     })
 
     socket.on("user_offline", (event: PresenceEvent) => {
-      onUserOffline?.(event)
+      setOnlineUsers((prev) => {
+        const next = new Set(prev)
+        next.delete(String(event.userId))
+        return next
+      })
     })
 
     return () => {
       socket.disconnect()
       socketRef.current = null
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current)
+        typingTimeoutRef.current = null
+      }
     }
-  }, [conversationId, queryClient, onTypingStart, onTypingStop, onUserOnline, onUserOffline])
+  }, [conversationId, queryClient, currentUserId])
 
   // Emit typing events from the component
-  const emitTypingStart = () => {
+  const emitTypingStart = useCallback(() => {
     if (conversationId && socketRef.current?.connected) {
       socketRef.current.emit("typing_start", { conversationId })
     }
-  }
+  }, [conversationId])
 
-  const emitTypingStop = () => {
+  const emitTypingStop = useCallback(() => {
     if (conversationId && socketRef.current?.connected) {
       socketRef.current.emit("typing_stop", { conversationId })
     }
-  }
+  }, [conversationId])
 
-  return { emitTypingStart, emitTypingStop }
+  const isUserOnline = useCallback(
+    (userId: string) => onlineUsers.has(String(userId)),
+    [onlineUsers]
+  )
+
+  return { emitTypingStart, emitTypingStop, isTyping, onlineUsers, isUserOnline }
 }
