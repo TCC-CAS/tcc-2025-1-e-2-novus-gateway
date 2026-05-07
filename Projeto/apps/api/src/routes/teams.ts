@@ -6,7 +6,7 @@ import { nanoid } from "nanoid"
 import { requireSession, requireRole } from "../hooks/require-auth.js"
 import { ok } from "../lib/response.js"
 import { teams } from "../db/schema/index.js"
-import { UpsertTeamProfileRequestSchema } from "../../../../apps/web/shared/contracts/teams.js"
+import { UpsertTeamProfileRequestSchema } from "../../../../shared/contracts/teams.js"
 
 const teamsRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /me — authenticated team only
@@ -40,7 +40,7 @@ const teamsRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request, reply) => {
       const userId = request.session!.user.id
-      const fields = request.body
+      const fields = request.body as z.infer<typeof UpsertTeamProfileRequestSchema>
       const [result] = await fastify.db
         .insert(teams)
         .values({

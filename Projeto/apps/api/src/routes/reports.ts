@@ -1,11 +1,12 @@
 import type { FastifyPluginAsync } from "fastify"
 import { ZodTypeProvider } from "fastify-type-provider-zod"
+import { z } from "zod"
 import { nanoid } from "nanoid"
 import { requireSession } from "../hooks/require-auth.js"
 import { moderationReports } from "../db/schema/moderation-reports.js"
 import {
   CreateReportRequestSchema,
-} from "../../../../apps/web/shared/contracts/moderation.js"
+} from "../../../../shared/contracts/moderation.js"
 
 const reportRoutes: FastifyPluginAsync = async (fastify) => {
   // POST /reports — create a report (any authenticated user)
@@ -16,7 +17,7 @@ const reportRoutes: FastifyPluginAsync = async (fastify) => {
       schema: { body: CreateReportRequestSchema },
     },
     async (request, reply) => {
-      const { reportedEntityType, reportedEntityId, reason, description } = request.body
+      const { reportedEntityType, reportedEntityId, reason, description } = request.body as z.infer<typeof CreateReportRequestSchema>
       const reporterId = request.session!.user.id
 
       const id = nanoid()

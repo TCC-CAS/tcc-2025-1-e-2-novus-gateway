@@ -1,17 +1,24 @@
 import fp from "fastify-plugin"
-import { auth } from "../lib/auth.js"
+import { createAuth } from "../lib/auth.js"
+import type { Auth } from "../lib/auth.js"
 import type { FastifyPluginAsync } from "fastify"
+
+// Augment FastifyInstance so fastify.auth is typed
+declare module "fastify" {
+  interface FastifyInstance {
+    auth: Auth
+  }
+}
 
 /**
  * Converts a Fastify request into a web fetch Request and pipes
  * the web Response back to Fastify reply — compatible with inject().
- * Replaces the previous reply.hijack() + toNodeHandler() pattern which
- * bypassed Fastify's response lifecycle and hung during inject().
  */
 async function handleAuthRequest(
   request: import("fastify").FastifyRequest,
   reply: import("fastify").FastifyReply
 ) {
+  const auth = request.server.auth
   const url = `${request.protocol}://${request.hostname}${request.url}`
   const headers = new Headers()
   for (const [key, value] of Object.entries(request.headers)) {
@@ -57,18 +64,16 @@ async function handleAuthRequest(
 }
 
 const authPlugin: FastifyPluginAsync = async (fastify) => {
+  // Create Better Auth using the shared database connection
+  const auth = createAuth(fastify.db)
   fastify.decorate("auth", auth)
 
   // Rate-limited explicit routes for sign-in and sign-up (AUTH-01, AUTH-02)
-  // Key by email address so each unique account gets its own bucket — this allows
-  // test suites that create many distinct users to work without hitting the IP-wide limit.
-  // The rate-limit.test.ts reuses the same email repeatedly, so it still triggers 429.
   const rateLimitConfig = {
     config: {
       rateLimit: {
         max: 5,
         timeWindow: "15 minutes",
-        // Run at preHandler so request.body is parsed and email is available for keying
         hook: "preHandler" as const,
         keyGenerator: (request: import("fastify").FastifyRequest) => {
           const body = request.body as Record<string, unknown> | undefined
@@ -88,5 +93,5 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
 
 export default fp(authPlugin, {
   name: "auth",
-  dependencies: ["env", "rate-limit"],
+  dependencies: ["env", "rate-limit", "db"],
 })

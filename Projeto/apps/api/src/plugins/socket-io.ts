@@ -4,7 +4,6 @@ import { Server } from "socket.io"
 import { eq, or } from "drizzle-orm"
 import type { Socket } from "socket.io"
 import { conversations } from "../db/schema/conversations.js"
-import { auth } from "../lib/auth.js"
 
 // Augment FastifyInstance so fastify.io is typed
 declare module "fastify" {
@@ -20,7 +19,7 @@ declare module "fastify" {
 const socketIOPlugin: FastifyPluginAsync = async (fastify) => {
   const io = new Server(fastify.server, {
     cors: {
-      origin: process.env.CORS_ORIGIN || "*",
+      origin: process.env.CORS_ORIGIN || (process.env.NODE_ENV === "production" ? false : "http://localhost:5173"),
       credentials: true,
     },
   })
@@ -41,7 +40,7 @@ const socketIOPlugin: FastifyPluginAsync = async (fastify) => {
         return next(new Error("No session cookie"))
       }
 
-      const session = await auth.api.getSession({
+      const session = await fastify.auth.api.getSession({
         headers: new Headers({ cookie: cookieHeader }),
       })
 

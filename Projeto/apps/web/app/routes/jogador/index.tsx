@@ -7,6 +7,7 @@ import { PlanGate, UpsellCard } from "~/lib/plan/plan-gate"
 import { Button } from "~/components/ui/button"
 import { Skeleton } from "~/components/ui/skeleton"
 import { searchApi, playersApi } from "~/lib/api-client"
+import { PLAN_CONFIGS } from "~shared/contracts"
 import type { TeamSummary } from "~shared/contracts"
 import {
   UserPlus,
@@ -17,10 +18,31 @@ import {
   Trophy,
   Eye,
   BadgeCheck,
+  Crown,
 } from "lucide-react"
 
 export function meta() {
   return [{ title: "Início - VárzeaPro" }]
+}
+
+function PlanBadge() {
+  const { planId } = usePlan();
+  const config = PLAN_CONFIGS[planId];
+  const isPaid = planId !== "free";
+
+  return (
+    <Link
+      to="/planos"
+      className={`flex items-center gap-2 border-2 px-4 py-2 font-display text-sm tracking-widest uppercase transition-all hover:-translate-y-0.5 ${
+        isPaid
+          ? "border-primary bg-primary text-primary-foreground hover:shadow-[3px_3px_0px_0px_var(--color-foreground)]"
+          : "border-foreground/30 text-muted-foreground hover:border-primary hover:text-primary"
+      }`}
+    >
+      {isPaid && <Crown className="size-4" />}
+      {config?.name ?? "LIVRE"}
+    </Link>
+  );
 }
 
 export default function JogadorHome() {
@@ -72,6 +94,7 @@ export default function JogadorHome() {
             A BOLA ESTÁ ROLANDO. ENCONTRE TIMES E VÁ PRO JOGO.
           </p>
         </div>
+        <PlanBadge />
       </div>
 
       {/* Profile completion banner - BRUTALIST STYLE */}

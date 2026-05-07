@@ -1,6 +1,5 @@
-import type { FastifyRequest, FastifyReply, FastifyInstance } from "fastify"
+import type { FastifyRequest, FastifyReply } from "fastify"
 import { fromNodeHeaders } from "better-auth/node"
-import { auth } from "../lib/auth.js"
 import { eq } from "drizzle-orm"
 import { users } from "../db/schema/users.js"
 
@@ -8,7 +7,7 @@ export async function requireSession(
   request: FastifyRequest,
   reply: FastifyReply
 ) {
-  const session = await auth.api.getSession({
+  const session = await request.server.auth.api.getSession({
     headers: fromNodeHeaders(request.headers),
   })
   if (!session) {
@@ -16,11 +15,10 @@ export async function requireSession(
       error: { code: "UNAUTHORIZED", message: "Authentication required" },
     })
   }
-  request.session = session
+  request.session = session as typeof request.session
 
   // Check ban status per D-02: banned users get 403 on every authenticated request
-  const fastify = request.server as FastifyInstance & { db: any }
-  const result = await fastify.db
+  const result = await request.server.db
     .select({ banned: users.banned })
     .from(users)
     .where(eq(users.id, session.user.id))

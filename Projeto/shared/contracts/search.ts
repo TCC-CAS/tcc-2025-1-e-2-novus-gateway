@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { PaginationQuerySchema, PaginationMetaSchema } from "./common";
-import { PlayerSummarySchema } from "./players";
-import { TeamSummarySchema } from "./teams";
-import { PositionSchema } from "./players";
-import { TeamLevelSchema } from "./teams";
+import { PaginationQuerySchema, PaginationMetaSchema } from "./common.js";
+import { PlayerSummarySchema } from "./players.js";
+import { TeamSummarySchema } from "./teams.js";
+import { PositionSchema } from "./players.js";
+import { TeamLevelSchema } from "./teams.js";
 
 /** Search players query (teams use this) */
 export const SearchPlayersQuerySchema = PaginationQuerySchema.extend({

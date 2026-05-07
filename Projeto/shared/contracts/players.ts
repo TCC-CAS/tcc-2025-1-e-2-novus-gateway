@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { OptionalBrazilianPhoneSchema } from "./common";
+import { OptionalBrazilianPhoneSchema } from "./common.js";
 
 /** Position / role on the field */
 export const POSITIONS = [

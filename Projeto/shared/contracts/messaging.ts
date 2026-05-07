@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { PaginationMetaSchema } from "./common";
+import { PaginationMetaSchema } from "./common.js";
 
 /** Single message */
 export const MessageSchema = z.object({

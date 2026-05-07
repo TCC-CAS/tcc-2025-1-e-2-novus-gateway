@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Link } from "react-router";
-import { useAuth } from "~/lib/auth/auth-context";
+import { useAuth, useAuthActions } from "~/lib/auth/auth-context";
 import { usePlan } from "~/lib/plan";
 import { subscriptionApi } from "~/lib/api-client";
 import { Button } from "~/components/ui/button";
-import { getPlansForRole, isUnlimited } from "~shared/contracts";
+import { getPlansForRole, isUnlimited, PLAN_CONFIGS } from "~shared/contracts";
 import type { PlanConfig, PlanId } from "~shared/contracts";
 import {
   Check,
@@ -15,6 +15,7 @@ import {
   Crown,
   Star,
   ArrowLeft,
+  ArrowDown,
   MessageCircle,
   Search,
   Video,
@@ -26,6 +27,8 @@ import {
   Sparkles,
   Headphones,
   ChevronDown,
+  XCircle,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -177,27 +180,57 @@ const FAQ_ITEMS = [
 
 export default function Planos() {
   const { user, role } = useAuth();
+  const { setUser } = useAuthActions();
+  const { planId: effectivePlanId, usage, refreshUsage } = usePlan();
   const [view, setView] = useState<"player" | "team">(
     role === "team" ? "team" : "player"
   );
   const [upgrading, setUpgrading] = useState<string | null>(null);
+  const [canceling, setCanceling] = useState(false);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
 
   const plans = getPlansForRole(view);
   const features = view === "player" ? PLAYER_FEATURES : TEAM_FEATURES;
-  const currentPlanId = user?.planId ?? "free";
+  // effectivePlanId comes from usage response (subscriptions table), which is
+  // the server-side source of truth — updated immediately after any plan change.
+  const currentPlanId = effectivePlanId;
+  const isPaid = currentPlanId !== "free";
+  const isCanceled = usage?.cancelAtPeriodEnd ?? false;
+
+  const planLabel = PLAN_CONFIGS[currentPlanId]?.name ?? "LIVRE";
 
   const handleUpgrade = async (planId: PlanId) => {
     if (!user) return;
     setUpgrading(planId);
     try {
       await subscriptionApi.upgrade({ planId });
-      toast.success("Plano atualizado com sucesso!");
+      // Immediately update auth context so the user sees the change
+      setUser({ ...user, planId });
+      await refreshUsage();
+      toast.success(`Plano alterado para ${PLAN_CONFIGS[planId]?.name ?? planId}!`);
     } catch {
-      toast.error("Erro ao atualizar plano. Tente novamente.");
+      toast.error("Erro ao alterar plano. Tente novamente.");
     } finally {
       setUpgrading(null);
     }
+  };
+
+  const handleCancel = async () => {
+    if (!user) return;
+    setCanceling(true);
+    try {
+      await subscriptionApi.cancel();
+      await refreshUsage();
+      toast.success("Assinatura será cancelada ao final do período.");
+    } catch {
+      toast.error("Erro ao cancelar. Tente novamente.");
+    } finally {
+      setCanceling(false);
+    }
+  };
+
+  const handleDowngrade = async () => {
+    await handleUpgrade("free");
   };
 
   return (
@@ -262,6 +295,56 @@ export default function Planos() {
               A busca de jogadores é sempre por relevância, nunca por quem paga mais.
             </p>
           </div>
+
+          {/* Current subscription status — only for authenticated users */}
+          {user && (
+            <div className="mx-auto mb-12 max-w-3xl">
+              <div className={`border-4 p-6 ${isCanceled ? "border-amber-500 bg-amber-500/10" : "border-primary bg-primary/5"}`}>
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="font-bold text-sm uppercase tracking-widest text-muted-foreground">
+                      SEU PLANO ATUAL
+                    </p>
+                    <p className="mt-1 font-display text-3xl tracking-wide text-foreground">
+                      {planLabel}
+                    </p>
+                    {isCanceled && (
+                      <div className="mt-2 flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                        <AlertTriangle className="size-4" />
+                        <span className="text-sm font-bold uppercase tracking-widest">
+                          Cancelado — válido até {usage?.periodResetAt ? new Date(usage.periodResetAt).toLocaleDateString("pt-BR") : "o fim do período"}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  {isPaid && (
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      {!isCanceled && (
+                        <Button
+                          variant="outline"
+                          className="gap-2 rounded-none border-2 border-foreground font-bold uppercase tracking-widest hover:bg-foreground hover:text-background"
+                          onClick={handleCancel}
+                          disabled={canceling}
+                        >
+                          <XCircle className="size-4" />
+                          {canceling ? "CANCELANDO..." : "CANCELAR"}
+                        </Button>
+                      )}
+                      <Button
+                        variant="outline"
+                        className="gap-2 rounded-none border-2 border-foreground font-bold uppercase tracking-widest hover:bg-foreground hover:text-background"
+                        onClick={handleDowngrade}
+                        disabled={upgrading === "free"}
+                      >
+                        <ArrowDown className="size-4" />
+                        {upgrading === "free" ? "VOLTANDO..." : "VOLTAR AO GRÁTIS"}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Toggle */}
           <div className="mb-12 flex justify-center">
@@ -418,12 +501,26 @@ export default function Planos() {
                       </div>
                     ) : plan.price === 0 ? (
                       <Button
-                        asChild
-                        className="h-14 w-full rounded-none border-2 border-foreground bg-background font-display text-xl tracking-widest text-foreground transition-all hover:-translate-y-1 hover:bg-foreground hover:text-background hover:shadow-[4px_4px_0px_0px_var(--color-primary)] uppercase"
+                        className="h-14 w-full gap-2 rounded-none border-2 border-foreground bg-foreground text-background font-display text-xl tracking-widest transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_var(--color-primary)] uppercase"
+                        disabled={upgrading === "free"}
+                        onClick={() => {
+                          if (user && isPaid) {
+                            handleDowngrade();
+                          }
+                        }}
                       >
-                        <Link to={user ? "#" : "/cadastro"}>
-                          {user ? "PLANO ATUAL" : "COMEÇAR GRÁTIS"}
-                        </Link>
+                        {user && isPaid ? (
+                          <>
+                            <ArrowDown className="size-5" />
+                            {upgrading === "free" ? "VOLTANDO..." : "VOLTAR AO GRÁTIS"}
+                          </>
+                        ) : !user ? (
+                          <Link to="/cadastro" className="flex items-center gap-2">
+                            COMEÇAR GRÁTIS
+                          </Link>
+                        ) : (
+                          "PLANO ATUAL"
+                        )}
                       </Button>
                     ) : (
                       <Button

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { RoleSchema } from "./auth";
+import { RoleSchema } from "./auth.js";
 
 export const UserStatusSchema = z.enum(["active", "banned", "pending"]);
 export type UserStatus = z.infer<typeof UserStatusSchema>;

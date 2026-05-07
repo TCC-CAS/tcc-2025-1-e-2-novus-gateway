@@ -34,7 +34,7 @@ export default function Login() {
     try {
       const res = await authApi.login(data);
       const sessionUser = { ...res.user, planId: res.user.planId ?? "free" } as Parameters<typeof login>[0];
-      login(sessionUser, "");
+      login(sessionUser);
 
       let hasProfile = false;
       if (res.user.role === "admin") {

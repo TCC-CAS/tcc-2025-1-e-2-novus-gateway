@@ -10,7 +10,7 @@ export default fp(async (fastify) => {
   fastify.addHook("onClose", async () => {
     await client.end()
   })
-})
+}, { name: "db" })
 
 declare module "fastify" {
   interface FastifyInstance {

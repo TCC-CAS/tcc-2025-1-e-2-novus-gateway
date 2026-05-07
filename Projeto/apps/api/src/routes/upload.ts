@@ -5,18 +5,122 @@ import { eq } from "drizzle-orm"
 import { requireSession } from "../hooks/require-auth.js"
 import { ok } from "../lib/response.js"
 import { AppError } from "../lib/errors.js"
+import { ImageService, ImageValidationError } from "../lib/images/index.js"
 import { players } from "../db/schema/players.js"
 import { teams } from "../db/schema/teams.js"
-import { mkdir, writeFile } from "node:fs/promises"
-import { join, extname } from "node:path"
-import { randomUUID } from "node:crypto"
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"]
+import { mediaAssets } from "../db/schema/media-assets.js"
 
 const uploadRoutes: FastifyPluginAsync = async (fastify) => {
-  // POST /upload/avatar — upload profile photo/logo
+  const imageService = new ImageService(fastify.db)
+
+  const uploadRateLimit = {
+    config: {
+      rateLimit: {
+        max: parseInt(process.env.UPLOAD_RATE_LIMIT_MAX ?? "10", 10),
+        timeWindow: `${parseInt(process.env.UPLOAD_RATE_LIMIT_WINDOW_MINUTES ?? "60", 10)} minutes`,
+        keyGenerator: (request: import("fastify").FastifyRequest) => {
+          const session = (request as unknown as Record<string, unknown>).session as
+            | { user: { id: string } }
+            | undefined
+          return `upload:${session?.user.id ?? request.ip}`
+        },
+      },
+    },
+  }
+
+  // POST /upload/avatar — upload or replace player profile photo
   fastify.withTypeProvider<ZodTypeProvider>().post(
+    "/upload/avatar",
+    {
+      preHandler: [requireSession],
+      ...uploadRateLimit,
+    },
+    async (request, reply) => {
+      const userId = request.session!.user.id
+      const role = request.session!.user.role as "player" | "team"
+
+      if (role !== "player") {
+        throw new AppError(403, "WRONG_ROLE", "Only players can upload avatars")
+      }
+
+      const data = await request.file()
+      if (!data) {
+        throw new AppError(400, "NO_FILE", "No file uploaded")
+      }
+
+      const buffer = await data.toBuffer()
+
+      // Find existing avatar asset for cleanup
+      const [existing] = await fastify.db
+        .select({ id: mediaAssets.id })
+        .from(mediaAssets)
+        .where(eq(mediaAssets.ownerUserId, userId))
+
+      try {
+        const result = await imageService.uploadProfileImage(
+          buffer,
+          userId,
+          "player_avatar",
+          existing?.id
+        )
+
+        return reply.code(201).send(ok(result))
+      } catch (err) {
+        if (err instanceof ImageValidationError) {
+          throw new AppError(400, err.code, err.message)
+        }
+        throw err
+      }
+    }
+  )
+
+  // POST /upload/logo — upload or replace team logo
+  fastify.withTypeProvider<ZodTypeProvider>().post(
+    "/upload/logo",
+    {
+      preHandler: [requireSession],
+      ...uploadRateLimit,
+    },
+    async (request, reply) => {
+      const userId = request.session!.user.id
+      const role = request.session!.user.role as "player" | "team"
+
+      if (role !== "team") {
+        throw new AppError(403, "WRONG_ROLE", "Only teams can upload logos")
+      }
+
+      const data = await request.file()
+      if (!data) {
+        throw new AppError(400, "NO_FILE", "No file uploaded")
+      }
+
+      const buffer = await data.toBuffer()
+
+      const [existing] = await fastify.db
+        .select({ id: mediaAssets.id })
+        .from(mediaAssets)
+        .where(eq(mediaAssets.ownerUserId, userId))
+
+      try {
+        const result = await imageService.uploadProfileImage(
+          buffer,
+          userId,
+          "team_logo",
+          existing?.id
+        )
+
+        return reply.code(201).send(ok(result))
+      } catch (err) {
+        if (err instanceof ImageValidationError) {
+          throw new AppError(400, err.code, err.message)
+        }
+        throw err
+      }
+    }
+  )
+
+  // DELETE /upload/avatar — remove player avatar
+  fastify.withTypeProvider<ZodTypeProvider>().delete(
     "/upload/avatar",
     {
       preHandler: [requireSession],
@@ -25,50 +129,58 @@ const uploadRoutes: FastifyPluginAsync = async (fastify) => {
       const userId = request.session!.user.id
       const role = request.session!.user.role as "player" | "team"
 
-      const data = await request.file()
-      if (!data) {
-        throw new AppError(400, "NO_FILE", "No file uploaded")
+      if (role !== "player") {
+        throw new AppError(403, "WRONG_ROLE", "Only players can remove avatars")
       }
 
-      // Validate file type
-      if (!ALLOWED_TYPES.includes(data.mimetype)) {
-        throw new AppError(400, "INVALID_TYPE", "Only JPEG, PNG, and WebP images are allowed")
+      const [existing] = await fastify.db
+        .select({ id: mediaAssets.id })
+        .from(mediaAssets)
+        .where(eq(mediaAssets.ownerUserId, userId))
+
+      if (existing) {
+        await imageService.deleteAsset(existing.id, userId)
       }
 
-      // Validate file size
-      const buffer = await data.toBuffer()
-      if (buffer.length > MAX_FILE_SIZE) {
-        throw new AppError(400, "FILE_TOO_LARGE", "File must be under 5MB")
+      // Clear photoUrl on profile
+      await fastify.db
+        .update(players)
+        .set({ photoUrl: null, updatedAt: new Date() })
+        .where(eq(players.userId, userId))
+
+      return reply.code(200).send(ok({ removed: true }))
+    }
+  )
+
+  // DELETE /upload/logo — remove team logo
+  fastify.withTypeProvider<ZodTypeProvider>().delete(
+    "/upload/logo",
+    {
+      preHandler: [requireSession],
+    },
+    async (request, reply) => {
+      const userId = request.session!.user.id
+      const role = request.session!.user.role as "player" | "team"
+
+      if (role !== "team") {
+        throw new AppError(403, "WRONG_ROLE", "Only teams can remove logos")
       }
 
-      // Generate unique filename
-      const ext = extname(data.filename) || ".jpg"
-      const filename = `${randomUUID()}${ext}`
-      const uploadDir = join(process.cwd(), "uploads")
-      const filepath = join(uploadDir, filename)
+      const [existing] = await fastify.db
+        .select({ id: mediaAssets.id })
+        .from(mediaAssets)
+        .where(eq(mediaAssets.ownerUserId, userId))
 
-      // Ensure uploads directory exists
-      await mkdir(uploadDir, { recursive: true })
-
-      // Write file
-      await writeFile(filepath, buffer)
-
-      const url = `/uploads/${filename}`
-
-      // Update profile with new photo URL
-      if (role === "player") {
-        await fastify.db
-          .update(players)
-          .set({ photoUrl: url, updatedAt: new Date() })
-          .where(eq(players.userId, userId))
-      } else if (role === "team") {
-        await fastify.db
-          .update(teams)
-          .set({ logoUrl: url, updatedAt: new Date() })
-          .where(eq(teams.userId, userId))
+      if (existing) {
+        await imageService.deleteAsset(existing.id, userId)
       }
 
-      return reply.code(201).send(ok({ url }))
+      await fastify.db
+        .update(teams)
+        .set({ logoUrl: null, updatedAt: new Date() })
+        .where(eq(teams.userId, userId))
+
+      return reply.code(200).send(ok({ removed: true }))
     }
   )
 }

@@ -2,12 +2,13 @@ import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "~/lib/auth/auth-context";
-import { usePlan } from "~/lib/plan";
-import { PlanGate, UpsellCard } from "~/lib/plan/plan-gate";
-import { Button } from "~/components/ui/button";
-import { Skeleton } from "~/components/ui/skeleton";
-import { searchApi, teamsApi } from "~/lib/api-client";
-import type { PlayerSummary } from "~shared/contracts";
+import { usePlan } from "~/lib/plan"
+import { PlanGate, UpsellCard } from "~/lib/plan/plan-gate"
+import { Button } from "~/components/ui/button"
+import { Skeleton } from "~/components/ui/skeleton"
+import { searchApi, teamsApi } from "~/lib/api-client"
+import { PLAN_CONFIGS } from "~shared/contracts"
+import type { PlayerSummary } from "~shared/contracts"
 import {
   Users,
   ArrowRight,
@@ -17,10 +18,31 @@ import {
   MapPin,
   Sparkles,
   BarChart3,
+  Crown,
 } from "lucide-react";
 
 export function meta() {
   return [{ title: "Início - VárzeaPro" }];
+}
+
+function PlanBadge() {
+  const { planId } = usePlan()
+  const config = PLAN_CONFIGS[planId]
+  const isPaid = planId !== "free"
+
+  return (
+    <Link
+      to="/planos"
+      className={`flex items-center gap-2 border-2 px-4 py-2 font-display text-sm tracking-widest uppercase transition-all hover:-translate-y-0.5 ${
+        isPaid
+          ? "border-primary bg-primary text-primary-foreground hover:shadow-[3px_3px_0px_0px_var(--color-foreground)]"
+          : "border-foreground/30 text-muted-foreground hover:border-primary hover:text-primary"
+      }`}
+    >
+      {isPaid && <Crown className="size-4" />}
+      {config?.name ?? "LIVRE"}
+    </Link>
+  )
 }
 
 export default function TimeHome() {
@@ -69,6 +91,7 @@ export default function TimeHome() {
             MONTE SEU ELENCO E VÁ PRO JOGO. O MERCADO TÁ ABERTO.
           </p>
         </div>
+        <PlanBadge />
       </div>
 
       {/* Profile completion banner - BRUTALIST STYLE */}

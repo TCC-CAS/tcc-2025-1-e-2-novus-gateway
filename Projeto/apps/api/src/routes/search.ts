@@ -1,13 +1,14 @@
 import type { FastifyPluginAsync } from "fastify"
 import { ZodTypeProvider } from "fastify-type-provider-zod"
+import { z } from "zod"
 import { and, eq, ne, ilike, desc, sql, count } from "drizzle-orm"
 import { requireRole } from "../hooks/require-auth.js"
 import { list } from "../lib/response.js"
 import { players } from "../db/schema/players.js"
 import { teams } from "../db/schema/teams.js"
 import { subscriptions } from "../db/schema/subscriptions.js"
-import { SearchPlayersQuerySchema, SearchTeamsQuerySchema } from "../../../../apps/web/shared/contracts/search.js"
-import { getPlanLimits } from "../../../../apps/web/shared/contracts/subscription.js"
+import { SearchPlayersQuerySchema, SearchTeamsQuerySchema } from "../../../../shared/contracts/search.js"
+import { getPlanLimits } from "../../../../shared/contracts/subscription.js"
 
 const searchRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /players — authenticated team users search for players
@@ -20,7 +21,7 @@ const searchRoutes: FastifyPluginAsync = async (fastify) => {
     async (request, reply) => {
       const userId = request.session!.user.id
       const role = request.session!.user.role
-      const { page = 1, pageSize = 10, skills, availability, minAge, maxAge } = request.query
+      const { page = 1, pageSize = 10, skills, availability, minAge, maxAge } = request.query as z.infer<typeof SearchPlayersQuerySchema>
 
       // Plan limit resolution
       const sub = await fastify.db.query.subscriptions.findFirst({
@@ -43,9 +44,9 @@ const searchRoutes: FastifyPluginAsync = async (fastify) => {
 
       // Skills filter (D-03, OR/ANY logic): comma-separated
       if (skills) {
-        const skillArray = skills.split(",").map((s) => s.trim()).filter(Boolean)
+        const skillArray = skills.split(",").map((s: string) => s.trim()).filter(Boolean)
         if (skillArray.length > 0) {
-          filters.push(sql`${players.skills} && ARRAY[${sql.join(skillArray.map((s) => sql`${s}`), sql`, `)}]::text[]` as unknown as ReturnType<typeof sql>)
+          filters.push(sql`${players.skills} && ARRAY[${sql.join(skillArray.map((s: string) => sql`${s}`), sql`, `)}]::text[]` as unknown as ReturnType<typeof sql>)
         }
       }
 
@@ -101,7 +102,7 @@ const searchRoutes: FastifyPluginAsync = async (fastify) => {
     async (request, reply) => {
       const userId = request.session!.user.id
       const role = request.session!.user.role
-      const { page = 1, pageSize = 10, level, region, openPosition } = request.query
+      const { page = 1, pageSize = 10, level, region, openPosition } = request.query as z.infer<typeof SearchTeamsQuerySchema>
 
       // Plan limit resolution
       const sub = await fastify.db.query.subscriptions.findFirst({

@@ -6,7 +6,7 @@ import { nanoid } from "nanoid"
 import { requireSession, requireRole } from "../hooks/require-auth.js"
 import { ok } from "../lib/response.js"
 import { players } from "../db/schema/index.js"
-import { UpsertPlayerProfileRequestSchema } from "../../../../apps/web/shared/contracts/players.js"
+import { UpsertPlayerProfileRequestSchema } from "../../../../shared/contracts/players.js"
 
 const playersRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /me — authenticated player only
@@ -40,7 +40,7 @@ const playersRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request, reply) => {
       const userId = request.session!.user.id
-      const fields = request.body
+      const fields = request.body as z.infer<typeof UpsertPlayerProfileRequestSchema>
       const [result] = await fastify.db
         .insert(players)
         .values({

@@ -48,7 +48,13 @@ export function registerErrorHandler(fastify: FastifyInstance) {
         })
       }
 
-      fastify.log.error(error)
+      // In production, log minimal info to avoid leaking stack traces.
+      // In development/test, log the full error for debugging.
+      if (process.env.NODE_ENV === "production") {
+        fastify.log.error({ code: "INTERNAL_SERVER_ERROR", message: error.message })
+      } else {
+        fastify.log.error(error)
+      }
       return reply.status(500).send({
         error: {
           code: "INTERNAL_SERVER_ERROR",

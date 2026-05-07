@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "~/lib/auth/auth-context";
 import { playersApi, messagingApi, favoritesApi } from "~/lib/api-client";
 import { canSearchPlayers } from "~/lib/auth";
+import { OptimizedImage } from "~/components/optimized-image";
 import { Button } from "~/components/ui/button";
 import { MessageCircle, User, MapPin, Activity, Trophy, Heart } from "lucide-react";
 import { toast } from "sonner";
@@ -40,7 +41,7 @@ export default function JogadorPublicProfile() {
     enabled: !!user,
   });
 
-  const isFavorited = !!favorites?.some((f) => f.targetUser.id === profile?.userId);
+  const isFavorited = !!favorites?.data?.some((f) => f.targetUser.id === profile?.userId);
   const isOwnProfile = !!user && !!profile && user.id === profile.userId;
 
   const favoriteMutation = useMutation({
@@ -48,12 +49,47 @@ export default function JogadorPublicProfile() {
       isFavorited
         ? favoritesApi.remove(profile!.userId)
         : favoritesApi.add(profile!.userId),
+    onMutate: async () => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["favorites"] });
+
+      // Snapshot previous value
+      const previous = queryClient.getQueryData(["favorites"]);
+
+      // Optimistically update
+      queryClient.setQueryData(["favorites"], (old: typeof favorites) => {
+        if (!old) return old;
+        const newData = isFavorited
+          ? old.data.filter((f) => f.targetUser.id !== profile?.userId)
+          : [
+              {
+                id: "optimistic",
+                targetUser: {
+                  id: profile!.userId,
+                  name: profile!.name,
+                  role: "player" as const,
+                  avatarUrl: profile!.photoUrl ?? null,
+                  profileId: profile!.id,
+                },
+                createdAt: new Date().toISOString(),
+              },
+              ...old.data,
+            ];
+        return { ...old, data: newData, meta: { ...old.meta, total: old.meta.total + (isFavorited ? -1 : 1) } };
+      });
+
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      // Rollback on error
+      queryClient.setQueryData(["favorites"], context?.previous);
+      toast.error("Erro ao atualizar favoritos.");
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["favorites"] });
       toast.success(isFavorited ? "Favorito removido." : "Jogador favoritado!");
     },
-    onError: () => {
-      toast.error("Erro ao atualizar favoritos.");
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["favorites"] });
     },
   });
 
@@ -87,9 +123,14 @@ export default function JogadorPublicProfile() {
           <div className="absolute bottom-0 right-0 h-1/2 w-full bg-linear-to-t from-background/40 to-transparent" />
 
           <div className="relative z-10 flex flex-col items-center text-center gap-6 sm:flex-row sm:text-left sm:gap-10">
-            <div className="flex size-32 shrink-0 items-center justify-center border-4 border-foreground bg-background shadow-[6px_6px_0px_0px_var(--color-foreground)] dark:shadow-[6px_6px_0px_0px_var(--color-foreground)] sm:size-40">
-              <User className="size-16 text-primary sm:size-24" />
-            </div>
+            <OptimizedImage
+              src={profile.photoUrl}
+              alt={`Foto de ${profile.name}`}
+              size="xl"
+              rounded={false}
+              fallback={<User className="size-16 text-primary sm:size-24" />}
+              className="shadow-[6px_6px_0px_0px_var(--color-foreground)] dark:shadow-[6px_6px_0px_0px_var(--color-foreground)]"
+            />
 
             <div>
               <h1 className="font-display text-5xl tracking-wide text-primary-foreground uppercase sm:text-7xl leading-[0.9]">

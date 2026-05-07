@@ -1,5 +1,4 @@
 import type { SessionUser } from "~shared/contracts";
-import { getAuthToken } from "~/lib/api-client";
 
 const SESSION_STORAGE_KEY = "varzeapro_user";
 
@@ -24,8 +23,8 @@ export function clearStoredUser(): void {
   sessionStorage.removeItem(SESSION_STORAGE_KEY);
 }
 
-/** Check if we have a valid session (token + user in storage). */
+/** Check if we have user data in storage (cookie-based auth, no token in JS). */
 export function hasSession(): boolean {
-  return !!getAuthToken() && !!getStoredUser();
+  return !!getStoredUser();
 }
 

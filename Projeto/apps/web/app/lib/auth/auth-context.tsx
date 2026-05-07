@@ -2,7 +2,6 @@
 
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import type { SessionUser } from "~shared/contracts";
-import * as api from "~/lib/api-client";
 import {
   getRole,
   getHomeForRole,
@@ -27,7 +26,7 @@ type AuthState = {
 };
 
 type AuthActions = {
-  login: (user: SessionUser, token: string) => void;
+  login: (user: SessionUser) => void;
   logout: () => void;
   setUser: (user: SessionUser | null) => void;
 };
@@ -41,16 +40,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const role = useMemo(() => getRole(user), [user]);
 
-  const login = useCallback((u: SessionUser, token: string) => {
+  const login = useCallback((u: SessionUser) => {
     setStoredUser(u);
-    api.setAuthToken(token);
-    setSessionCookie(u, token);
+    setSessionCookie(u);
     setUserState(u);
   }, []);
 
   const logout = useCallback(() => {
     clearStoredUser();
-    api.clearAuthToken();
     clearSessionCookie();
     setUserState(null);
   }, []);

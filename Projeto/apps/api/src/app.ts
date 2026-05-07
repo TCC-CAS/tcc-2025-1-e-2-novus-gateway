@@ -1,7 +1,5 @@
 import Fastify from "fastify"
 import { serializerCompiler, validatorCompiler, ZodTypeProvider } from "fastify-type-provider-zod"
-import fastifyStatic from "@fastify/static"
-import { join } from "node:path"
 import { registerErrorHandler } from "./lib/errors.js"
 import { requireSession, requireRole } from "./hooks/require-auth.js"
 
@@ -30,18 +28,23 @@ export async function buildApp() {
   await fastify.register(import("./plugins/auth.js"))
   await fastify.register(import("./plugins/socket-io.js"))
 
-  // Serve uploaded files statically
-  await fastify.register(fastifyStatic, {
-    root: join(process.cwd(), "uploads"),
-    prefix: "/uploads/",
-  })
-
   // Multipart support for file uploads
   await fastify.register(import("@fastify/multipart"), {
     limits: { fileSize: 5 * 1024 * 1024 },
   })
 
   registerErrorHandler(fastify)
+
+  // Cache-Control headers — short cache for profile data, no-store for authenticated
+  fastify.addHook("onSend", async (_request, reply) => {
+    const route = reply.request.routeOptions.url ?? ""
+    // Public profile data — cache briefly
+    if (route.startsWith("/api/players") || route.startsWith("/api/teams") || route.startsWith("/api/search")) {
+      reply.header("Cache-Control", "private, max-age=30")
+    } else {
+      reply.header("Cache-Control", "no-store")
+    }
+  })
 
   await fastify.register(import("./routes/health.js"), { prefix: "/health" })
   await fastify.register(import("./routes/players.js"), { prefix: "/api/players" })

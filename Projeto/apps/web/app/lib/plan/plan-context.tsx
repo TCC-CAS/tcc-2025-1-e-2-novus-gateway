@@ -48,7 +48,11 @@ export function PlanProvider({ children }: { children: React.ReactNode }) {
   const [usage, setUsage] = useState<Usage | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const planId: PlanId = (user?.planId as PlanId) ?? "free";
+  // Use planId from usage response (source of truth: subscriptions table) with
+  // fallback to user.planId from auth session. After any plan change, the usage
+  // endpoint returns the correct planId immediately, even before the auth session
+  // cache refreshes.
+  const planId: PlanId = (usage?.planId as PlanId) ?? (user?.planId as PlanId) ?? "free";
   const effectiveRole = role === "admin" ? "player" : (role ?? "player");
   const limits = useMemo(
     () => getPlanLimits(planId, effectiveRole),

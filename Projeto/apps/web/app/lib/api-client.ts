@@ -22,11 +22,12 @@ async function request<T>(
       if (v !== undefined && v !== "") url.searchParams.set(k, String(v));
     });
   }
+  const hasBody = !!init.body;
   const res = await fetch(url.toString(), {
     ...init,
     credentials: "include",
     headers: {
-      "Content-Type": "application/json",
+      ...(hasBody ? { "Content-Type": "application/json" } : {}),
       ...init.headers,
     },
   });
@@ -58,27 +59,6 @@ export class ApiError extends Error {
   }
 }
 
-/** Get auth token from storage (sessionStorage for mock/dev) */
-export function getAuthToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return sessionStorage.getItem("varzeapro_token");
-}
-
-export function setAuthToken(token: string): void {
-  if (typeof window === "undefined") return;
-  sessionStorage.setItem("varzeapro_token", token);
-}
-
-export function clearAuthToken(): void {
-  if (typeof window === "undefined") return;
-  sessionStorage.removeItem("varzeapro_token");
-}
-
-function authHeaders(): HeadersInit {
-  const token = getAuthToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
 type BetterAuthUser = { id: string; email: string; name: string; role: string; planId?: string }
 
 // --- Auth ---
@@ -104,18 +84,14 @@ export const authApi = {
 export const playersApi = {
   getMe: () =>
     request<import("~shared/contracts").PlayerProfile>(
-      "/players/me",
-      { headers: authHeaders() }
-    ),
+      "/players/me"),
   getById: (id: string) =>
     request<import("~shared/contracts").PlayerProfile>(
-      `/players/${id}`,
-      { headers: authHeaders() }
-    ),
+      `/players/${id}`),
   upsert: (body: import("~shared/contracts").UpsertPlayerProfileRequest) =>
     request<import("~shared/contracts").PlayerProfile>(
       "/players/me",
-      { method: "PUT", body: JSON.stringify(body), headers: authHeaders() }
+      { method: "PUT", body: JSON.stringify(body)}
     ),
 };
 
@@ -123,18 +99,14 @@ export const playersApi = {
 export const teamsApi = {
   getMe: () =>
     request<import("~shared/contracts").TeamProfile>(
-      "/teams/me",
-      { headers: authHeaders() }
-    ),
+      "/teams/me"),
   getById: (id: string) =>
     request<import("~shared/contracts").TeamProfile>(
-      `/teams/${id}`,
-      { headers: authHeaders() }
-    ),
+      `/teams/${id}`),
   upsert: (body: import("~shared/contracts").UpsertTeamProfileRequest) =>
     request<import("~shared/contracts").TeamProfile>(
       "/teams/me",
-      { method: "PUT", body: JSON.stringify(body), headers: authHeaders() }
+      { method: "PUT", body: JSON.stringify(body)}
     ),
 };
 
@@ -143,12 +115,12 @@ export const searchApi = {
   players: (params: import("~shared/contracts").SearchPlayersQuery) =>
     request<import("~shared/contracts").SearchPlayersResponse>(
       "/search/players",
-      { params: params as Record<string, string | number | undefined>, headers: authHeaders() }
+      { params: params as Record<string, string | number | undefined>}
     ),
   teams: (params: import("~shared/contracts").SearchTeamsQuery) =>
     request<import("~shared/contracts").SearchTeamsResponse>(
       "/search/teams",
-      { params: params as Record<string, string | number | undefined>, headers: authHeaders() }
+      { params: params as Record<string, string | number | undefined>}
     ),
 };
 
@@ -156,23 +128,21 @@ export const searchApi = {
 export const messagingApi = {
   listConversations: () =>
     request<import("~shared/contracts").ListConversationsResponse>(
-      "/conversations",
-      { headers: authHeaders() }
-    ),
+      "/conversations"),
   getMessages: (conversationId: string, params?: { page?: number; pageSize?: number }) =>
     request<import("~shared/contracts").GetMessagesResponse>(
       `/conversations/${conversationId}/messages`,
-      { params, headers: authHeaders() }
+      { params}
     ),
   createConversation: (body: import("~shared/contracts").CreateConversationRequest) =>
     request<import("~shared/contracts").Conversation>(
       "/conversations",
-      { method: "POST", body: JSON.stringify(body), headers: authHeaders() }
+      { method: "POST", body: JSON.stringify(body)}
     ),
   sendMessage: (conversationId: string, body: import("~shared/contracts").SendMessageRequest) =>
     request<import("~shared/contracts").Message>(
       `/conversations/${conversationId}/messages`,
-      { method: "POST", body: JSON.stringify(body), headers: authHeaders() }
+      { method: "POST", body: JSON.stringify(body)}
     ),
 };
 
@@ -181,17 +151,15 @@ export const adminUsersApi = {
   list: (params?: import("~shared/contracts").ListUsersQuery) =>
     request<import("~shared/contracts").ListUsersResponse>(
       "/admin/users",
-      { params: params as Record<string, string | number | undefined>, headers: authHeaders() }
+      { params: params as Record<string, string | number | undefined>}
     ),
   getById: (id: string) =>
     request<import("~shared/contracts").UserDetail>(
-      `/admin/users/${id}`,
-      { headers: authHeaders() }
-    ),
+      `/admin/users/${id}`),
   ban: (id: string, body?: import("~shared/contracts").BanUserRequest) =>
     request<void>(
       `/admin/users/${id}/ban`,
-      { method: "POST", body: body ? JSON.stringify(body) : undefined, headers: authHeaders() }
+      { method: "POST", body: body ? JSON.stringify(body) : undefined}
     ),
 };
 
@@ -199,13 +167,16 @@ export const adminUsersApi = {
 export const subscriptionApi = {
   getUsage: () =>
     request<import("~shared/contracts").Usage>(
-      "/subscription/usage",
-      { headers: authHeaders() }
-    ),
+      "/subscription/usage"),
   upgrade: (body: { planId: string }) =>
     request<{ success: boolean; planId: string; message: string }>(
       "/subscription/upgrade",
-      { method: "POST", body: JSON.stringify(body), headers: authHeaders() }
+      { method: "POST", body: JSON.stringify(body)}
+    ),
+  cancel: () =>
+    request<{ success: boolean; message: string; planId: string; currentPeriodEnd: string | null }>(
+      "/subscription/cancel",
+      { method: "POST" }
     ),
 };
 
@@ -214,7 +185,7 @@ export const reportApi = {
   create: (body: import("~shared/contracts").CreateReportRequest) =>
     request<import("~shared/contracts").CreateReportResponse>(
       "/reports",
-      { method: "POST", body: JSON.stringify(body), headers: authHeaders() }
+      { method: "POST", body: JSON.stringify(body)}
     ),
 };
 
@@ -223,62 +194,85 @@ export const adminModerationApi = {
   listReports: (params?: import("~shared/contracts").ListReportsQuery) =>
     request<import("~shared/contracts").ListReportsResponse>(
       "/admin/moderation/reports",
-      { params: params as Record<string, string | number | undefined>, headers: authHeaders() }
+      { params: params as Record<string, string | number | undefined>}
     ),
   moderate: (reportId: string, body: import("~shared/contracts").ModerateReportRequest) =>
     request<void>(
       `/admin/moderation/reports/${reportId}`,
-      { method: "POST", body: JSON.stringify(body), headers: authHeaders() }
+      { method: "POST", body: JSON.stringify(body)}
     ),
 };
 
 // --- Favorites ---
-type FavoriteItem = {
-  id: string;
-  targetUser: {
-    id: string;
-    name: string;
-    role: string;
-    avatarUrl: string | null;
-    profileId: string | null;
-  };
-  createdAt: string;
-};
-
 export const favoritesApi = {
-  list: () =>
-    request<FavoriteItem[]>(
+  list: (params?: { page?: number; pageSize?: number }) =>
+    request<import("~shared/contracts").ListFavoritesResponse>(
       "/favorites",
-      { headers: authHeaders() }
+      { params: params as Record<string, string | number | undefined>}
     ),
   add: (targetUserId: string) =>
-    request<{ id: string; favorited: boolean }>(
+    request<import("~shared/contracts").FavoriteActionResponse>(
       "/favorites",
-      { method: "POST", body: JSON.stringify({ targetUserId }), headers: authHeaders() }
+      { method: "POST", body: JSON.stringify({ targetUserId })}
     ),
   remove: (targetUserId: string) =>
-    request<{ favorited: boolean }>(
+    request<import("~shared/contracts").UnfavoriteActionResponse>(
       `/favorites/${targetUserId}`,
-      { method: "DELETE", headers: authHeaders() }
+      { method: "DELETE"}
     ),
 };
 
 // --- Upload ---
+
+export type UploadImageResult = {
+  assetId: string;
+  thumbnailUrl: string;
+  mediumUrl: string;
+  originalUrl: string;
+  sizeBytes: number;
+  width: number;
+  height: number;
+};
+
+async function uploadFile(endpoint: string, file: File): Promise<UploadImageResult> {
+  const base = BASE_URL.startsWith("http") ? BASE_URL : `${window.location.origin}${BASE_URL}`;
+  const formData = new FormData();
+  formData.append("file", file);
+  const res = await fetch(`${base.replace(/\/$/, "")}${endpoint}`, {
+    method: "POST",
+    body: formData,
+    credentials: "include",
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new ApiError(
+      res.status,
+      body?.error?.code ?? "UPLOAD_FAILED",
+      body?.error?.message ?? "Upload failed"
+    );
+  }
+  return (body as { data: UploadImageResult }).data;
+}
+
+async function deleteUpload(endpoint: string): Promise<void> {
+  const base = BASE_URL.startsWith("http") ? BASE_URL : `${window.location.origin}${BASE_URL}`;
+  const res = await fetch(`${base.replace(/\/$/, "")}${endpoint}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new ApiError(
+      res.status,
+      body?.error?.code ?? "DELETE_FAILED",
+      body?.error?.message ?? "Delete failed"
+    );
+  }
+}
+
 export const uploadApi = {
-  avatar: async (file: File) => {
-    const base = BASE_URL.startsWith("http") ? BASE_URL : `${window.location.origin}${BASE_URL}`;
-    const formData = new FormData();
-    formData.append("file", file);
-    const res = await fetch(`${base.replace(/\/$/, "")}/upload/avatar`, {
-      method: "POST",
-      body: formData,
-      credentials: "include",
-    });
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      throw new ApiError(res.status, body?.error?.code ?? "UPLOAD_FAILED", body?.error?.message ?? "Upload failed");
-    }
-    const body = await res.json();
-    return (body as { data: { url: string } }).data;
-  },
+  avatar: (file: File) => uploadFile("/upload/avatar", file),
+  logo: (file: File) => uploadFile("/upload/logo", file),
+  deleteAvatar: () => deleteUpload("/upload/avatar"),
+  deleteLogo: () => deleteUpload("/upload/logo"),
 };

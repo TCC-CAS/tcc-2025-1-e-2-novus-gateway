@@ -66,7 +66,7 @@ export default function Cadastro() {
         role: data.role,
       });
       const sessionUser = { ...res.user, planId: res.user.planId ?? "free" } as Parameters<typeof login>[0];
-      login(sessionUser, "");
+      login(sessionUser);
       toast.success("Conta criada! Complete seu perfil.");
       navigate("/onboarding", { replace: true });
     } catch (e) {

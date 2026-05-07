@@ -20,10 +20,10 @@ export function getSessionFromRequest(request: Request): SessionUser | null {
   }
 }
 
-/** Set session cookie (call from client after login). */
-export function setSessionCookie(user: SessionUser, token: string): void {
+/** Set session cookie with user info (call from client after login). No token — auth is cookie-based. */
+export function setSessionCookie(user: SessionUser): void {
   if (typeof document === "undefined") return;
-  const value = encodeURIComponent(JSON.stringify({ user, token }));
+  const value = encodeURIComponent(JSON.stringify({ user }));
   document.cookie = `${COOKIE_NAME}=${value}; path=/; max-age=604800; samesite=lax`;
 }
 

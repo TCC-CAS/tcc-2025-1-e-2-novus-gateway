@@ -10,6 +10,24 @@ const EnvSchema = z.object({
   BETTER_AUTH_SECRET: z.string().min(32),
   BETTER_AUTH_URL: z.string().default("http://localhost:3000"),
   CORS_ORIGIN: z.string().default("http://localhost:5173"),
+
+  // S3-compatible storage
+  S3_ENDPOINT: z.string().default("https://s3.amazonaws.com"),
+  S3_REGION: z.string().default("us-east-1"),
+  S3_BUCKET: z.string().default("varzeapro-media"),
+  S3_ACCESS_KEY_ID: z.string().default(""),
+  S3_SECRET_ACCESS_KEY: z.string().default(""),
+  S3_PUBLIC_URL: z.string().default(""),
+  S3_USE_PATH_STYLE: z.coerce.boolean().default(false),
+
+  // Image processing
+  IMAGE_MAX_SIZE_MB: z.coerce.number().default(10),
+  IMAGE_MAX_DIMENSION: z.coerce.number().default(4000),
+  PRESIGNED_URL_TTL_SECONDS: z.coerce.number().default(3600),
+
+  // Upload rate limiting
+  UPLOAD_RATE_LIMIT_MAX: z.coerce.number().default(10),
+  UPLOAD_RATE_LIMIT_WINDOW_MINUTES: z.coerce.number().default(60),
 })
 
 export type Env = z.infer<typeof EnvSchema>

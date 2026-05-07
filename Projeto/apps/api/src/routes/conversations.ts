@@ -14,7 +14,7 @@ import { ok } from "../lib/response.js"
 import { AppError } from "../lib/errors.js"
 import {
   getPlanLimits,
-} from "../../../../apps/web/shared/contracts/subscription.js"
+} from "../../../../shared/contracts/subscription.js"
 
 const conversationRoutes: FastifyPluginAsync = async (fastify) => {
   // POST /conversations — start or retrieve existing conversation (MSG-01, D-09, D-10)

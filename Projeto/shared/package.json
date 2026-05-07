@@ -1,0 +1,14 @@
+{
+  "name": "@varzeapro/shared",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./contracts/index.ts",
+  "types": "./contracts/index.ts",
+  "exports": {
+    ".": "./contracts/index.ts",
+    "./*": "./contracts/*.ts"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
+  }
+}

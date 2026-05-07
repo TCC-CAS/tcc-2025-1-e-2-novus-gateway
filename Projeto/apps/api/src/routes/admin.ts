@@ -12,11 +12,11 @@ import { teams } from "../db/schema/teams.js"
 import { messages } from "../db/schema/messages.js"
 import {
   ListUsersQuerySchema,
-} from "../../../../apps/web/shared/contracts/users.js"
+} from "../../../../shared/contracts/users.js"
 import {
   ListReportsQuerySchema,
   ModerateReportRequestSchema,
-} from "../../../../apps/web/shared/contracts/moderation.js"
+} from "../../../../shared/contracts/moderation.js"
 
 const adminRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /users — list users with filters and pagination (ADM-01, D-12, D-13, D-14)
@@ -27,7 +27,7 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
       schema: { querystring: ListUsersQuerySchema },
     },
     async (request, reply) => {
-      const { page, pageSize, status, role, search } = request.query
+      const { page, pageSize, status, role, search } = request.query as z.infer<typeof ListUsersQuerySchema>
       const offset = Math.max(0, (page - 1) * pageSize)
 
       const whereClause = and(
@@ -225,7 +225,7 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
       schema: { querystring: ListReportsQuerySchema },
     },
     async (request, reply) => {
-      const { page, pageSize, status } = request.query
+      const { page, pageSize, status } = request.query as z.infer<typeof ListReportsQuerySchema>
       const offset = Math.max(0, (page - 1) * pageSize)
 
       const whereClause = status ? eq(moderationReports.status, status) : undefined
@@ -279,7 +279,7 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request, reply) => {
       const { id } = request.params
-      const { action, note } = request.body
+      const { action, note } = request.body as z.infer<typeof ModerateReportRequestSchema>
       const adminId = request.session!.user.id
 
       // Fetch report

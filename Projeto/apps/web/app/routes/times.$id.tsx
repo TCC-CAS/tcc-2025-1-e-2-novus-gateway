@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "~/lib/auth/auth-context";
 import { teamsApi, messagingApi, favoritesApi } from "~/lib/api-client";
 import { canSearchTeams } from "~/lib/auth";
+import { OptimizedImage } from "~/components/optimized-image";
 import { Button } from "~/components/ui/button";
 import {
   MessageCircle,
@@ -49,7 +50,7 @@ export default function TimePublicProfile() {
     enabled: !!user,
   });
 
-  const isFavorited = !!favorites?.some((f) => f.targetUser.id === profile?.userId);
+  const isFavorited = !!favorites?.data?.some((f) => f.targetUser.id === profile?.userId);
   const isOwnProfile = !!user && !!profile && user.id === profile.userId;
 
   const favoriteMutation = useMutation({
@@ -57,12 +58,43 @@ export default function TimePublicProfile() {
       isFavorited
         ? favoritesApi.remove(profile!.userId)
         : favoritesApi.add(profile!.userId),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ["favorites"] });
+
+      const previous = queryClient.getQueryData(["favorites"]);
+
+      queryClient.setQueryData(["favorites"], (old: typeof favorites) => {
+        if (!old) return old;
+        const newData = isFavorited
+          ? old.data.filter((f) => f.targetUser.id !== profile?.userId)
+          : [
+              {
+                id: "optimistic",
+                targetUser: {
+                  id: profile!.userId,
+                  name: profile!.name,
+                  role: "team" as const,
+                  avatarUrl: profile!.logoUrl ?? null,
+                  profileId: profile!.id,
+                },
+                createdAt: new Date().toISOString(),
+              },
+              ...old.data,
+            ];
+        return { ...old, data: newData, meta: { ...old.meta, total: old.meta.total + (isFavorited ? -1 : 1) } };
+      });
+
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      queryClient.setQueryData(["favorites"], context?.previous);
+      toast.error("Erro ao atualizar favoritos.");
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["favorites"] });
       toast.success(isFavorited ? "Favorito removido." : "Time favoritado!");
     },
-    onError: () => {
-      toast.error("Erro ao atualizar favoritos.");
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["favorites"] });
     },
   });
 
@@ -86,9 +118,14 @@ export default function TimePublicProfile() {
         <div className="border-b-4 border-foreground p-8 sm:p-12 relative">
           <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-8">
-              <div className="flex size-32 shrink-0 items-center justify-center border-4 border-foreground bg-primary shadow-[6px_6px_0px_0px_var(--color-foreground)] dark:shadow-[6px_6px_0px_0px_var(--color-foreground)] sm:size-48">
-                <Shield className="size-20 text-foreground sm:size-28" />
-              </div>
+              <OptimizedImage
+                src={profile.logoUrl}
+                alt={`Logo do ${profile.name}`}
+                size="xl"
+                rounded={false}
+                fallback={<Shield className="size-20 text-foreground sm:size-28" />}
+                className="shadow-[6px_6px_0px_0px_var(--color-foreground)] dark:shadow-[6px_6px_0px_0px_var(--color-foreground)] bg-primary"
+              />
 
               <div className="text-center sm:text-left pt-2 sm:pt-4">
                 <h1 className="font-display text-5xl tracking-wide text-foreground uppercase sm:text-7xl leading-[0.9]">

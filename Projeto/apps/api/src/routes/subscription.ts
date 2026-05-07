@@ -6,13 +6,15 @@ import { nanoid } from "nanoid"
 import { requireSession } from "../hooks/require-auth.js"
 import { ok } from "../lib/response.js"
 import { subscriptions } from "../db/schema/subscriptions.js"
+import { users } from "../db/schema/users.js"
 import { conversations } from "../db/schema/conversations.js"
+import { favorites } from "../db/schema/favorites.js"
 import { players } from "../db/schema/players.js"
 import { teams } from "../db/schema/teams.js"
 import {
   PlanIdSchema,
   getPlanLimits,
-} from "../../../../apps/web/shared/contracts/subscription.js"
+} from "../../../../shared/contracts/subscription.js"
 
 const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /usage — authenticated users get plan + usage info (D-15, D-16, D-17)
@@ -71,10 +73,17 @@ const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
         openPositionsUsed = teamRow?.positions?.length ?? 0
       }
 
-      // Count favorites (placeholder until favorites feature is built)
-      const favoritesUsed = 0
+      // Count actual favorites
+      const [favRow] = await fastify.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(favorites)
+        .where(eq(favorites.userId, userId))
+      const favoritesUsed = favRow?.count ?? 0
 
       return ok({
+        planId: sub.planId,
+        status: sub.status,
+        cancelAtPeriodEnd: sub.cancelAtPeriodEnd,
         conversationsUsed,
         conversationsLimit: limits.conversations,
         searchResultsLimit: limits.searchResults,
@@ -113,39 +122,94 @@ const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
         })
       }
 
-      // D-19: Upsert — create row if not exists, update planId in-place (no history)
+      // D-19: Upsert subscription and update users.planId in a transaction
       const now = new Date()
       const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
-      const [result] = await fastify.db
-        .insert(subscriptions)
-        .values({
-          id: nanoid(),
-          userId,
-          planId,
-          status: "active",
-          currentPeriodStart: now,
-          currentPeriodEnd: periodEnd,
-          cancelAtPeriodEnd: false,
-          createdAt: now,
-          updatedAt: now,
-        })
-        .onConflictDoUpdate({
-          target: subscriptions.userId,
-          set: {
+
+      const result = await fastify.db.transaction(async (tx) => {
+        const [sub] = await tx
+          .insert(subscriptions)
+          .values({
+            id: nanoid(),
+            userId,
             planId,
             status: "active",
             currentPeriodStart: now,
             currentPeriodEnd: periodEnd,
+            cancelAtPeriodEnd: false,
+            createdAt: now,
             updatedAt: now,
-          },
-        })
-        .returning()
+          })
+          .onConflictDoUpdate({
+            target: subscriptions.userId,
+            set: {
+              planId,
+              status: "active",
+              currentPeriodStart: now,
+              currentPeriodEnd: periodEnd,
+              cancelAtPeriodEnd: false,
+              updatedAt: now,
+            },
+          })
+          .returning()
+
+        await tx
+          .update(users)
+          .set({ planId, updatedAt: now })
+          .where(eq(users.id, userId))
+
+        return sub
+      })
 
       // D-20: Response shape
       return ok({
         success: !!result,
         planId: result?.planId ?? planId,
-        message: result ? `Upgraded to ${planId}` : "Upgrade failed",
+        message: result ? `Plano alterado para ${planId}` : "Falha ao alterar plano",
+      })
+    }
+  )
+
+  // POST /cancel — cancel subscription at period end (D-21)
+  fastify.withTypeProvider<ZodTypeProvider>().post(
+    "/cancel",
+    { preHandler: [requireSession] },
+    async (request, reply) => {
+      const userId = request.session!.user.id
+
+      const [sub] = await fastify.db
+        .select({
+          planId: subscriptions.planId,
+          cancelAtPeriodEnd: subscriptions.cancelAtPeriodEnd,
+          currentPeriodEnd: subscriptions.currentPeriodEnd,
+        })
+        .from(subscriptions)
+        .where(eq(subscriptions.userId, userId))
+        .limit(1)
+
+      if (!sub) {
+        return reply.status(404).send({
+          error: { code: "NO_SUBSCRIPTION", message: "Nenhuma assinatura encontrada" },
+        })
+      }
+
+      if (sub.cancelAtPeriodEnd) {
+        return reply.status(400).send({
+          error: { code: "ALREADY_CANCELED", message: "Assinatura já está cancelada" },
+        })
+      }
+
+      const now = new Date()
+      await fastify.db
+        .update(subscriptions)
+        .set({ cancelAtPeriodEnd: true, updatedAt: now })
+        .where(eq(subscriptions.userId, userId))
+
+      return ok({
+        success: true,
+        message: "Assinatura será cancelada ao final do período",
+        planId: sub.planId,
+        currentPeriodEnd: sub.currentPeriodEnd.toISOString(),
       })
     }
   )
