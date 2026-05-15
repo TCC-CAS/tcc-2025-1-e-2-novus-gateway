@@ -8,3 +8,4 @@ export * from "./messaging.js";
 export * from "./moderation.js";
 export * from "./subscription.js";
 export * from "./favorites.js";
+export * from "./gallery.js";

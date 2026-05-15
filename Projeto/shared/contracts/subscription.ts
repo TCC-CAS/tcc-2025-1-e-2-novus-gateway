@@ -59,6 +59,7 @@ export type PlanLimits = {
   searchResults: number;
   openPositions: number;
   favorites: number;
+  maxGalleryItems: number;
   videoHighlights: boolean;
   expandedProfile: boolean;
   verifiedBadge: boolean;
@@ -95,6 +96,7 @@ export const PLAN_CONFIGS: Record<PlanId, PlanConfig> = {
       searchResults: UNLIMITED,
       openPositions: 0,
       favorites: 5,
+      maxGalleryItems: 5,
       videoHighlights: false,
       expandedProfile: false,
       verifiedBadge: false,
@@ -119,6 +121,7 @@ export const PLAN_CONFIGS: Record<PlanId, PlanConfig> = {
       searchResults: UNLIMITED,
       openPositions: 0,
       favorites: 50,
+      maxGalleryItems: 20,
       videoHighlights: true,
       expandedProfile: true,
       verifiedBadge: true,
@@ -145,6 +148,7 @@ export const PLAN_CONFIGS: Record<PlanId, PlanConfig> = {
       searchResults: UNLIMITED,
       openPositions: 5,
       favorites: 50,
+      maxGalleryItems: 0,
       videoHighlights: false,
       expandedProfile: false,
       verifiedBadge: false,
@@ -168,6 +172,7 @@ export const PLAN_CONFIGS: Record<PlanId, PlanConfig> = {
       searchResults: UNLIMITED,
       openPositions: UNLIMITED,
       favorites: UNLIMITED,
+      maxGalleryItems: 0,
       videoHighlights: false,
       expandedProfile: false,
       verifiedBadge: true,
@@ -189,6 +194,7 @@ export function getDefaultLimitsForRole(role: "player" | "team"): PlanLimits {
       searchResults: 10,
       openPositions: 1,
       favorites: 3,
+      maxGalleryItems: 0,
       videoHighlights: false,
       expandedProfile: false,
       verifiedBadge: false,

@@ -62,6 +62,21 @@ export class ImageStorage {
   }
 
   /**
+   * Generate a presigned URL for uploading directly to S3.
+   * Used by gallery uploads where the client uploads directly.
+   */
+  async getSignedUploadUrl(key: string, contentType: string, ttlSeconds?: number): Promise<string> {
+    const command = new PutObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+      ContentType: contentType,
+    })
+    return getSignedUrl(this.client, command, {
+      expiresIn: ttlSeconds ?? this.presignedTTL,
+    })
+  }
+
+  /**
    * Upload a buffer to S3.
    * The key should be a structured path like "avatars/{userId}/{uuid}-thumbnail.webp".
    * Metadata is stored as S3 object metadata for auditing.

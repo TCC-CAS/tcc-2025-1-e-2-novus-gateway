@@ -2,9 +2,10 @@ import { ReportButton } from "~/components/report-button";
 import { useParams, useNavigate } from "react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "~/lib/auth/auth-context";
-import { playersApi, messagingApi, favoritesApi } from "~/lib/api-client";
+import { playersApi, messagingApi, favoritesApi, galleryApi } from "~/lib/api-client";
 import { canSearchPlayers } from "~/lib/auth";
 import { OptimizedImage } from "~/components/optimized-image";
+import { GalleryGrid } from "~/components/gallery-grid";
 import { Button } from "~/components/ui/button";
 import { MessageCircle, User, MapPin, Activity, Trophy, Heart } from "lucide-react";
 import { toast } from "sonner";
@@ -43,6 +44,12 @@ export default function JogadorPublicProfile() {
 
   const isFavorited = !!favorites?.data?.some((f) => f.targetUser.id === profile?.userId);
   const isOwnProfile = !!user && !!profile && user.id === profile.userId;
+
+  const { data: galleryData } = useQuery({
+    queryKey: ["gallery", id],
+    queryFn: () => galleryApi.listByUser(id!),
+    enabled: !!id,
+  });
 
   const favoriteMutation = useMutation({
     mutationFn: () =>
@@ -245,7 +252,7 @@ export default function JogadorPublicProfile() {
                 <MapPin className="size-5 text-primary" /> REGIÃO
               </h3>
               <p className="font-bold tracking-widest text-[11px] text-muted-foreground uppercase italic pb-4">
-                SEM REGIÃO DEFINIDA
+                {profile.region || "REGIÃO NÃO INFORMADA"}
               </p>
             </div>
           </div>
@@ -286,6 +293,16 @@ export default function JogadorPublicProfile() {
               </p>
             )}
           </div>
+
+          {/* Public Gallery */}
+          {galleryData && galleryData.data.length > 0 && (
+            <div className="border-t-4 border-foreground pt-10">
+              <h3 className="mb-6 font-display tracking-widest text-3xl text-foreground uppercase border-b-2 border-dashed border-foreground/30 pb-2 inline-block">
+                GALERIA
+              </h3>
+              <GalleryGrid items={galleryData.data} />
+            </div>
+          )}
         </div>
 
         {/* Mobile Action Area */}

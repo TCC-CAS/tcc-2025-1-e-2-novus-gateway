@@ -1,7 +1,9 @@
 import { Link, Navigate } from "react-router";
-import { useQuery } from "@tanstack/react-query";
-import { playersApi, ApiError } from "~/lib/api-client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { playersApi, galleryApi, ApiError } from "~/lib/api-client";
 import { Button } from "~/components/ui/button";
+import { GalleryUpload } from "~/components/gallery-upload";
+import { GalleryGrid } from "~/components/gallery-grid";
 import {
   User,
   Edit,
@@ -17,10 +19,20 @@ export function meta() {
 }
 
 export default function JogadorPerfil() {
+  const queryClient = useQueryClient()
   const { data: profile, isLoading, isError, error } = useQuery({
     queryKey: ["player", "me"],
     queryFn: () => playersApi.getMe(),
   });
+
+  const { data: galleryData } = useQuery({
+    queryKey: ["gallery", "mine"],
+    queryFn: () => galleryApi.listMine(),
+  });
+
+  const handleGalleryChange = () => {
+    queryClient.invalidateQueries({ queryKey: ["gallery", "mine"] })
+  }
 
   if (isError) {
     if (error instanceof ApiError && error.status === 404) {
@@ -200,6 +212,33 @@ export default function JogadorPerfil() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Gallery Section */}
+      <div className="space-y-6">
+        <div className="border-b-4 border-foreground pb-4">
+          <h2 className="font-display text-3xl tracking-wide text-foreground uppercase">
+            GALERIA
+          </h2>
+          <p className="mt-1 text-sm font-bold tracking-widest text-muted-foreground uppercase">
+            MOSTRE SEUS MELHORES MOMENTOS
+          </p>
+        </div>
+
+        <GalleryUpload onUploadComplete={handleGalleryChange} />
+
+        <GalleryGrid
+          items={galleryData?.data ?? []}
+          isOwner
+          onDelete={async (id) => {
+            await galleryApi.deleteItem(id)
+            handleGalleryChange()
+          }}
+          onToggleHighlight={async (id, isHighlight) => {
+            await galleryApi.update(id, { isHighlight })
+            handleGalleryChange()
+          }}
+        />
       </div>
     </div>
   );

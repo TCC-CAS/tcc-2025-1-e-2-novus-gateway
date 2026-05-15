@@ -276,3 +276,35 @@ export const uploadApi = {
   deleteAvatar: () => deleteUpload("/upload/avatar"),
   deleteLogo: () => deleteUpload("/upload/logo"),
 };
+
+// --- Gallery ---
+export const galleryApi = {
+  presign: (body: import("~shared/contracts").PresignRequest) =>
+    request<import("~shared/contracts").PresignResponse>(
+      "/gallery/presign",
+      { method: "POST", body: JSON.stringify(body) }
+    ),
+  confirm: (body: import("~shared/contracts").ConfirmUploadRequest) =>
+    request<import("~shared/contracts").GalleryMedia>(
+      "/gallery/confirm",
+      { method: "POST", body: JSON.stringify(body) }
+    ),
+  listByUser: (userId: string) =>
+    request<import("~shared/contracts").ListGalleryResponse>(
+      `/gallery/${userId}`
+    ),
+  listMine: () =>
+    request<import("~shared/contracts").ListGalleryResponse>(
+      "/gallery/me"
+    ),
+  update: (assetId: string, body: import("~shared/contracts").UpdateGalleryItemRequest) =>
+    request<import("~shared/contracts").GalleryMedia>(
+      `/gallery/${assetId}`,
+      { method: "PUT", body: JSON.stringify(body) }
+    ),
+  deleteItem: (assetId: string) =>
+    request<{ success: boolean }>(
+      `/gallery/${assetId}`,
+      { method: "DELETE" }
+    ),
+};
