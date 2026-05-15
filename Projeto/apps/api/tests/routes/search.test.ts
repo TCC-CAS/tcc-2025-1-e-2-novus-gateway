@@ -101,6 +101,72 @@ describe("Search routes", () => {
       // (self-exclusion: requester's own userId must not appear in results)
       expect(Array.isArray(body.data)).toBe(true)
     })
+
+    it("SRCH-01g: filters results by position when position=goleiro", async () => {
+      const goleiro = await signUpAndGetCookie(app, "player")
+      await upsertPlayerProfile(app, goleiro.sessionCookie, {
+        name: "Goleiro Test",
+        positions: ["goleiro"],
+      })
+
+      const atacante = await signUpAndGetCookie(app, "player")
+      await upsertPlayerProfile(app, atacante.sessionCookie, {
+        name: "Atacante Test",
+        positions: ["atacante"],
+      })
+
+      const res = await app.inject({
+        method: "GET",
+        url: "/api/search/players",
+        headers: { cookie: teamCookie },
+        query: { position: "goleiro" },
+      })
+      expect(res.statusCode).toBe(200)
+      const body = res.json()
+      expect(Array.isArray(body.data)).toBe(true)
+      for (const player of body.data) {
+        expect(player.positions).toContain("goleiro")
+      }
+    })
+
+    it("SRCH-01h: filters results by region when region is set on player", async () => {
+      const player = await signUpAndGetCookie(app, "player")
+      await upsertPlayerProfile(app, player.sessionCookie, {
+        name: "Player Region Test",
+        region: "Zona Sul",
+      })
+
+      const res = await app.inject({
+        method: "GET",
+        url: "/api/search/players",
+        headers: { cookie: teamCookie },
+        query: { region: "Zona Sul" },
+      })
+      expect(res.statusCode).toBe(200)
+      const body = res.json()
+      expect(Array.isArray(body.data)).toBe(true)
+    })
+
+    it("SRCH-01i: filters results by level when level=amador", async () => {
+      const player = await signUpAndGetCookie(app, "player")
+      await upsertPlayerProfile(app, player.sessionCookie, {
+        name: "Amador Player",
+        level: "amador",
+      })
+
+      const res = await app.inject({
+        method: "GET",
+        url: "/api/search/players",
+        headers: { cookie: teamCookie },
+        query: { level: "amador" },
+      })
+      expect(res.statusCode).toBe(200)
+      const body = res.json()
+      expect(Array.isArray(body.data)).toBe(true)
+      for (const player of body.data) {
+        expect(player.level).toBe("amador")
+      }
+    })
   })
 
   // SRCH-02: GET /api/search/teams — players search for teams

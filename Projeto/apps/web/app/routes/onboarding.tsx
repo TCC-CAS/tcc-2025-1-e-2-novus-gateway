@@ -15,9 +15,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { POSITIONS } from "~shared/contracts";
+import { POSITIONS, PLAYER_LEVELS } from "~shared/contracts";
 import { TEAM_LEVELS } from "~shared/contracts";
-import type { Position, TeamLevel } from "~shared/contracts";
+import type { Position, PlayerLevel, TeamLevel } from "~shared/contracts";
 import { playersApi, teamsApi } from "~/lib/api-client";
 import { Check, ChevronLeft, ChevronRight, Trophy } from "lucide-react";
 
@@ -61,6 +61,9 @@ export default function Onboarding() {
   const [playerWeight, setPlayerWeight] = useState("");
   const [playerAvailability, setPlayerAvailability] = useState<string[]>([]);
   const [playerPhone, setPlayerPhone] = useState("");
+  const [playerLevel, setPlayerLevel] = useState<string>("");
+  const [playerRegion, setPlayerRegion] = useState("");
+  const [playerCity, setPlayerCity] = useState("");
 
   const [teamName, setTeamName] = useState("");
   const [teamLevel, setTeamLevel] = useState("amador");
@@ -92,6 +95,9 @@ export default function Onboarding() {
           weight: playerWeight ? Number(playerWeight) : undefined,
           phone: playerPhone || undefined,
           availability: playerAvailability.length > 0 ? playerAvailability.join(", ") : undefined,
+          region: playerRegion || undefined,
+          city: playerCity || undefined,
+          level: (playerLevel || undefined) as PlayerLevel | undefined,
         });
       } else {
         await teamsApi.upsert({
@@ -245,6 +251,25 @@ export default function Onboarding() {
                 </div>
 
                 <div className="space-y-4 pt-4">
+                  <Label className="font-display text-2xl tracking-wide">
+                    NÍVEL DE COMPETIÇÃO
+                  </Label>
+                  <Select value={playerLevel || "none"} onValueChange={(v) => setPlayerLevel(v === "none" ? "" : v)}>
+                    <SelectTrigger className="h-14 rounded-none border-2 border-foreground bg-muted/50 px-4 text-lg uppercase font-bold tracking-widest focus:ring-0 focus:border-primary transition-colors">
+                      <SelectValue placeholder="SELECIONE SEU NÍVEL" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-none border-2 border-foreground">
+                      <SelectItem value="none" className="font-bold tracking-widest uppercase text-xs">NENHUM</SelectItem>
+                      {PLAYER_LEVELS.map((l) => (
+                        <SelectItem key={l} value={l} className="font-bold tracking-widest uppercase hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground cursor-pointer rounded-none">
+                          {l.toUpperCase()}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-4 pt-4">
                   <Label
                     htmlFor="onb-bio"
                     className="font-display text-2xl tracking-wide"
@@ -380,6 +405,39 @@ export default function Onboarding() {
                     onChange={(e) => setPlayerPhone(e.target.value)}
                     className="h-14 rounded-none border-2 border-foreground bg-muted/50 px-4 text-lg focus-visible:ring-0 focus-visible:border-primary transition-colors"
                   />
+                </div>
+
+                <div className="grid gap-6 sm:grid-cols-2 pt-6">
+                  <div className="space-y-4">
+                    <Label
+                      htmlFor="onb-region"
+                      className="font-display text-2xl tracking-wide"
+                    >
+                      REGIÃO / BAIRRO
+                    </Label>
+                    <Input
+                      id="onb-region"
+                      placeholder="Ex.: Zona Sul"
+                      value={playerRegion}
+                      onChange={(e) => setPlayerRegion(e.target.value)}
+                      className="h-14 rounded-none border-2 border-foreground bg-muted/50 px-4 text-lg focus-visible:ring-0 focus-visible:border-primary transition-colors uppercase"
+                    />
+                  </div>
+                  <div className="space-y-4">
+                    <Label
+                      htmlFor="onb-city"
+                      className="font-display text-2xl tracking-wide"
+                    >
+                      CIDADE
+                    </Label>
+                    <Input
+                      id="onb-city"
+                      placeholder="Ex.: São Paulo"
+                      value={playerCity}
+                      onChange={(e) => setPlayerCity(e.target.value)}
+                      className="h-14 rounded-none border-2 border-foreground bg-muted/50 px-4 text-lg focus-visible:ring-0 focus-visible:border-primary transition-colors uppercase"
+                    />
+                  </div>
                 </div>
               </div>
             )}

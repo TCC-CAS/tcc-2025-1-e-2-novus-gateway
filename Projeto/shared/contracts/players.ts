@@ -13,6 +13,16 @@ export const POSITIONS = [
 export const PositionSchema = z.enum(POSITIONS);
 export type Position = z.infer<typeof PositionSchema>;
 
+/** Player level / competitiveness — mirrors team levels */
+export const PLAYER_LEVELS = [
+  "amador",
+  "recreativo",
+  "semi-profissional",
+  "outro",
+] as const;
+export const PlayerLevelSchema = z.enum(PLAYER_LEVELS);
+export type PlayerLevel = z.infer<typeof PlayerLevelSchema>;
+
 /** Player profile (full) */
 export const PlayerProfileSchema = z.object({
   id: z.string(),
@@ -27,6 +37,9 @@ export const PlayerProfileSchema = z.object({
   birthDate: z.string().optional(), // ISO date
   phone: OptionalBrazilianPhoneSchema,
   availability: z.string().optional(),
+  region: z.string().optional(),
+  city: z.string().optional(),
+  level: PlayerLevelSchema.optional(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
@@ -40,6 +53,8 @@ export const PlayerSummarySchema = z.object({
   positions: z.array(PositionSchema),
   skills: z.array(z.string()),
   availability: z.string().optional(),
+  region: z.string().optional(),
+  level: PlayerLevelSchema.optional(),
 });
 export type PlayerSummary = z.infer<typeof PlayerSummarySchema>;
 
@@ -55,6 +70,9 @@ export const UpsertPlayerProfileRequestSchema = z.object({
   birthDate: z.string().optional(),
   phone: z.string().optional(),
   availability: z.string().optional(),
+  region: z.string().optional(),
+  city: z.string().optional(),
+  level: PlayerLevelSchema.optional(),
 });
 export type UpsertPlayerProfileRequest = z.infer<
   typeof UpsertPlayerProfileRequestSchema

@@ -21,7 +21,7 @@ const searchRoutes: FastifyPluginAsync = async (fastify) => {
     async (request, reply) => {
       const userId = request.session!.user.id
       const role = request.session!.user.role
-      const { page = 1, pageSize = 10, skills, availability, minAge, maxAge } = request.query as z.infer<typeof SearchPlayersQuerySchema>
+      const { page = 1, pageSize = 10, position, skills, region, availability, level, minAge, maxAge } = request.query as z.infer<typeof SearchPlayersQuerySchema>
 
       // Plan limit resolution
       const sub = await fastify.db.query.subscriptions.findFirst({
@@ -42,6 +42,13 @@ const searchRoutes: FastifyPluginAsync = async (fastify) => {
       // Exclude hidden profiles (removed by moderation)
       filters.push(sql`${players.hidden} = false` as unknown as ReturnType<typeof sql>)
 
+      // Position filter: array containment — player positions must include the requested position
+      if (position) {
+        filters.push(
+          sql`${players.positions} @> ARRAY[${position}]::text[]` as unknown as ReturnType<typeof sql>
+        )
+      }
+
       // Skills filter (D-03, OR/ANY logic): comma-separated
       if (skills) {
         const skillArray = skills.split(",").map((s: string) => s.trim()).filter(Boolean)
@@ -53,6 +60,16 @@ const searchRoutes: FastifyPluginAsync = async (fastify) => {
       // Availability filter (D-04): case-insensitive exact match
       if (availability) {
         filters.push(ilike(players.availability, availability) as unknown as ReturnType<typeof sql>)
+      }
+
+      // Region filter: case-insensitive partial match
+      if (region) {
+        filters.push(ilike(players.region, `%${region}%`) as unknown as ReturnType<typeof sql>)
+      }
+
+      // Level filter: exact match
+      if (level) {
+        filters.push(eq(players.level, level) as unknown as ReturnType<typeof sql>)
       }
 
       // Age filters (D-05): birthDate is stored as text, cast to date

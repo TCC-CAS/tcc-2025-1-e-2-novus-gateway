@@ -15,6 +15,9 @@ export const players = pgTable("players", {
   phone: text("phone"),
   availability: text("availability"),
   hidden: boolean("hidden").notNull().default(false),
+  region: text("region"),
+  city: text("city"),
+  level: text("level"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 })

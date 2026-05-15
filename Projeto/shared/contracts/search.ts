@@ -1,9 +1,7 @@
 import { z } from "zod";
 import { PaginationQuerySchema, PaginationMetaSchema } from "./common.js";
-import { PlayerSummarySchema } from "./players.js";
-import { TeamSummarySchema } from "./teams.js";
-import { PositionSchema } from "./players.js";
-import { TeamLevelSchema } from "./teams.js";
+import { PlayerSummarySchema, PositionSchema, PlayerLevelSchema } from "./players.js";
+import { TeamSummarySchema, TeamLevelSchema } from "./teams.js";
 
 /** Search players query (teams use this) */
 export const SearchPlayersQuerySchema = PaginationQuerySchema.extend({
@@ -11,6 +9,7 @@ export const SearchPlayersQuerySchema = PaginationQuerySchema.extend({
   skills: z.string().optional(), // comma-separated or single
   region: z.string().optional(),
   availability: z.string().optional(),
+  level: PlayerLevelSchema.optional(),
   minAge: z.coerce.number().int().optional(),
   maxAge: z.coerce.number().int().optional(),
 });

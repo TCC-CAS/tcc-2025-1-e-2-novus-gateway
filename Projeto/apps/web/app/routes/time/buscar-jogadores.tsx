@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { POSITIONS } from "~shared/contracts";
+import { POSITIONS, PLAYER_LEVELS } from "~shared/contracts";
 import {
   Filter,
   ArrowRight,
@@ -31,13 +31,14 @@ export default function TimeBuscarJogadores() {
   const [position, setPosition] = useState<string | undefined>(undefined);
   const [skills, setSkills] = useState<string>("");
   const [region, setRegion] = useState<string>("");
+  const [level, setLevel] = useState<string | undefined>(undefined);
   const [page, setPage] = useState(1);
   const { getSearchResultsLimit } = usePlan();
   const searchLimit = getSearchResultsLimit();
   const isLimited = !isUnlimited(searchLimit);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["search", "players", { position, skills, region, page }],
+    queryKey: ["search", "players", { position, skills, region, level, page }],
     queryFn: () =>
       searchApi.players({
         page,
@@ -45,6 +46,7 @@ export default function TimeBuscarJogadores() {
         position: position as import("~shared/contracts").Position | undefined,
         skills: skills || undefined,
         region: region || undefined,
+        level: level as import("~shared/contracts").PlayerLevel | undefined,
       }),
   });
 
@@ -102,6 +104,20 @@ export default function TimeBuscarJogadores() {
             onChange={(e) => { setRegion(e.target.value); setPage(1) }}
             className="w-[140px] h-10 rounded-none border-2 border-foreground bg-muted/50 font-bold tracking-widest text-xs uppercase focus:ring-0 focus:border-primary"
           />
+          <Select
+            value={level ?? "all"}
+            onValueChange={(v) => { setLevel(v === "all" ? undefined : v); setPage(1) }}
+          >
+            <SelectTrigger className="w-[180px] h-10 rounded-none border-2 border-foreground bg-muted/50 font-bold tracking-widest text-xs uppercase focus:ring-0 focus:border-primary">
+              <SelectValue placeholder="NÍVEL" />
+            </SelectTrigger>
+            <SelectContent className="rounded-none border-4 border-foreground">
+              <SelectItem value="all" className="font-bold tracking-widest uppercase text-xs">TODOS</SelectItem>
+              {PLAYER_LEVELS.map((l) => (
+                <SelectItem key={l} value={l} className="font-bold tracking-widest uppercase text-xs">{l}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -131,7 +147,7 @@ export default function TimeBuscarJogadores() {
                     <div className="flex items-center gap-2">
                       <MapPin className="size-4 text-muted-foreground" />
                       <span className="font-bold tracking-widest text-xs text-muted-foreground uppercase">
-                        SEM REGIÃO DEFINIDA
+                        {player.region || "REGIÃO NÃO INFORMADA"}
                       </span>
                     </div>
                   </div>

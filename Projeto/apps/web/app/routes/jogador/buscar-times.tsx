@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { searchApi } from "~/lib/api-client";
+import { searchApi, playersApi } from "~/lib/api-client";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import {
@@ -19,6 +19,7 @@ import {
   MapPin,
   Trophy,
 } from "lucide-react";
+import { cn } from "~/lib/utils";
 
 export function meta() {
   return [{ title: "Buscar times - VárzeaPro" }];
@@ -29,6 +30,17 @@ export default function JogadorBuscarTimes() {
   const [region, setRegion] = useState<string>("");
   const [openPosition, setOpenPosition] = useState<string | undefined>(undefined);
   const [page, setPage] = useState(1);
+
+  const { data: myProfile } = useQuery({
+    queryKey: ["myPlayerProfile"],
+    queryFn: () => playersApi.getMe(),
+  })
+
+  useEffect(() => {
+    if (myProfile?.positions?.length && !openPosition) {
+      setOpenPosition(myProfile.positions[0])
+    }
+  }, [myProfile])
 
   const { data, isLoading } = useQuery({
     queryKey: ["search", "teams", { level, region, openPosition, page }],
@@ -153,7 +165,12 @@ export default function JogadorBuscarTimes() {
                       {team.openPositions.map((pos) => (
                         <span
                           key={pos}
-                          className="border border-foreground bg-muted/50 px-2.5 py-1 font-display text-sm tracking-widest text-foreground uppercase"
+                          className={cn(
+                            "border px-2.5 py-1 font-display text-sm tracking-widest uppercase",
+                            pos === openPosition
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-foreground bg-muted/50 text-foreground"
+                          )}
                         >
                           {pos}
                         </span>

@@ -8,13 +8,22 @@ import {
   UpsertPlayerProfileRequestSchema,
   type UpsertPlayerProfileRequest,
   POSITIONS,
+  PLAYER_LEVELS,
 } from "~shared/contracts";
+import type { PlayerLevel } from "~shared/contracts";
 import { playersApi, uploadApi, ApiError } from "~/lib/api-client";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Label } from "~/components/ui/label";
 import { ImageUpload } from "~/components/image-upload";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { cn } from "~/lib/utils";
 import { Check, Save, X, User } from "lucide-react";
 
@@ -66,6 +75,9 @@ export default function JogadorPerfilEditar() {
         birthDate: profile.birthDate ?? "",
         phone: profile.phone ?? "",
         availability: profile.availability ?? "",
+        region: (profile as any).region ?? "",
+        city: (profile as any).city ?? "",
+        level: (profile as any).level ?? "",
       });
       if (profile.availability) {
         setAvailabilityDays(
@@ -219,6 +231,62 @@ export default function JogadorPerfilEditar() {
                 {...form.register("phone")}
                 className="h-14 rounded-none border-2 border-foreground bg-muted/50 px-4 text-lg focus-visible:ring-0 focus-visible:border-primary transition-colors font-mono"
               />
+            </div>
+
+            <div className="space-y-3">
+              <Label
+                htmlFor="level"
+                className="font-display text-xl tracking-wide uppercase"
+              >
+                NÍVEL DE COMPETIÇÃO
+              </Label>
+              <Select
+                value={form.watch("level") || "none"}
+                onValueChange={(v) => form.setValue("level", v === "none" ? "" as any : v as PlayerLevel, { shouldValidate: true })}
+              >
+                <SelectTrigger className="h-14 rounded-none border-2 border-foreground bg-muted/50 px-4 text-lg uppercase font-bold tracking-widest focus:ring-0 focus:border-primary transition-colors">
+                  <SelectValue placeholder="SELECIONE SEU NÍVEL" />
+                </SelectTrigger>
+                <SelectContent className="rounded-none border-2 border-foreground">
+                  <SelectItem value="none" className="font-bold tracking-widest uppercase text-xs">NENHUM</SelectItem>
+                  {PLAYER_LEVELS.map((l) => (
+                    <SelectItem key={l} value={l} className="font-bold tracking-widest uppercase hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground cursor-pointer rounded-none">
+                      {l.toUpperCase()}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-6 sm:grid-cols-2">
+              <div className="space-y-3">
+                <Label
+                  htmlFor="region"
+                  className="font-display text-xl tracking-wide uppercase"
+                >
+                  REGIÃO / BAIRRO
+                </Label>
+                <Input
+                  id="region"
+                  placeholder="Ex.: Zona Sul"
+                  {...form.register("region")}
+                  className="h-14 rounded-none border-2 border-foreground bg-muted/50 px-4 text-lg focus-visible:ring-0 focus-visible:border-primary transition-colors uppercase"
+                />
+              </div>
+              <div className="space-y-3">
+                <Label
+                  htmlFor="city"
+                  className="font-display text-xl tracking-wide uppercase"
+                >
+                  CIDADE
+                </Label>
+                <Input
+                  id="city"
+                  placeholder="Ex.: São Paulo"
+                  {...form.register("city")}
+                  className="h-14 rounded-none border-2 border-foreground bg-muted/50 px-4 text-lg focus-visible:ring-0 focus-visible:border-primary transition-colors uppercase"
+                />
+              </div>
             </div>
           </div>
         </section>
