@@ -18,7 +18,7 @@ ENV NODE_ENV=production
 RUN apk add --no-cache tini
 COPY --from=deps /build/apps/api/node_modules ./node_modules
 COPY --from=builder /build/apps/api/dist ./dist
-COPY --from=builder /build/apps/api/src/db/migrations ./src/db/migrations
+COPY --from=builder /build/apps/api/src/db ./src/db
 COPY --from=builder /build/apps/api/package.json ./
 COPY --from=builder /build/apps/api/drizzle.config.ts ./
 RUN mkdir -p uploads
