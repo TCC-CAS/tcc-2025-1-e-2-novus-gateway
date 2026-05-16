@@ -15,7 +15,7 @@ services:
     restart: always
 
   api:
-    image: ${API_IMAGE:-ghcr.io/your-github-username/varzeapro-api:latest}
+    image: ${API_IMAGE:-ghcr.io/tcc-cas/varzeapro-api:latest}
     build:
       context: .
       dockerfile: apps/api/Dockerfile
@@ -33,7 +33,7 @@ services:
     restart: always
 
   web:
-    image: ${WEB_IMAGE:-ghcr.io/your-github-username/varzeapro-web:latest}
+    image: ${WEB_IMAGE:-ghcr.io/tcc-cas/varzeapro-web:latest}
     build:
       context: .
       dockerfile: apps/web/Dockerfile

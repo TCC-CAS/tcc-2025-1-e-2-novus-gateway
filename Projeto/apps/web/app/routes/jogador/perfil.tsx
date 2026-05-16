@@ -101,13 +101,13 @@ export default function JogadorPerfil() {
           {/* Avatar Block */}
           <OptimizedImage
             src={profile.photoUrl}
-            size="xl"
+            size="lg"
             rounded
             alt={profile.name}
-            className="shrink-0 !size-32 sm:!size-48 border-4 border-foreground shadow-[4px_4px_0px_0px_var(--color-foreground)] dark:shadow-[4px_4px_0px_0px_var(--color-foreground)]"
+            className="shrink-0 border-4 border-foreground shadow-[4px_4px_0px_0px_var(--color-foreground)] dark:shadow-[4px_4px_0px_0px_var(--color-foreground)]"
             fallback={
               <div className="flex size-full items-center justify-center bg-primary">
-                <User className="size-16 text-foreground sm:size-24" />
+                <User className="size-10 text-foreground" />
               </div>
             }
           />

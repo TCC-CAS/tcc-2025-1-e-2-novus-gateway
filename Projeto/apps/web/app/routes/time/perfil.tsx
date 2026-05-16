@@ -76,12 +76,12 @@ export default function TimePerfil() {
           {/* Logo Block */}
           <OptimizedImage
             src={profile.logoUrl}
-            size="xl"
+            size="lg"
             alt={profile.name}
-            className="shrink-0 !size-32 sm:!size-48 border-4 border-foreground shadow-[4px_4px_0px_0px_var(--color-foreground)] dark:shadow-[4px_4px_0px_0px_var(--color-foreground)]"
+            className="shrink-0 border-4 border-foreground shadow-[4px_4px_0px_0px_var(--color-foreground)] dark:shadow-[4px_4px_0px_0px_var(--color-foreground)]"
             fallback={
               <div className="flex size-full items-center justify-center bg-primary">
-                <Shield className="size-16 text-foreground sm:size-24" />
+                <Shield className="size-10 text-foreground" />
               </div>
             }
           />

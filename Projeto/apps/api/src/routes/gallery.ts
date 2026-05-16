@@ -136,7 +136,7 @@ const galleryRoutes: FastifyPluginAsync = async (fastify) => {
         .where(and(eq(galleryMedia.ownerUserId, userId), eq(galleryMedia.isDeleted, false)))
         .orderBy(desc(galleryMedia.isHighlight), desc(galleryMedia.createdAt))
 
-      const data = rows.map((item) => ({
+      const data = await Promise.all(rows.map(async (item) => ({
         id: item.id,
         mediaType: item.mediaType as "image" | "video",
         caption: item.caption ?? undefined,
@@ -144,9 +144,9 @@ const galleryRoutes: FastifyPluginAsync = async (fastify) => {
         sortOrder: item.sortOrder,
         thumbnailUrl: item.thumbnailUrl ?? undefined,
         mediumUrl: item.mediumUrl ?? undefined,
-        originalUrl: item.originalUrl ?? "",
+        originalUrl: await storage.getUrl(item.storageKey).catch(() => ""),
         createdAt: item.createdAt.toISOString(),
-      }))
+      })))
 
       return list(data, 1, 50, data.length)
     }
@@ -165,7 +165,7 @@ const galleryRoutes: FastifyPluginAsync = async (fastify) => {
         .where(and(eq(galleryMedia.ownerUserId, userId), eq(galleryMedia.isDeleted, false)))
         .orderBy(desc(galleryMedia.isHighlight), desc(galleryMedia.createdAt))
 
-      const data = rows.map((item) => ({
+      const data = await Promise.all(rows.map(async (item) => ({
         id: item.id,
         mediaType: item.mediaType as "image" | "video",
         caption: item.caption ?? undefined,
@@ -173,9 +173,9 @@ const galleryRoutes: FastifyPluginAsync = async (fastify) => {
         sortOrder: item.sortOrder,
         thumbnailUrl: item.thumbnailUrl ?? undefined,
         mediumUrl: item.mediumUrl ?? undefined,
-        originalUrl: item.originalUrl ?? "",
+        originalUrl: await storage.getUrl(item.storageKey).catch(() => ""),
         createdAt: item.createdAt.toISOString(),
-      }))
+      })))
 
       return list(data, 1, 50, data.length)
     }
