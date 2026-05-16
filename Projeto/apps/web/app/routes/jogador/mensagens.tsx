@@ -202,14 +202,20 @@ export default function JogadorMensagens() {
                 />
               </div>
               <div className="flex flex-col justify-center min-w-0">
-                <Link
-                  to={current?.otherParticipant.role === "team"
-                    ? `/times/${current.otherParticipant.profileId}`
-                    : `/jogadores/${current.otherParticipant.profileId}`}
-                  className="font-display text-3xl tracking-wide text-foreground uppercase pt-1 leading-none hover:text-primary transition-colors"
-                >
-                  {current?.otherParticipant.name}
-                </Link>
+                {current ? (
+                  <Link
+                    to={current.otherParticipant.role === "team"
+                      ? `/times/${current.otherParticipant.profileId}`
+                      : `/jogadores/${current.otherParticipant.profileId}`}
+                    className="font-display text-3xl tracking-wide text-foreground uppercase pt-1 leading-none hover:text-primary transition-colors"
+                  >
+                    {current.otherParticipant.name}
+                  </Link>
+                ) : (
+                  <p className="font-display text-3xl tracking-wide text-foreground uppercase pt-1 leading-none">
+                    CARREGANDO...
+                  </p>
+                )}
               </div>
             </div>
 
