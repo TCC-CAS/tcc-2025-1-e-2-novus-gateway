@@ -85,7 +85,10 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd /opt/varzeapro
+            cd /opt/varzeapro/Projeto
+
+            # Pull latest code
+            git pull
 
             # Pull latest images
             docker compose -f docker-compose.prod.yml pull
