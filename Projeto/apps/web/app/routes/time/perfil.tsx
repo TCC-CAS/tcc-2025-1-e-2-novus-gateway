@@ -11,6 +11,7 @@ import {
   MapPin,
   Search,
 } from "lucide-react";
+import { OptimizedImage } from "~/components/optimized-image";
 
 export function meta() {
   return [{ title: "Meu time - VárzeaPro" }];
@@ -72,10 +73,18 @@ export default function TimePerfil() {
         <div className="pointer-events-none absolute right-0 top-0 h-64 w-64 translate-x-1/3 -translate-y-1/3 rounded-full bg-primary opacity-20 blur-[80px]" />
 
         <div className="relative z-10 flex flex-col gap-8 md:flex-row md:items-start">
-          {/* Avatar Block */}
-          <div className="flex size-32 shrink-0 items-center justify-center border-4 border-foreground bg-primary shadow-[4px_4px_0px_0px_var(--color-foreground)] dark:shadow-[4px_4px_0px_0px_var(--color-foreground)] sm:size-48">
-            <Shield className="size-16 text-foreground sm:size-24" />
-          </div>
+          {/* Logo Block */}
+          <OptimizedImage
+            src={profile.logoUrl}
+            size="xl"
+            alt={profile.name}
+            className="shrink-0 !size-32 sm:!size-48 border-4 border-foreground shadow-[4px_4px_0px_0px_var(--color-foreground)] dark:shadow-[4px_4px_0px_0px_var(--color-foreground)]"
+            fallback={
+              <div className="flex size-full items-center justify-center bg-primary">
+                <Shield className="size-16 text-foreground sm:size-24" />
+              </div>
+            }
+          />
 
           <div className="flex-1 space-y-6">
             <div>

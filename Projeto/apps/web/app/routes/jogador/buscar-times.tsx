@@ -18,8 +18,10 @@ import {
   Search as SearchIcon,
   MapPin,
   Trophy,
+  Shield,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
+import { OptimizedImage } from "~/components/optimized-image";
 
 export function meta() {
   return [{ title: "Buscar times - VárzeaPro" }];
@@ -136,9 +138,19 @@ export default function JogadorBuscarTimes() {
                 className="group flex flex-col justify-between border-4 border-foreground bg-background transition-transform hover:-translate-y-2 hover:shadow-[8px_8px_0px_0px_var(--color-primary)] dark:hover:shadow-[8px_8px_0px_0px_var(--color-primary)] relative"
               >
                 <div className="p-5 pb-0 flex-1">
-                  <h3 className="font-display text-4xl tracking-wide text-foreground uppercase leading-[0.9] group-hover:text-primary transition-colors">
-                    {team.name}
-                  </h3>
+                  <div className="flex items-start gap-4">
+                    <OptimizedImage
+                      src={team.logoUrl}
+                      size="lg"
+                      alt={team.name}
+                      fallback={<Shield className="size-8 text-muted-foreground" />}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-display text-4xl tracking-wide text-foreground uppercase leading-[0.9] group-hover:text-primary transition-colors">
+                        {team.name}
+                      </h3>
+                    </div>
+                  </div>
 
                   <div className="mt-4 flex flex-col gap-2">
                     <div className="flex items-center gap-2">

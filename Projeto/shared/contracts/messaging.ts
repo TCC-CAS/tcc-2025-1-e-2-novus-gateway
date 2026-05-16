@@ -28,6 +28,8 @@ export const ConversationSummarySchema = z.object({
   otherParticipant: z.object({
     id: z.string(),
     name: z.string(),
+    role: z.enum(["player", "team", "admin"]),
+    profileId: z.string(),
     avatarUrl: z.string().url().optional(),
   }),
   lastMessage: z

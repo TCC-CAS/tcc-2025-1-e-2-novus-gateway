@@ -168,10 +168,18 @@ const conversationRoutes: FastifyPluginAsync = async (fastify) => {
         rows.map(async (row) => {
           const participantId = row.participantA === userId ? row.participantB : row.participantA
 
-          // Fetch other participant user record
+          // Fetch other participant user record with profile info
           const [participant] = await fastify.db
-            .select({ id: users.id, name: users.name })
+            .select({
+              id: users.id,
+              name: users.name,
+              role: users.role,
+              profileId: sql<string>`COALESCE(${players.id}, ${teams.id})`,
+              avatarUrl: sql<string | null>`COALESCE(${players.photoUrl}, ${teams.logoUrl})`,
+            })
             .from(users)
+            .leftJoin(players, eq(players.userId, users.id))
+            .leftJoin(teams, eq(teams.userId, users.id))
             .where(eq(users.id, participantId))
 
           // Count unread messages (sent by the other participant, not yet read)
@@ -203,6 +211,9 @@ const conversationRoutes: FastifyPluginAsync = async (fastify) => {
             otherParticipant: {
               id: participant?.id ?? participantId,
               name: participant?.name ?? "Unknown",
+              role: (participant?.role ?? "player") as "player" | "team" | "admin",
+              profileId: participant?.profileId ?? "",
+              avatarUrl: participant?.avatarUrl ?? undefined,
             },
             lastMessage: lastMsg
               ? {

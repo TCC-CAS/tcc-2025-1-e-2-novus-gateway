@@ -14,6 +14,7 @@ import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { cn } from "~/lib/utils"
 import { ArrowLeft, Send, MessageCircle, User } from "lucide-react"
+import { Link } from "react-router"
 
 export function meta() {
   return [{ title: "Mensagens - VárzeaPro" }]
@@ -201,9 +202,14 @@ export default function JogadorMensagens() {
                 />
               </div>
               <div className="flex flex-col justify-center min-w-0">
-                <p className="font-display text-3xl tracking-wide text-foreground uppercase pt-1 leading-none">
+                <Link
+                  to={current?.otherParticipant.role === "team"
+                    ? `/times/${current.otherParticipant.profileId}`
+                    : `/jogadores/${current.otherParticipant.profileId}`}
+                  className="font-display text-3xl tracking-wide text-foreground uppercase pt-1 leading-none hover:text-primary transition-colors"
+                >
                   {current?.otherParticipant.name}
-                </p>
+                </Link>
               </div>
             </div>
 

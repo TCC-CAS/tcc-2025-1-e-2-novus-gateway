@@ -13,6 +13,7 @@ import {
   MapPin,
   Activity,
 } from "lucide-react";
+import { OptimizedImage } from "~/components/optimized-image";
 
 export function meta() {
   return [{ title: "Meu perfil - VárzeaPro" }];
@@ -98,9 +99,18 @@ export default function JogadorPerfil() {
 
         <div className="relative z-10 flex flex-col gap-8 md:flex-row md:items-start">
           {/* Avatar Block */}
-          <div className="flex size-32 shrink-0 items-center justify-center border-4 border-foreground bg-primary shadow-[4px_4px_0px_0px_var(--color-foreground)] dark:shadow-[4px_4px_0px_0px_var(--color-foreground)] sm:size-48">
-            <User className="size-16 text-foreground sm:size-24" />
-          </div>
+          <OptimizedImage
+            src={profile.photoUrl}
+            size="xl"
+            rounded
+            alt={profile.name}
+            className="shrink-0 !size-32 sm:!size-48 border-4 border-foreground shadow-[4px_4px_0px_0px_var(--color-foreground)] dark:shadow-[4px_4px_0px_0px_var(--color-foreground)]"
+            fallback={
+              <div className="flex size-full items-center justify-center bg-primary">
+                <User className="size-16 text-foreground sm:size-24" />
+              </div>
+            }
+          />
 
           <div className="flex-1 space-y-6">
             <div>
