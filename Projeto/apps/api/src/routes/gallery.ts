@@ -67,7 +67,7 @@ const galleryRoutes: FastifyPluginAsync = async (fastify) => {
       }
 
       const assetId = randomUUID()
-      const key = `gallery/${userId}/${assetId}-${fileName}`
+      const key = `gallery/${userId}/${assetId}`
       const uploadUrl = await storage.getSignedUploadUrl(key, contentType)
 
       return ok({ uploadUrl, key, assetId })
@@ -83,7 +83,7 @@ const galleryRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request, reply) => {
       const userId = request.session!.user.id
-      const { assetId, caption, isHighlight } = request.body as ConfirmUploadRequest
+      const { assetId, mediaType, contentType, caption, isHighlight } = request.body as ConfirmUploadRequest
 
       // Check duplicate
       const [{ value: existing }] = await fastify.db
@@ -106,10 +106,10 @@ const galleryRoutes: FastifyPluginAsync = async (fastify) => {
         .values({
           id: assetId,
           ownerUserId: userId,
-          mediaType: "image",
+          mediaType,
           storageKey,
           fileName: assetId,
-          mimeType: "image/webp",
+          mimeType: contentType,
           caption: caption ?? null,
           isHighlight: isHighlight ?? false,
           sortOrder: 0,

@@ -55,7 +55,7 @@ export function GalleryUpload({ onUploadComplete }: GalleryUploadProps) {
       setProgress(70)
 
       // Step 3: Confirm upload
-      await galleryApi.confirm({ assetId })
+      await galleryApi.confirm({ assetId, mediaType, contentType: file.type })
 
       setProgress(100)
       toast.success("Upload concluído!")

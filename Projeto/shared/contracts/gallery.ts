@@ -34,6 +34,8 @@ export type PresignResponse = z.infer<typeof PresignResponseSchema>;
 
 export const ConfirmUploadSchema = z.object({
   assetId: z.string().min(1),
+  mediaType: GalleryMediaTypeSchema,
+  contentType: z.string().min(1),
   caption: z.string().optional(),
   isHighlight: z.boolean().optional(),
 });
