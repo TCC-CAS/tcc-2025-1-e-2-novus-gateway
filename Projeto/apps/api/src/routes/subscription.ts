@@ -293,7 +293,7 @@ const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
         })
 
         return ok({
-          initPoint: `${frontendUrl}/pagamento-sucesso`,
+          initPoint: `${frontendUrl}/pagamento-sucesso?planId=${planId}`,
           preferenceId: `mock_${nanoid()}`,
         })
       }
@@ -304,6 +304,10 @@ const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
         accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN || "",
       })
       const preference = new Preference(client)
+
+      const successUrl = `${frontendUrl}/pagamento-sucesso?planId=${planId}`
+      const failureUrl = `${frontendUrl}/planos?status=failure`
+      const pendingUrl = `${frontendUrl}/planos?status=pending`
 
       try {
         const result = await preference.create({
@@ -319,12 +323,11 @@ const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
             ],
             payer: { email },
             back_urls: {
-              success: `${frontendUrl}/planos?status=success`,
-              failure: `${frontendUrl}/planos?status=failure`,
-              pending: `${frontendUrl}/planos?status=pending`,
+              success: successUrl,
+              failure: failureUrl,
+              pending: pendingUrl,
             },
             auto_return: "approved",
-            notification_url: process.env.MERCADOPAGO_WEBHOOK_URL,
             external_reference: JSON.stringify({ userId, planId }),
           },
         })
