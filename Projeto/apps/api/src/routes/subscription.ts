@@ -3,6 +3,7 @@ import { ZodTypeProvider } from "fastify-type-provider-zod"
 import { z } from "zod"
 import { eq, or, sql } from "drizzle-orm"
 import { nanoid } from "nanoid"
+import { MercadoPagoConfig, Preference } from "mercadopago"
 import { requireSession } from "../hooks/require-auth.js"
 import { ok } from "../lib/response.js"
 import { subscriptions } from "../db/schema/subscriptions.js"
@@ -14,7 +15,10 @@ import { teams } from "../db/schema/teams.js"
 import {
   PlanIdSchema,
   getPlanLimits,
+  PLAN_CONFIGS,
 } from "../../../../shared/contracts/subscription.js"
+import type { PlanId } from "../../../../shared/contracts/subscription.js"
+import { CheckoutRequestSchema } from "../../../../shared/contracts/payment.js"
 
 const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /usage — authenticated users get plan + usage info (D-15, D-16, D-17)
@@ -211,6 +215,84 @@ const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
         planId: sub.planId,
         currentPeriodEnd: sub.currentPeriodEnd.toISOString(),
       })
+    }
+  )
+
+  // POST /checkout — create MercadoPago preference and return checkout URL
+  fastify.withTypeProvider<ZodTypeProvider>().post(
+    "/checkout",
+    {
+      preHandler: [requireSession],
+      schema: { body: CheckoutRequestSchema },
+    },
+    async (request, reply) => {
+      const userId = request.session!.user.id
+      const email = request.session!.user.email
+      const role = request.session!.user.role as "player" | "team"
+      const { planId } = request.body as { planId: PlanId }
+
+      // Checkout is only for paid plans
+      if (planId === "free") {
+        return reply.status(400).send({
+          error: { code: "INVALID_PLAN", message: "Checkout não disponível para o plano gratuito" },
+        })
+      }
+
+      // Role-plan compatibility
+      const playerPlans = ["free", "craque"]
+      const teamPlans = ["free", "titular", "campeao"]
+      if (role === "player" && !playerPlans.includes(planId)) {
+        return reply.status(400).send({
+          error: { code: "INVALID_PLAN", message: "Jogadores só podem assinar o plano Craque" },
+        })
+      }
+      if (role === "team" && !teamPlans.includes(planId)) {
+        return reply.status(400).send({
+          error: { code: "INVALID_PLAN", message: "Times só podem assinar os planos Titular ou Campeão" },
+        })
+      }
+
+      const planConfig = PLAN_CONFIGS[planId as keyof typeof PLAN_CONFIGS]
+
+      const client = new MercadoPagoConfig({
+        accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN || "",
+      })
+      const preference = new Preference(client)
+
+      try {
+        const result = await preference.create({
+          body: {
+            items: [
+              {
+                id: planId,
+                title: `VarzeaPro ${planConfig.name}`,
+                quantity: 1,
+                unit_price: planConfig.price,
+                currency_id: "BRL",
+              },
+            ],
+            payer: { email },
+            back_urls: {
+              success: `${process.env.FRONTEND_URL || ""}/planos?status=success`,
+              failure: `${process.env.FRONTEND_URL || ""}/planos?status=failure`,
+              pending: `${process.env.FRONTEND_URL || ""}/planos?status=pending`,
+            },
+            auto_return: "approved",
+            notification_url: process.env.MERCADOPAGO_WEBHOOK_URL,
+            external_reference: JSON.stringify({ userId, planId }),
+          },
+        })
+
+        return ok({
+          initPoint: result.sandbox_init_point ?? result.init_point,
+          preferenceId: result.id,
+        })
+      } catch (error) {
+        request.log.error({ error }, "MercadoPago preference creation failed")
+        return reply.status(502).send({
+          error: { code: "PAYMENT_PROVIDER_ERROR", message: "Falha ao criar preferência de pagamento" },
+        })
+      }
     }
   )
 }

@@ -178,6 +178,11 @@ export const subscriptionApi = {
       "/subscription/cancel",
       { method: "POST" }
     ),
+  checkout: (body: { planId: string }) =>
+    request<import("~shared/contracts").CheckoutResponse>(
+      "/subscription/checkout",
+      { method: "POST", body: JSON.stringify(body) }
+    ),
 };
 
 // --- Reports (user-facing) ---

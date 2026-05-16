@@ -12,6 +12,7 @@ export default [
   route("onboarding", "routes/onboarding.tsx"),
   route("recuperar-senha", "routes/recuperar-senha.tsx"),
   route("planos", "routes/planos.tsx"),
+  route("pagamento-sucesso", "routes/pagamento-sucesso.tsx"),
   layout("routes/_authenticated-layout.tsx", [
     route("jogador", "routes/jogador/_player-layout.tsx", [
       index("routes/jogador/index.tsx"),

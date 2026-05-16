@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router";
 import { useAuth, useAuthActions } from "~/lib/auth/auth-context";
 import { usePlan } from "~/lib/plan";
-import { subscriptionApi } from "~/lib/api-client";
+import { subscriptionApi, ApiError } from "~/lib/api-client";
 import { Button } from "~/components/ui/button";
 import { getPlansForRole, isUnlimited, PLAN_CONFIGS } from "~shared/contracts";
 import type { PlanConfig, PlanId } from "~shared/contracts";
@@ -199,18 +199,16 @@ export default function Planos() {
 
   const planLabel = PLAN_CONFIGS[currentPlanId]?.name ?? "LIVRE";
 
-  const handleUpgrade = async (planId: PlanId) => {
+  const handleCheckout = async (planId: PlanId) => {
     if (!user) return;
     setUpgrading(planId);
     try {
-      await subscriptionApi.upgrade({ planId });
-      // Immediately update auth context so the user sees the change
-      setUser({ ...user, planId });
-      await refreshUsage();
-      toast.success(`Plano alterado para ${PLAN_CONFIGS[planId]?.name ?? planId}!`);
-    } catch {
-      toast.error("Erro ao alterar plano. Tente novamente.");
-    } finally {
+      const { initPoint } = await subscriptionApi.checkout({ planId });
+      window.location.href = initPoint;
+    } catch (err) {
+      toast.error(
+        err instanceof ApiError ? err.message : "Erro ao iniciar checkout. Tente novamente."
+      );
       setUpgrading(null);
     }
   };
@@ -230,7 +228,18 @@ export default function Planos() {
   };
 
   const handleDowngrade = async () => {
-    await handleUpgrade("free");
+    if (!user) return;
+    setUpgrading("free");
+    try {
+      await subscriptionApi.upgrade({ planId: "free" });
+      setUser({ ...user, planId: "free" });
+      await refreshUsage();
+      toast.success("Plano alterado para LIVRE!");
+    } catch {
+      toast.error("Erro ao alterar plano. Tente novamente.");
+    } finally {
+      setUpgrading(null);
+    }
   };
 
   return (
@@ -532,7 +541,7 @@ export default function Planos() {
                         disabled={upgrading === plan.id}
                         onClick={() => {
                           if (user) {
-                            handleUpgrade(plan.id as PlanId);
+                            handleCheckout(plan.id as PlanId);
                           }
                         }}
                       >
