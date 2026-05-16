@@ -252,8 +252,54 @@ const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
         })
       }
 
-      const planConfig = PLAN_CONFIGS[planId as keyof typeof PLAN_CONFIGS]
+      const frontendUrl = process.env.CORS_ORIGIN || "http://localhost:5173"
+      const paymentMode = process.env.PAYMENT_MODE || "mock"
 
+      // Mock mode: activate plan directly, redirect to success page
+      if (paymentMode === "mock") {
+        const now = new Date()
+        const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+
+        await fastify.db.transaction(async (tx) => {
+          await tx
+            .insert(subscriptions)
+            .values({
+              id: nanoid(),
+              userId,
+              planId,
+              status: "active",
+              currentPeriodStart: now,
+              currentPeriodEnd: periodEnd,
+              cancelAtPeriodEnd: false,
+              createdAt: now,
+              updatedAt: now,
+            })
+            .onConflictDoUpdate({
+              target: subscriptions.userId,
+              set: {
+                planId,
+                status: "active",
+                currentPeriodStart: now,
+                currentPeriodEnd: periodEnd,
+                cancelAtPeriodEnd: false,
+                updatedAt: now,
+              },
+            })
+
+          await tx
+            .update(users)
+            .set({ planId, updatedAt: now })
+            .where(eq(users.id, userId))
+        })
+
+        return ok({
+          initPoint: `${frontendUrl}/pagamento-sucesso`,
+          preferenceId: `mock_${nanoid()}`,
+        })
+      }
+
+      // MercadoPago mode
+      const planConfig = PLAN_CONFIGS[planId as keyof typeof PLAN_CONFIGS]
       const client = new MercadoPagoConfig({
         accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN || "",
       })
@@ -273,9 +319,9 @@ const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
             ],
             payer: { email },
             back_urls: {
-              success: `${process.env.FRONTEND_URL || ""}/planos?status=success`,
-              failure: `${process.env.FRONTEND_URL || ""}/planos?status=failure`,
-              pending: `${process.env.FRONTEND_URL || ""}/planos?status=pending`,
+              success: `${frontendUrl}/planos?status=success`,
+              failure: `${frontendUrl}/planos?status=failure`,
+              pending: `${frontendUrl}/planos?status=pending`,
             },
             auto_return: "approved",
             notification_url: process.env.MERCADOPAGO_WEBHOOK_URL,
