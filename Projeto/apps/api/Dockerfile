@@ -9,6 +9,7 @@ COPY apps/api/package.json apps/api/package-lock.json ./
 RUN npm ci
 COPY apps/api/ .
 COPY shared/ /build/shared/
+RUN ln -sf /build/apps/api/node_modules /build/shared/node_modules
 RUN npm run build
 
 FROM node:24-alpine AS runner

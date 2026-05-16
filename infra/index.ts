@@ -6,6 +6,7 @@ const awsRegion = config.get("awsRegion") || "sa-east-1"
 const instanceType = config.get("instanceType") || "t3.micro"
 const domain = config.require("domain")
 const githubRepo = config.require("githubRepo")
+const githubBranch = config.get("githubBranch") || "main"
 const sshPublicKey = config.require("sshPublicKey")
 
 // Secrets
@@ -173,7 +174,7 @@ apt-get install -y nginx certbot python3-certbot-nginx
 # --- App ---
 mkdir -p /opt/varzeapro
 cd /opt/varzeapro
-git clone ${githubRepo} .
+git clone --branch ${githubBranch} ${githubRepo} .
 chown -R ubuntu:ubuntu /opt/varzeapro
 
 # --- Swap (t3.micro tem 1GB RAM) ---
