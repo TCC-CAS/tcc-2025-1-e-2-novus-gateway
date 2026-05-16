@@ -13,6 +13,7 @@ WORKDIR /build/apps/web
 COPY --from=development-dependencies-env /build/apps/web/node_modules ./node_modules
 COPY apps/web/ .
 COPY shared/ /build/shared/
+RUN ln -sf /build/apps/web/node_modules /build/shared/node_modules
 RUN npm run build
 
 FROM node:24-alpine
