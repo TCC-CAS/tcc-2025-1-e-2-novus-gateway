@@ -36,6 +36,9 @@ CREATE TABLE "players" (
 	"phone" text,
 	"availability" text,
 	"hidden" boolean DEFAULT false NOT NULL,
+	"region" text,
+	"city" text,
+	"level" text,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "players_user_id_unique" UNIQUE("user_id")
@@ -148,6 +151,55 @@ CREATE TABLE "verifications" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "favorites" (
+	"id" text PRIMARY KEY NOT NULL,
+	"user_id" text NOT NULL,
+	"target_user_id" text NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "media_assets" (
+	"id" text PRIMARY KEY NOT NULL,
+	"owner_user_id" text NOT NULL,
+	"entity_type" text NOT NULL,
+	"entity_id" text,
+	"storage_path" text NOT NULL,
+	"file_name" text NOT NULL,
+	"mime_type" text NOT NULL,
+	"size_bytes" integer NOT NULL,
+	"width" integer,
+	"height" integer,
+	"thumbnail_url" text,
+	"medium_url" text,
+	"original_url" text,
+	"is_deleted" boolean DEFAULT false NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"deleted_at" timestamp with time zone
+);
+--> statement-breakpoint
+CREATE TABLE "gallery_media" (
+	"id" text PRIMARY KEY NOT NULL,
+	"owner_user_id" text NOT NULL,
+	"media_type" text DEFAULT 'image' NOT NULL,
+	"storage_key" text NOT NULL,
+	"file_name" text NOT NULL,
+	"mime_type" text NOT NULL,
+	"size_bytes" integer DEFAULT 0 NOT NULL,
+	"width" integer,
+	"height" integer,
+	"duration_seconds" integer,
+	"caption" text,
+	"is_highlight" boolean DEFAULT false NOT NULL,
+	"sort_order" integer DEFAULT 0 NOT NULL,
+	"thumbnail_url" text,
+	"medium_url" text,
+	"original_url" text,
+	"is_deleted" boolean DEFAULT false NOT NULL,
+	"deleted_at" timestamp with time zone,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 ALTER TABLE "players" ADD CONSTRAINT "players_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "teams" ADD CONSTRAINT "teams_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "conversations" ADD CONSTRAINT "conversations_participant_a_users_id_fk" FOREIGN KEY ("participant_a") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -159,4 +211,9 @@ ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_admin_id_users_id_fk" FOREIG
 ALTER TABLE "moderation_reports" ADD CONSTRAINT "moderation_reports_reporter_id_users_id_fk" FOREIGN KEY ("reporter_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "accounts" ADD CONSTRAINT "accounts_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-CREATE INDEX "messages_conversation_id_idx" ON "messages" USING btree ("conversation_id");
+ALTER TABLE "favorites" ADD CONSTRAINT "favorites_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "favorites" ADD CONSTRAINT "favorites_target_user_id_users_id_fk" FOREIGN KEY ("target_user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "media_assets" ADD CONSTRAINT "media_assets_owner_user_id_users_id_fk" FOREIGN KEY ("owner_user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "gallery_media" ADD CONSTRAINT "gallery_media_owner_user_id_users_id_fk" FOREIGN KEY ("owner_user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "messages_conversation_id_idx" ON "messages" USING btree ("conversation_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "unique_favorite" ON "favorites" USING btree ("user_id","target_user_id");
