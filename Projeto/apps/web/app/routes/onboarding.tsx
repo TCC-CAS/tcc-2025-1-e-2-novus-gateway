@@ -113,7 +113,7 @@ export default function Onboarding() {
     } catch {
       toast.error("Não foi possível salvar o perfil. Edite depois no seu vestiário.");
     }
-    toast.success("Perfil configurado!");
+    toast.success("Perfil configurado! Verifique seu email para ativar todas as funcionalidades.");
     navigate(getHomeForRole(role!), { replace: true });
   }
 

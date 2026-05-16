@@ -3,6 +3,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle"
 import { nanoid } from "nanoid"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import * as schema from "../db/schema/index.js"
+import { emailService } from "./email/index.js"
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Auth = ReturnType<typeof betterAuth<any>>
@@ -32,10 +33,18 @@ export function createAuth(db: PostgresJsDatabase<typeof schema>) {
     emailAndPassword: {
       enabled: true,
       sendResetPassword: async ({ user, url, token }) => {
-        console.log(`[PASSWORD RESET] email=${user.email} token=${token} url=${url}`)
+        void emailService.sendPasswordReset(user.email, url)
       },
     },
     plugins: [],
+    emailVerification: {
+      sendVerificationEmail: async ({ user, url, token }) => {
+        void emailService.sendEmailVerification(user.email, url)
+      },
+      sendOnSignUp: true,
+      autoSignInAfterVerification: true,
+      expiresIn: 3600,
+    },
     user: {
       additionalFields: {
         role: {
@@ -71,6 +80,8 @@ export function createAuth(db: PostgresJsDatabase<typeof schema>) {
                 .values({ id: nanoid(), userId, name, level: "outro" })
                 .onConflictDoNothing()
             }
+
+            void emailService.sendWelcome(u.email as string, name)
           },
         },
       },
