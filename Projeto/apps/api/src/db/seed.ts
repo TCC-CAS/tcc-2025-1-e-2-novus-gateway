@@ -2,6 +2,7 @@ import { randomUUID } from "crypto"
 import { createWriteStream } from "fs"
 
 const API_URL = process.env.API_URL || "http://localhost:3000"
+const ORIGIN = process.env.CORS_ORIGIN || "http://localhost:5173"
 const PASSWORD = "VarzeaPro@2026"
 const CSV_PATH = "./seed-credentials.csv"
 
@@ -55,7 +56,7 @@ function slug(name: string): string {
 async function signUp(name: string, email: string, password: string, role: string) {
   const res = await fetch(`${API_URL}/api/auth/sign-up/email`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "Origin": "https://varzeapro.online" },
+    headers: { "Content-Type": "application/json", "Origin": ORIGIN },
     body: JSON.stringify({ name, email, password, role }),
   })
   if (!res.ok) {

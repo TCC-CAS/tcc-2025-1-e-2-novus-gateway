@@ -253,7 +253,7 @@ const instance = new aws.ec2.Instance(
     iamInstanceProfile: instanceProfile.name,
     vpcSecurityGroupIds: [sg.id],
     rootBlockDevice: {
-      volumeSize: 8,
+      volumeSize: 20,
       volumeType: "gp3",
     },
     userData: userData,
