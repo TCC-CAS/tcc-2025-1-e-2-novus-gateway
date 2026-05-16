@@ -41,7 +41,7 @@ export function createAuth(db: PostgresJsDatabase<typeof schema>) {
       sendVerificationEmail: async ({ user, url, token }) => {
         void emailService.sendEmailVerification(user.email, url)
       },
-      sendOnSignUp: true,
+      sendOnSignUp: false,
       autoSignInAfterVerification: true,
       expiresIn: 3600,
     },
