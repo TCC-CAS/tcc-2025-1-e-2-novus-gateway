@@ -46,9 +46,9 @@ export default function JogadorPublicProfile() {
   const isOwnProfile = !!user && !!profile && user.id === profile.userId;
 
   const { data: galleryData } = useQuery({
-    queryKey: ["gallery", id],
-    queryFn: () => galleryApi.listByUser(id!),
-    enabled: !!id,
+    queryKey: ["gallery", profile?.userId],
+    queryFn: () => galleryApi.listByUser(profile!.userId),
+    enabled: !!profile?.userId,
   });
 
   const favoriteMutation = useMutation({
