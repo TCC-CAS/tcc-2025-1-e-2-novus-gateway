@@ -1,6 +1,6 @@
 # VarzeaPro — Infraestrutura AWS com Pulumi
 
-Infraestrutura como código para deploy do VarzeaPro na AWS. Cria EC2, S3, IAM e Security Group via Pulumi (TypeScript), com CI/CD automático via GitHub Actions.
+Infraestrutura como código para deploy do VarzeaPro na AWS. Um `pulumi up` cria tudo — EC2, S3, IAM, instala Docker/Nginx, sobe os containers, roda migrations e configura HTTPS. Zero SSH manual.
 
 ---
 
@@ -26,7 +26,7 @@ S3 (varzeapro-media) ← Upload de imagens via presigned URLs
 
 - [Pulumi CLI](https://www.pulumi.com/docs/install/) instalado
 - [AWS CLI](https://aws.amazon.com/cli/) instalado e configurado
-- Conta AWS com permissão para criar EC2, S3, IAM
+- Conta AWS com permissão para criar EC2, S3, IAM (Free Tier funciona)
 - Um par de chaves SSH (ed25519 ou RSA)
 - Domínio registrado (para HTTPS com Let's Encrypt)
 
@@ -46,7 +46,7 @@ S3 (varzeapro-media) ← Upload de imagens via presigned URLs
 
 ---
 
-## Setup rápido
+## Setup completo (tudo automatizado)
 
 ### 1. Instalar dependências
 
@@ -78,106 +78,70 @@ export AWS_REGION=sa-east-1
 pulumi stack init production
 ```
 
-### 4. Configurar variáveis da stack
+### 4. Configurar variáveis obrigatórias
 
 ```bash
-# Obrigatório: chave SSH pública para acessar a EC2
+# Chave SSH pública (obrigatório — já configurado no stack)
 pulumi config set sshPublicKey --plaintext 'ssh-ed25519 AAAA... user@email.com'
 
-# Opcional: customizar (valores padrão já estão em Pulumi.production.yaml)
-pulumi config set domain 'seudominio.com.br'
-pulumi config set ghcrOwner 'seu-usuario-github'
+# Domínio (obrigatório — usado no Nginx, Certbot e CORS)
+pulumi config set domain 'seudominio.com'
+
+# Repo do GitHub (obrigatório — a EC2 clona automaticamente)
+pulumi config set githubRepo 'https://github.com/seu-user/seu-repo.git'
+
+# Secrets gerados automaticamente:
+pulumi config set --secret postgresPassword "$(openssl rand -hex 16)"
+pulumi config set --secret jwtSecret "$(openssl rand -hex 32)"
+pulumi config set --secret betterAuthSecret "$(openssl rand -hex 32)"
 ```
 
-### 5. Preview (dry-run)
+### 5. Configurar variáveis opcionais
 
 ```bash
-pulumi preview
+# S3 (se quiser usar credenciais específicas, senão a EC2 usa IAM Role)
+pulumi config set s3AccessKeyId 'AKIA...'
+pulumi config set --secret s3SecretAccessKey 'xxx'
+
+# Email (Resend)
+pulumi config set --secret resendApiKey 're_xxxxxxxxxxxx'
+pulumi config set emailFrom 'noreply@seudominio.com'
+
+# MercadoPago (Sandbox)
+pulumi config set --secret mercadopagoAccessToken 'your-sandbox-token'
 ```
 
-Mostra exatamente o que será criado sem aplicar nenhuma mudança.
-
-### 6. Criar infraestrutura
+### 6. Subir tudo com um comando
 
 ```bash
 pulumi up
 ```
 
-Confirme com `yes` quando solicitado. Ao final, o Pulumi imprime os outputs:
+Confirme com `yes`. O Pulumi cria toda a infra e a EC2 executa o bootstrap automaticamente:
+
+1. Instala Docker, Nginx e Certbot
+2. Cria swap de 1GB (t3.micro tem só 1GB RAM)
+3. Clona o repo
+4. Gera o `.env` com todos os valores configurados
+5. Sobe os containers com Docker Compose
+6. Roda as migrations (drizzle-kit push)
+7. Configura Nginx com o domínio real
+8. Roda Certbot para HTTPS (Let's Encrypt)
+
+Ao final, o Pulumi imprime:
 
 ```
 Outputs:
-    instancePublicIp:   "18.228.xxx.xxx"
-    mediaBucketName:    "varzeapro-media"
-    securityGroupId:    "sg-xxx"
+    instancePublicIp:    "18.228.xxx.xxx"
+    instancePublicDns:   "ec2-xxx.sa-east-1.compute.amazonaws.com"
+    mediaBucketName:     "varzeapro-media"
+    securityGroupId:     "sg-xxx"
     instanceProfileName: "varzeapro-ec2-profile"
+    appUrl:              "https://seudominio.com"
+    apiUrlOutput:        "https://api.seudominio.com"
 ```
 
-Anote o `instancePublicIp`.
-
----
-
-## Deploy da aplicação
-
-### Primeiro deploy (manual)
-
-Após `pulumi up`, a EC2 já terá Docker e Nginx instalados (via user-data). Falta clonar o repo e subir os containers:
-
-```bash
-# SSH na EC2
-ssh -i ~/.ssh/sua-chave ubuntu@<instancePublicIp>
-
-# Clonar o projeto
-cd /opt/varzeapro
-sudo git clone https://github.com/seu-user/varzeapro.git .
-
-# Configurar environment
-sudo cp .env.production.example .env
-sudo nano .env  # Preencher todos os valores reais
-```
-
-Editar o `.env` com os valores reais:
-
-```env
-POSTGRES_PASSWORD=<gerar com: openssl rand -hex 16>
-JWT_SECRET=<gerar com: openssl rand -hex 32>
-BETTER_AUTH_SECRET=<gerar com: openssl rand -hex 32>
-BETTER_AUTH_URL=https://api.seudominio.com.br
-CORS_ORIGIN=https://seudominio.com.br
-S3_ACCESS_KEY_ID=<sua AWS access key>
-S3_SECRET_ACCESS_KEY=<sua AWS secret key>
-S3_BUCKET=varzeapro-media
-S3_REGION=sa-east-1
-RESEND_API_KEY=re_xxxxxxxxxxxx
-EMAIL_FROM=noreply@seudominio.com.br
-VITE_API_URL=https://api.seudominio.com.br
-```
-
-Subir os containers:
-
-```bash
-sudo docker compose -f docker-compose.prod.yml up -d --build
-```
-
-### Configurar Nginx + HTTPS
-
-```bash
-# Copiar config do Nginx
-sudo cp nginx/varzeapro.conf /etc/nginx/sites-available/varzeapro
-sudo ln -s /etc/nginx/sites-available/varzeapro /etc/nginx/sites-enabled/
-
-# Substituir yourdomain.com pelo domínio real
-sudo sed -i 's/yourdomain.com/seudominio.com.br/g' /etc/nginx/sites-available/varzeapro
-sudo sed -i 's/api.yourdomain.com/api.seudominio.com.br/g' /etc/nginx/sites-available/varzeapro
-
-# Testar e recarregar
-sudo nginx -t && sudo systemctl reload nginx
-
-# Certbot (HTTPS com Let's Encrypt)
-sudo certbot --nginx -d seudominio.com.br -d www.seudominio.com.br -d api.seudominio.com.br
-```
-
-### Configurar DNS
+### 7. Apontar DNS
 
 No registrar do domínio, criar registros A apontando para o IP da EC2:
 
@@ -187,11 +151,50 @@ No registrar do domínio, criar registros A apontando para o IP da EC2:
 | `www` | A | `18.228.xxx.xxx` |
 | `api` | A | `18.228.xxx.xxx` |
 
+> O Certbot roda durante o bootstrap. Se o DNS ainda não propagou, ele falha silenciosamente. Depois que o DNS estiver pronto, rode manualmente:
+> ```bash
+> ssh ubuntu@<IP>
+> sudo certbot --nginx -d varzeapro.online  -d www.varzeapro.online -d api.varzeapro.online
+> ```
+
+### 8. Verificar
+
+- `https://seudominio.com` — Web app
+- `https://api.seudominio.com/health` — API respondendo 200
+
+---
+
+## O que acontece no `pulumi up`
+
+```
+Pulumi (index.ts)
+├── Cria S3 bucket (varzeapro-media) + CORS + public access block
+├── Cria IAM Role + Policy (S3 read/write) + Instance Profile
+├── Cria SSH Key Pair
+├── Cria Security Group (22/80/443)
+├── Busca AMI Ubuntu 24.04 mais recente
+├── Monta user-data com todos os valores injetados
+└── Cria EC2 com user-data
+    │
+    └── EC2 executa automaticamente:
+        ├── apt update + upgrade
+        ├── Instala Docker
+        ├── Instala Nginx + Certbot
+        ├── Cria swap (1GB)
+        ├── Clona repo do GitHub
+        ├── Escreve .env com secrets
+        ├── docker compose up -d --build
+        ├── Aguarda API ficar healthy
+        ├── Roda drizzle-kit push (migrations)
+        ├── Configura Nginx com domínio real
+        └── Roda certbot --nginx (HTTPS)
+```
+
 ---
 
 ## CI/CD — GitHub Actions
 
-Após o primeiro deploy manual, os deploys seguintes são automáticos via GitHub Actions.
+Após o primeiro deploy, os deploys seguintes são automáticos via GitHub Actions.
 
 ### Fluxo
 
@@ -212,14 +215,14 @@ Vá em **Settings → Secrets and variables → Actions** e adicione:
 | Secret | Descrição |
 |--------|-----------|
 | `EC2_HOST` | IP público da EC2 (output do `pulumi up`) |
-| `EC2_SSH_KEY` | Chave SSH privada (conteúdo do `.pem`) |
-| `VITE_API_URL` | `https://api.seudominio.com.br` |
+| `EC2_SSH_KEY` | Chave SSH privada (conteúdo do arquivo) |
+| `VITE_API_URL` | `https://api.seudominio.com` |
 
 O `GITHUB_TOKEN` é automático (usado para push no GHCR).
 
 ### Imagens Docker
 
-As imagens são publicadas no GitHub Container Registry:
+Publicadas no GitHub Container Registry:
 
 ```
 ghcr.io/<usuario>/varzeapro-api:latest
@@ -230,6 +233,8 @@ ghcr.io/<usuario>/varzeapro-api:sha-abc1234   (tag por commit)
 ---
 
 ## Comandos úteis
+
+### Pulumi
 
 ```bash
 # Ver estado atual da infra
@@ -251,7 +256,7 @@ pulumi refresh
 pulumi stack history
 ```
 
-### Na EC2
+### Na EC2 (SSH)
 
 ```bash
 # Ver status dos containers
@@ -263,11 +268,17 @@ docker compose -f docker-compose.prod.yml logs api -f
 # Ver logs do Web
 docker compose -f docker-compose.prod.yml logs web -f
 
+# Ver log do bootstrap (se algo deu errado na criação)
+cat /var/log/user-data.log
+
 # Rodar migration manual
 docker compose -f docker-compose.prod.yml exec api npx drizzle-kit push
 
 # Restartar um serviço
 docker compose -f docker-compose.prod.yml restart api
+
+# Reconfigurar HTTPS (se DNS propagou depois)
+sudo certbot --nginx -d seudominio.com -d www.seudominio.com -d api.seudominio.com
 ```
 
 ---
@@ -289,18 +300,11 @@ Todos os recursos usam o [AWS Free Tier](https://aws.amazon.com/free/):
 
 ### Limitações do t3.micro (1GB RAM)
 
-Com 1GB RAM rodando PostgreSQL + API + Web + Nginx, é apertado mas funciona para TCC. Dicas:
+Com 1GB RAM rodando PostgreSQL + API + Web + Nginx, é apertado mas funciona para TCC:
 
-- O PostgreSQL vai usar ~200MB, Nginx ~20MB, cada container Node ~150-200MB
-- Se ficar lento, considere usar um banco externo (Supabase free tier) ou swap file
-- Para criar swap na EC2 se necessário:
-```bash
-sudo fallocate -l 1G /swapfile
-sudo chmod 600 /swapfile
-sudo mkswap /swapfile
-sudo swapon /swapfile
-echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
-```
+- PostgreSQL usa ~200MB, Nginx ~20MB, cada container Node ~150-200MB
+- Swap de 1GB é criado automaticamente pelo user-data
+- Se ficar lento, considere banco externo (Supabase free tier)
 
 ---
 
@@ -312,15 +316,14 @@ infra/
 ├── Pulumi.production.yaml   # Variáveis da stack production
 ├── package.json              # Deps (pulumi, pulumi-aws)
 ├── tsconfig.json
-├── index.ts                  # Infra principal (S3, IAM, SG, EC2)
-├── user-data.sh              # Bootstrap da EC2 (Docker, Nginx, Certbot)
+├── index.ts                  # Infra principal (S3, IAM, SG, EC2) + user-data inline
 └── README.md                 # Este arquivo
 
 Projeto/
 ├── docker-compose.prod.yml   # Compose de produção (imagens GHCR)
 ├── deploy.sh                 # Deploy manual (alternativa ao CI/CD)
-├── nginx/varzeapro.conf      # Config do Nginx
-└── .env.production.example   # Template de variáveis de ambiente
+├── nginx/varzeapro.conf      # Config do Nginx (placeholder, injetado pelo user-data)
+└── .env.production.example   # Template de variáveis (referência)
 
 .github/
 └── workflows/
@@ -337,14 +340,24 @@ error: 403 Forbidden
 ```
 Verifique se `aws configure` foi executado ou se as env vars estão corretas.
 
+### Pulumi: missing required configuration
+```
+error: Missing required configuration variable 'varzeapro-infra:domain'
+```
+Rode `pulumi config set domain 'seudominio.com'` e os outros campos obrigatórios listados no setup.
+
 ### EC2: containers não sobem
 ```bash
+ssh ubuntu@<IP>
 docker compose -f docker-compose.prod.yml logs api
 ```
-Verificar se o `.env` tem todos os valores preenchidos.
+Verificar se o `.env` tem todos os valores preenchidos:
+```bash
+cat /opt/varzeapro/Projeto/.env
+```
 
 ### EC2: Nginx 502 Bad Gateway
-Os containers ainda não subiram ou estão em porta diferente. Verifique:
+Os containers ainda estão subindo (demora ~2min no t3.micro). Verifique:
 ```bash
 docker compose -f docker-compose.prod.yml ps
 curl http://localhost:3000/health
@@ -354,19 +367,30 @@ curl http://localhost:3001
 ### Certbot: erro de DNS
 O DNS pode levar alguns minutos para propagar. Verifique com:
 ```bash
-dig seudominio.com.br
-dig api.seudominio.com.br
+dig seudominio.com
+dig api.seudominio.com
 ```
+Depois de propagar, rode novamente:
+```bash
+sudo certbot --nginx -d seudominio.com -d www.seudominio.com -d api.seudominio.com
+```
+
+### Bootstrap falhou / quero ver o log
+```bash
+cat /var/log/user-data.log
+```
+Esse arquivo tem a saída completa do script de bootstrap.
 
 ### GitHub Actions: permission denied no GHCR
 O `GITHUB_TOKEN` precisa de permissão `packages: write`. Isso já está no workflow, mas verifique se o repo não desabilitou GitHub Actions.
 
 ### Quero recriar tudo do zero
 ```bash
-pulumi destroy    # Destroi toda a infra AWS
-pulumi stack rm production  # Remove o stack local
-pulumi stack init production  # Cria de novo
-pulumi up         # Recria
+pulumi destroy               # Destroi toda a infra AWS
+pulumi stack rm production   # Remove o stack local
+pulumi stack init production # Cria de novo
+# Reconfigurar variáveis (passo 4 e 5 do setup)
+pulumi up                    # Recria tudo
 ```
 
 > **Atenção:** `pulumi destroy` apaga o banco de dados. Faça backup antes se tiver dados importantes.

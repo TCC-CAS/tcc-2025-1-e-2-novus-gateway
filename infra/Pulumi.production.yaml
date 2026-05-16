@@ -1,2 +1,23 @@
 config:
+  varzeapro-infra:awsRegion: sa-east-1
+  varzeapro-infra:instanceType: t3.micro
+  varzeapro-infra:domain: varzeapro.online
+  varzeapro-infra:githubRepo: https://github.com/TCC-CAS/tcc-2025-1-e-2-novus-gateway.git
   varzeapro-infra:sshPublicKey: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGXX1S6FtGTg3RCEJM3tfmBJD7Oe6iGACt6lG6nVFdnN diogosarti13@gmail.com
+  # Opcional (deixe vazio se não for usar)
+  varzeapro-infra:s3AccessKeyId: ""
+  varzeapro-infra:emailFrom: "noreply@yourdomain.com"
+  varzeapro-infra:postgresPassword:
+    secure: AAABAI/3Tdopx2tbXwLRA1KfnLiDRakHCLnkO/QCtKTZU04zLLG9VCcRGnstbkOjIdSr8Uu900FCe1whlRJtuQ==
+  varzeapro-infra:betterAuthSecret:
+    secure: AAABAE0ndLfft0+dQUX+R7hgEWI74oizcABAGc3wWxqsWEE/YzKYwhsQYhZ3Tx38MORQUvfbcGggCXeZ0tS2xTjSwAJieATGU9nFRXvDdzQ74BOxV/FkuzBLAEvsbzh5
+  varzeapro-infra:jwtSecret:
+    secure: AAABAKy1gWIEeoSnBKoBK5NpWbY8JQ0m5uRS7SPI8UjECpLwH7RCZQYoR7TDemCf9uWEyRoeIYu+no5KkM1rgBBfnVWlQ0Up8GIoRw+br4tWOeAkRcsTawyTOqE3x+1m
+
+# Secrets — NÃO coloque aqui, use o CLI:
+# pulumi config set --secret postgresPassword "$(openssl rand -hex 16)"
+# pulumi config set --secret jwtSecret "$(openssl rand -hex 32)"
+# pulumi config set --secret betterAuthSecret "$(openssl rand -hex 32)"
+# pulumi config set --secret s3SecretAccessKey "xxx"
+# pulumi config set --secret resendApiKey "re_xxx"
+# pulumi config set --secret mercadopagoAccessToken "xxx"
