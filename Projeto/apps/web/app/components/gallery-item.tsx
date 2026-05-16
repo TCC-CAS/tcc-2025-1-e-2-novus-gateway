@@ -6,19 +6,26 @@ import { cn } from "~/lib/utils"
 interface GalleryItemProps {
   item: GalleryMedia
   isOwner?: boolean
+  onClick?: () => void
   onDelete?: (id: string) => void
   onToggleHighlight?: (id: string, isHighlight: boolean) => void
 }
 
-export function GalleryItem({ item, isOwner, onDelete, onToggleHighlight }: GalleryItemProps) {
+export function GalleryItem({ item, isOwner, onClick, onDelete, onToggleHighlight }: GalleryItemProps) {
   const isVideo = item.mediaType === "video"
 
   return (
-    <div className={cn(
-      "group relative border-4 border-foreground bg-background transition-transform hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_var(--color-primary)]",
-      item.isHighlight && "ring-2 ring-primary ring-offset-2"
-    )}>
-      <div className="aspect-square overflow-hidden">
+    <div
+      className={cn(
+        "group relative border-4 border-foreground bg-background transition-transform hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_var(--color-primary)]",
+        item.isHighlight && "ring-2 ring-primary ring-offset-2"
+      )}
+    >
+      <button
+        type="button"
+        onClick={onClick}
+        className="aspect-square w-full overflow-hidden block"
+      >
         {isVideo ? (
           <VideoPlayer src={item.originalUrl} className="h-full w-full" />
         ) : (
@@ -29,7 +36,7 @@ export function GalleryItem({ item, isOwner, onDelete, onToggleHighlight }: Gall
             loading="lazy"
           />
         )}
-      </div>
+      </button>
 
       {item.isHighlight && (
         <div className="absolute top-2 left-2 border-2 border-foreground bg-primary px-2 py-1">
