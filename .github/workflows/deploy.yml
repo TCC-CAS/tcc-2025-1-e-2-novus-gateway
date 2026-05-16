@@ -20,9 +20,11 @@ jobs:
       matrix:
         include:
           - app: api
-            context: ./Projeto/apps/api
+            context: ./Projeto
+            dockerfile: ./Projeto/apps/api/Dockerfile
           - app: web
-            context: ./Projeto/apps/web
+            context: ./Projeto
+            dockerfile: ./Projeto/apps/web/Dockerfile
 
     steps:
       - name: Checkout
@@ -51,6 +53,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -62,6 +65,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max

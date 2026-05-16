@@ -17,8 +17,8 @@ services:
   api:
     image: ${API_IMAGE:-ghcr.io/your-github-username/varzeapro-api:latest}
     build:
-      context: ./apps/api
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/api/Dockerfile
     depends_on:
       postgres:
         condition: service_healthy
@@ -35,8 +35,8 @@ services:
   web:
     image: ${WEB_IMAGE:-ghcr.io/your-github-username/varzeapro-web:latest}
     build:
-      context: ./apps/web
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/web/Dockerfile
     depends_on:
       - api
     environment:

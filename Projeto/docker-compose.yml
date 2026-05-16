@@ -16,7 +16,9 @@ services:
       - postgres_data:/var/lib/postgresql
 
   api:
-    build: ./apps/api
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
     depends_on:
       postgres:
         condition: service_healthy
@@ -29,7 +31,9 @@ services:
       - uploads_data:/app/uploads
 
   web:
-    build: ./apps/web
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
     depends_on:
       - api
     environment:
