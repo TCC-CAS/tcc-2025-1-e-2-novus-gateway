@@ -243,6 +243,9 @@ export default function Cadastro() {
                       className="h-14 rounded-none border-2 border-foreground bg-muted/50 px-4 text-lg focus-visible:ring-0 focus-visible:border-primary transition-colors"
                       {...form.register("password")}
                     />
+                    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                      Mín. 8 caracteres, com maiúscula, minúscula, número e símbolo.
+                    </p>
                     {form.formState.errors.password && (
                       <p className="font-bold tracking-wide text-destructive text-sm mt-1">
                         {form.formState.errors.password.message}

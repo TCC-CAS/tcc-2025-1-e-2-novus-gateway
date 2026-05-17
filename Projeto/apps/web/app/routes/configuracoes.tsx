@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { toast } from "sonner";
 import { useAuth } from "~/lib/auth/auth-context";
 import { usePlan } from "~/lib/plan";
-import { getPlansForRole, isUnlimited, PLAN_CONFIGS } from "~shared/contracts";
+import { PasswordSchema, getPlansForRole, isUnlimited, PLAN_CONFIGS } from "~shared/contracts";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import {
@@ -43,8 +43,10 @@ export default function Configuracoes() {
       toast.error("As senhas não coincidem");
       return;
     }
-    if (newPassword.length < 8) {
-      toast.error("A nova senha deve ter no mínimo 8 caracteres");
+
+    const passwordValidation = PasswordSchema.safeParse(newPassword);
+    if (!passwordValidation.success) {
+      toast.error(passwordValidation.error.issues[0]?.message ?? "Senha inválida");
       return;
     }
     setIsChangingPassword(true);
@@ -145,20 +147,21 @@ export default function Configuracoes() {
               />
               <Input
                 type="password"
-                placeholder="NOVA SENHA (mín. 8 caracteres)"
+                placeholder="NOVA SENHA"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
-                minLength={8}
                 className="h-12 rounded-none border-2 border-foreground bg-muted/30 font-bold tracking-widest text-sm uppercase focus:ring-0 focus:border-primary"
               />
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                Mín. 8 caracteres, com maiúscula, minúscula, número e símbolo.
+              </p>
               <Input
                 type="password"
                 placeholder="CONFIRMAR NOVA SENHA"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                minLength={8}
                 className="h-12 rounded-none border-2 border-foreground bg-muted/30 font-bold tracking-widest text-sm uppercase focus:ring-0 focus:border-primary"
               />
               <Button

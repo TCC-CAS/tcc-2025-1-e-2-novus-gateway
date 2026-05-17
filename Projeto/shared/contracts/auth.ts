@@ -3,6 +3,15 @@ import { z } from "zod";
 export const RoleSchema = z.enum(["player", "team", "admin"]);
 export type Role = z.infer<typeof RoleSchema>;
 
+export const PasswordSchema = z
+  .string()
+  .min(8, "Senha deve ter pelo menos 8 caracteres")
+  .regex(/[a-z]/, "Senha deve conter ao menos uma letra minúscula")
+  .regex(/[A-Z]/, "Senha deve conter ao menos uma letra maiúscula")
+  .regex(/\d/, "Senha deve conter ao menos um número")
+  .regex(/[^A-Za-z0-9]/, "Senha deve conter ao menos um símbolo")
+export type Password = z.infer<typeof PasswordSchema>;
+
 /** Login request body */
 export const LoginRequestSchema = z.object({
   email: z.string().email("E-mail inválido"),
@@ -27,7 +36,7 @@ export const SignUpRequestSchema = z
   .object({
     name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
     email: z.string().email("E-mail inválido"),
-    password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
+    password: PasswordSchema,
     confirmPassword: z.string(),
     role: RoleSchema,
   })
