@@ -129,73 +129,77 @@ export default function JogadorPublicProfile() {
           <div className="absolute -left-10 -top-10 h-40 w-40 bg-background/10 rotate-12 blur-sm" />
           <div className="absolute bottom-0 right-0 h-1/2 w-full bg-linear-to-t from-background/40 to-transparent" />
 
-          <div className="relative z-10 flex flex-col items-center text-center gap-6 sm:flex-row sm:text-left sm:gap-10">
-            <OptimizedImage
-              src={profile.photoUrl}
-              alt={`Foto de ${profile.name}`}
-              size="xl"
-              rounded={false}
-              fallback={<User className="size-16 text-primary sm:size-24" />}
-              className="shadow-[6px_6px_0px_0px_var(--color-foreground)] dark:shadow-[6px_6px_0px_0px_var(--color-foreground)]"
-            />
+          <div className="relative z-10 flex flex-col gap-6">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+              <div className="flex flex-col items-center text-center gap-6 sm:flex-row sm:text-left sm:gap-10 min-w-0">
+                <OptimizedImage
+                  src={profile.photoUrl}
+                  alt={`Foto de ${profile.name}`}
+                  size="xl"
+                  rounded={false}
+                  fallback={<User className="size-16 text-primary sm:size-24" />}
+                  className="shadow-[6px_6px_0px_0px_var(--color-foreground)] dark:shadow-[6px_6px_0px_0px_var(--color-foreground)] shrink-0"
+                />
 
-            <div>
-              <h1 className="font-display text-5xl tracking-wide text-primary-foreground uppercase sm:text-7xl leading-[0.9]">
-                {profile.name}
-              </h1>
+                <div className="min-w-0">
+                  <h1 className="font-display text-5xl tracking-wide text-primary-foreground uppercase sm:text-7xl leading-[0.9] break-words">
+                    {profile.name}
+                  </h1>
 
-              <div className="mt-6 flex flex-wrap justify-center sm:justify-start gap-3">
-                {profile.positions.map((p) => (
-                  <span
-                    key={p}
-                    className="border-2 border-foreground bg-foreground text-background px-4 py-1.5 font-display text-lg tracking-widest uppercase shadow-[2px_2px_0px_0px_var(--color-background)]"
+                  <div className="mt-6 flex flex-wrap justify-center sm:justify-start gap-3">
+                    {profile.positions.map((p) => (
+                      <span
+                        key={p}
+                        className="border-2 border-foreground bg-foreground text-background px-4 py-1.5 font-display text-lg tracking-widest uppercase shadow-[2px_2px_0px_0px_var(--color-background)]"
+                      >
+                        {p}
+                      </span>
+                    ))}
+                    {profile.positions.length === 0 && (
+                      <span className="border-2 border-foreground text-foreground px-4 py-1.5 font-display text-lg tracking-widest uppercase opacity-70">
+                        POSIÇÃO INDEFINIDA
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Desktop Action Buttons */}
+              <div className="hidden sm:flex flex-col items-stretch gap-3 lg:min-w-[18rem] lg:items-end lg:shrink-0">
+                <div className="flex flex-wrap justify-end gap-2">
+                  {user && !isOwnProfile && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => favoriteMutation.mutate()}
+                      disabled={favoriteMutation.isPending}
+                      className={`rounded-none border-2 border-foreground font-display tracking-widest uppercase transition-all whitespace-nowrap ${
+                        isFavorited
+                          ? "bg-primary text-primary-foreground hover:bg-primary/80"
+                          : "bg-background text-foreground hover:bg-primary hover:text-primary-foreground"
+                      }`}
+                    >
+                      <Heart className={`size-4 mr-1 ${isFavorited ? "fill-current" : ""}`} />
+                      {isFavorited ? "FAVORITADO" : "FAVORITAR"}
+                    </Button>
+                  )}
+                  <ReportButton entityType="player" entityId={id!} />
+                </div>
+                {canContact && (
+                  <Button
+                    type="button"
+                    size="lg"
+                    onClick={() => contactMutation.mutate()}
+                    disabled={contactMutation.isPending}
+                    className="h-12 w-full max-w-full rounded-none border-2 border-foreground bg-background px-6 font-display text-xl tracking-widest text-primary hover:bg-foreground hover:text-background hover:shadow-[4px_4px_0px_0px_var(--color-primary)] transition-all uppercase flex items-center justify-center gap-2 disabled:opacity-50 whitespace-nowrap"
                   >
-                    {p}
-                  </span>
-                ))}
-                {profile.positions.length === 0 && (
-                  <span className="border-2 border-foreground text-foreground px-4 py-1.5 font-display text-lg tracking-widest uppercase opacity-70">
-                    POSIÇÃO INDEFINIDA
-                  </span>
+                    <MessageCircle className="size-5" />
+                    MANDAR PROPOSTA
+                  </Button>
                 )}
               </div>
             </div>
-          </div>
-
-          {/* Desktop Action Buttons */}
-          <div className="absolute top-6 right-6 hidden sm:flex flex-col items-end gap-3 z-20">
-            <div className="flex items-start gap-2">
-              {user && !isOwnProfile && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => favoriteMutation.mutate()}
-                  disabled={favoriteMutation.isPending}
-                  className={`rounded-none border-2 border-foreground font-display tracking-widest uppercase transition-all ${
-                    isFavorited
-                      ? "bg-primary text-primary-foreground hover:bg-primary/80"
-                      : "bg-background text-foreground hover:bg-primary hover:text-primary-foreground"
-                  }`}
-                >
-                  <Heart className={`size-4 mr-1 ${isFavorited ? "fill-current" : ""}`} />
-                  {isFavorited ? "FAVORITADO" : "FAVORITAR"}
-                </Button>
-              )}
-              <ReportButton entityType="player" entityId={id!} />
-            </div>
-            {canContact && (
-              <Button
-                type="button"
-                size="lg"
-                onClick={() => contactMutation.mutate()}
-                disabled={contactMutation.isPending}
-                className="h-12 rounded-none border-2 border-foreground bg-background px-6 font-display text-xl tracking-widest text-primary hover:bg-foreground hover:text-background hover:shadow-[4px_4px_0px_0px_var(--color-primary)] transition-all uppercase flex items-center gap-2 disabled:opacity-50"
-              >
-                <MessageCircle className="size-5" />
-                MANDAR PROPOSTA
-              </Button>
-            )}
           </div>
         </div>
 

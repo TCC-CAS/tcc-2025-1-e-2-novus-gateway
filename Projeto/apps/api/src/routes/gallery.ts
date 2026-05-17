@@ -3,9 +3,11 @@ import { ZodTypeProvider } from "fastify-type-provider-zod"
 import { eq, and, desc, count } from "drizzle-orm"
 import { requireRole } from "../hooks/require-auth.js"
 import { ok, list } from "../lib/response.js"
+import { AppError } from "../lib/errors.js"
 import { galleryMedia } from "../db/schema/gallery-media.js"
 import { subscriptions } from "../db/schema/subscriptions.js"
 import { ImageStorage } from "../lib/images/storage.js"
+import { getImageModerationService, ImageModerationError } from "../lib/images/moderation.js"
 import { getPlanLimits } from "../../../../shared/contracts/subscription.js"
 import type { PlanId } from "../../../../shared/contracts/subscription.js"
 import {
@@ -22,6 +24,7 @@ import { randomUUID } from "crypto"
 
 const galleryRoutes: FastifyPluginAsync = async (fastify) => {
   const storage = new ImageStorage()
+  const moderation = getImageModerationService()
 
   // Resolve the effective plan ID for a user
   async function getPlanId(userId: string): Promise<PlanId> {
@@ -100,6 +103,21 @@ const galleryRoutes: FastifyPluginAsync = async (fastify) => {
       const now = new Date()
       const storageKey = `gallery/${userId}/${assetId}`
       const originalUrl = await storage.getUrl(storageKey).catch(() => "")
+
+      try {
+        const decision = await moderation.inspectS3Object(process.env.S3_BUCKET ?? "varzeapro-media", storageKey)
+        if (decision.unsafe) {
+          await storage.delete(storageKey).catch(() => {})
+          throw new AppError(400, "CONTENT_FLAGGED", "Imagem rejeitada pela moderação automática. Envie outra foto.")
+        }
+      } catch (err) {
+        if (err instanceof AppError) throw err
+        if (err instanceof ImageModerationError) {
+          await storage.delete(storageKey).catch(() => {})
+          throw new AppError(400, err.code, err.message)
+        }
+        throw err
+      }
 
       const [asset] = await fastify.db
         .insert(galleryMedia)

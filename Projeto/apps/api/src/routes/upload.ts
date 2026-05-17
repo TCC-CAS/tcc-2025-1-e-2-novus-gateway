@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm"
 import { requireSession } from "../hooks/require-auth.js"
 import { ok } from "../lib/response.js"
 import { AppError } from "../lib/errors.js"
-import { ImageService, ImageValidationError } from "../lib/images/index.js"
+import { ImageService, ImageValidationError, ImageModerationError } from "../lib/images/index.js"
 import { players } from "../db/schema/players.js"
 import { teams } from "../db/schema/teams.js"
 import { mediaAssets } from "../db/schema/media-assets.js"
@@ -69,6 +69,9 @@ const uploadRoutes: FastifyPluginAsync = async (fastify) => {
         if (err instanceof ImageValidationError) {
           throw new AppError(400, err.code, err.message)
         }
+        if (err instanceof ImageModerationError) {
+          throw new AppError(400, err.code, err.message)
+        }
         throw err
       }
     }
@@ -112,6 +115,9 @@ const uploadRoutes: FastifyPluginAsync = async (fastify) => {
         return reply.code(201).send(ok(result))
       } catch (err) {
         if (err instanceof ImageValidationError) {
+          throw new AppError(400, err.code, err.message)
+        }
+        if (err instanceof ImageModerationError) {
           throw new AppError(400, err.code, err.message)
         }
         throw err

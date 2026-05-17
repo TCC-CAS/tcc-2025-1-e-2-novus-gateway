@@ -22,6 +22,7 @@ import { teams } from "../../db/schema/teams.js"
 import { ImageValidator, ImageValidationError } from "./validator.js"
 import { ImageProcessor } from "./processor.js"
 import { ImageStorage } from "./storage.js"
+import { getImageModerationService, ImageModerationError } from "./moderation.js"
 
 export interface UploadResult {
   assetId: string
@@ -37,12 +38,14 @@ export class ImageService {
   private validator: ImageValidator
   private processor: ImageProcessor
   private storage: ImageStorage
+  private moderation: ReturnType<typeof getImageModerationService>
   private db: PostgresJsDatabase<typeof schema>
 
   constructor(db: PostgresJsDatabase<typeof schema>) {
     this.validator = new ImageValidator()
     this.processor = new ImageProcessor()
     this.storage = new ImageStorage()
+    this.moderation = getImageModerationService()
     this.db = db
   }
 
@@ -62,6 +65,15 @@ export class ImageService {
   ): Promise<UploadResult> {
     // 1. Validate
     const { mime } = await this.validator.validate(buffer)
+
+    // 1.5 Moderate the actual image content before we spend CPU on processing/storage.
+    const moderation = await this.moderation.inspect(buffer)
+    if (moderation.unsafe) {
+      throw new ImageModerationError(
+        "CONTENT_FLAGGED",
+        "Imagem rejeitada pela moderação automática. Envie outra foto."
+      )
+    }
 
     // 2. Process — produce 3 sizes in WebP
     const variants = await this.processor.process(buffer)

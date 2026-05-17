@@ -15,10 +15,10 @@ import {
   PutObjectCommand,
   DeleteObjectCommand,
   HeadObjectCommand,
+  GetObjectCommand,
   type PutObjectCommandInput,
 } from "@aws-sdk/client-s3"
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
-import { GetObjectCommand } from "@aws-sdk/client-s3"
 
 function createS3Client(): S3Client {
   const endpoint = process.env.S3_ENDPOINT || "https://s3.amazonaws.com"
@@ -126,6 +126,31 @@ export class ImageStorage {
       return `${this.publicUrl.replace(/\/$/, "")}/${key}`
     }
     return this.getSignedUrl(key)
+  }
+
+  /**
+   * Retrieve an object as a buffer.
+   * Used for moderation of already-uploaded gallery media.
+   */
+  async getBuffer(key: string): Promise<Buffer | null> {
+    const response = await this.client.send(
+      new GetObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+      })
+    ).catch((error) => {
+      if (error instanceof Error && error.name === "NoSuchKey") return null
+      throw error
+    })
+
+    if (!response?.Body) return null
+
+    const chunks: Buffer[] = []
+    const body = response.Body as AsyncIterable<Uint8Array>
+    for await (const chunk of body) {
+      chunks.push(Buffer.from(chunk))
+    }
+    return Buffer.concat(chunks)
   }
 
   /**

@@ -4,13 +4,14 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { z } from "zod";
 import {
   UpsertPlayerProfileRequestSchema,
   type UpsertPlayerProfileRequest,
   POSITIONS,
   PLAYER_LEVELS,
 } from "~shared/contracts";
-import type { PlayerLevel } from "~shared/contracts";
+import type { PlayerLevel, Position } from "~shared/contracts";
 import { playersApi, uploadApi, ApiError } from "~/lib/api-client";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -38,6 +39,19 @@ const POSITION_LABELS: Record<string, string> = {
 
 const DAYS_OF_WEEK = ["SEG", "TER", "QUA", "QUI", "SEX", "SÁB", "DOM"] as const;
 
+function parseSkillsInput(value: string) {
+  return value
+    .split(",")
+    .map((skill) => skill.trim())
+    .filter(Boolean);
+}
+
+function normalizePlayerLevel(value: unknown): PlayerLevel | undefined {
+  return PLAYER_LEVELS.includes(value as PlayerLevel) ? (value as PlayerLevel) : undefined;
+}
+
+type PlayerProfileFormValues = z.input<typeof UpsertPlayerProfileRequestSchema>;
+
 export function meta() {
   return [{ title: "Editar Perfil - VárzeaPro" }];
 }
@@ -51,8 +65,10 @@ export default function JogadorPerfilEditar() {
   });
 
   const [availabilityDays, setAvailabilityDays] = useState<string[]>([]);
+  const [skillsInput, setSkillsInput] = useState("");
+  const [playerLevel, setPlayerLevel] = useState<PlayerLevel | undefined>(undefined);
 
-  const form = useForm<UpsertPlayerProfileRequest>({
+  const form = useForm<PlayerProfileFormValues>({
     resolver: zodResolver(UpsertPlayerProfileRequestSchema),
     defaultValues: {
       name: "",
@@ -77,8 +93,8 @@ export default function JogadorPerfilEditar() {
         availability: profile.availability ?? "",
         region: (profile as any).region ?? "",
         city: (profile as any).city ?? "",
-        level: (profile as any).level ?? "",
       });
+      setPlayerLevel(normalizePlayerLevel((profile as any).level));
       if (profile.availability) {
         setAvailabilityDays(
           profile.availability
@@ -87,6 +103,7 @@ export default function JogadorPerfilEditar() {
             .filter(Boolean),
         );
       }
+      setSkillsInput((profile.skills ?? []).join(", "));
     }
   }, [profile, form]);
 
@@ -110,7 +127,7 @@ export default function JogadorPerfilEditar() {
   const positions = form.watch("positions") ?? [];
   const skills = form.watch("skills") ?? [];
 
-  function togglePosition(pos: string) {
+  function togglePosition(pos: Position) {
     const current = form.getValues("positions");
     const next = current.includes(pos)
       ? current.filter((p) => p !== pos)
@@ -165,7 +182,21 @@ export default function JogadorPerfilEditar() {
       </div>
 
       <form
-        onSubmit={form.handleSubmit((data) => mutation.mutate(data))}
+        noValidate
+        onSubmit={form.handleSubmit(
+          (data) =>
+            mutation.mutate(
+              UpsertPlayerProfileRequestSchema.parse({
+                ...data,
+                skills: parseSkillsInput(skillsInput),
+                level: normalizePlayerLevel(playerLevel) ?? normalizePlayerLevel((profile as any)?.level),
+              }),
+            ),
+          (errors) => {
+            const firstError = Object.values(errors)[0]
+            toast.error(firstError?.message ?? "Corrija os campos destacados antes de salvar.")
+          },
+        )}
         className="space-y-10 relative z-10"
       >
         {/* Basic info */}
@@ -241,8 +272,10 @@ export default function JogadorPerfilEditar() {
                 NÍVEL DE COMPETIÇÃO
               </Label>
               <Select
-                value={form.watch("level") || "none"}
-                onValueChange={(v) => form.setValue("level", v === "none" ? "" as any : v as PlayerLevel, { shouldValidate: true })}
+                value={playerLevel ?? "none"}
+                onValueChange={(v) =>
+                  setPlayerLevel(v === "none" ? undefined : (v as PlayerLevel))
+                }
               >
                 <SelectTrigger className="h-14 rounded-none border-2 border-foreground bg-muted/50 px-4 text-lg uppercase font-bold tracking-widest focus:ring-0 focus:border-primary transition-colors">
                   <SelectValue placeholder="SELECIONE SEU NÍVEL" />
@@ -340,17 +373,13 @@ export default function JogadorPerfilEditar() {
             <div className="space-y-3">
               <Input
                 placeholder="Ex.: drible, passe longo, finalização, raça"
-                value={Array.isArray(skills) ? skills.join(", ") : ""}
-                onChange={(e) =>
-                  form.setValue(
-                    "skills",
-                    e.target.value
-                      ? e.target.value
-                          .split(",")
-                          .map((s) => s.trim())
-                          .filter(Boolean)
-                      : [],
-                  )
+                value={skillsInput}
+                onChange={(e) => setSkillsInput(e.target.value)}
+                onBlur={() =>
+                  form.setValue("skills", parseSkillsInput(skillsInput), {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                  })
                 }
                 className="h-14 rounded-none border-2 border-foreground bg-muted/50 px-4 text-lg focus-visible:ring-0 focus-visible:border-primary transition-colors"
               />

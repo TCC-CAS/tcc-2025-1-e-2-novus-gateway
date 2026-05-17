@@ -64,7 +64,7 @@ export function OptimizedImage({
       return (
         <div
           className={cn(
-            "flex items-center justify-center border-2 border-foreground bg-muted/30",
+            "flex items-center justify-center overflow-hidden border-2 border-foreground bg-muted/30",
             sizeClasses[size],
             rounded && "rounded-full",
             className
@@ -78,7 +78,7 @@ export function OptimizedImage({
     return (
       <div
         className={cn(
-          "flex items-center justify-center border-2 border-foreground bg-muted/30",
+          "flex items-center justify-center overflow-hidden border-2 border-foreground bg-muted/30",
           sizeClasses[size],
           rounded && "rounded-full",
           className
@@ -92,8 +92,14 @@ export function OptimizedImage({
   }
 
   return (
-    <div className={cn("relative", sizeClasses[size], className)}>
-      {/* Skeleton while loading */}
+    <div
+      className={cn(
+        "relative overflow-hidden",
+        sizeClasses[size],
+        rounded && "rounded-full",
+        className
+      )}
+    >
       {status === "loading" && (
         <Skeleton
           className={cn(
@@ -121,11 +127,11 @@ export function OptimizedImage({
         decoding="async"
         onLoad={() => setStatus("loaded")}
         onError={() => {
-          setStatus("error");
-          onError?.();
+          setStatus("error")
+          onError?.()
         }}
         className={cn(
-          "border-2 border-foreground transition-opacity duration-300",
+          "block h-full w-full border-2 border-foreground transition-opacity duration-300",
           sizeClasses[size],
           rounded && "rounded-full",
           fit === "cover" ? "object-cover" : "object-contain",
@@ -133,5 +139,5 @@ export function OptimizedImage({
         )}
       />
     </div>
-  );
+  )
 }

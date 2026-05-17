@@ -111,7 +111,9 @@ docker compose ps
 #### 2. Backend
 
 ```bash
-cd apps/api
+cd shared
+npm install
+cd ../apps/api
 npm install
 cp .env.example .env
 ```
