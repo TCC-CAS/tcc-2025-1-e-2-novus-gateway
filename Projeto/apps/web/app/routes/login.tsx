@@ -54,7 +54,11 @@ export default function Login() {
       navigate(next, { replace: true });
     } catch (e) {
       const message =
-        e instanceof ApiError ? e.message : "Erro ao entrar. Tente novamente.";
+        e instanceof ApiError && e.status === 401
+          ? "Usuário ou Senha inválidos"
+          : e instanceof ApiError
+            ? e.message
+            : "Erro ao entrar. Tente novamente.";
       toast.error(message);
     } finally {
       setIsSubmitting(false);
