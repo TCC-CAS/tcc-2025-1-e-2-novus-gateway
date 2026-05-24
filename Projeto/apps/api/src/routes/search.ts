@@ -1,7 +1,7 @@
 import type { FastifyPluginAsync } from "fastify"
 import { ZodTypeProvider } from "fastify-type-provider-zod"
 import { z } from "zod"
-import { and, eq, ne, ilike, desc, sql, count } from "drizzle-orm"
+import { and, eq, ne, ilike, desc, sql, count, inArray } from "drizzle-orm"
 import { requireRole } from "../hooks/require-auth.js"
 import { list } from "../lib/response.js"
 import { players } from "../db/schema/players.js"
@@ -9,6 +9,7 @@ import { teams } from "../db/schema/teams.js"
 import { subscriptions } from "../db/schema/subscriptions.js"
 import { SearchPlayersQuerySchema, SearchTeamsQuerySchema } from "../../../../shared/contracts/search.js"
 import { getPlanLimits } from "../../../../shared/contracts/subscription.js"
+import type { PlanId } from "../../../../shared/contracts/subscription.js"
 
 const searchRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /players — authenticated team users search for players
@@ -99,11 +100,38 @@ const searchRoutes: FastifyPluginAsync = async (fastify) => {
         .limit(effectivePageSize)
         .offset((page - 1) * effectivePageSize)
 
-      const data = rows.map((p) => ({
-        ...p,
-        createdAt: p.createdAt.toISOString(),
-        updatedAt: p.updatedAt.toISOString(),
-      }))
+      // Plan enforcement: determine what the requesting team can see
+      const teamLimits = getPlanLimits(planId as PlanId, "team")
+      const teamCanSeeCareer = teamLimits.playerCareerAccess
+      const teamCanSeeStats = teamLimits.playerStatsAccess
+
+      // Bulk-fetch player subscriptions to avoid N+1
+      let playerPlanMap: Record<string, PlanId> = {}
+      if (teamCanSeeCareer || teamCanSeeStats) {
+        const playerUserIds = rows.map((p) => p.userId)
+        if (playerUserIds.length > 0) {
+          const playerSubs = await fastify.db
+            .select({ userId: subscriptions.userId, planId: subscriptions.planId })
+            .from(subscriptions)
+            .where(inArray(subscriptions.userId, playerUserIds))
+          for (const s of playerSubs) {
+            playerPlanMap[s.userId] = s.planId as PlanId
+          }
+        }
+      }
+
+      const data = rows.map((p) => {
+        const playerPlanId = playerPlanMap[p.userId] ?? "free"
+        const playerCanShowCareer = ["craque", "fenomeno"].includes(playerPlanId)
+        const playerCanShowStats = playerPlanId === "fenomeno"
+        return {
+          ...p,
+          careerHistory: playerCanShowCareer && teamCanSeeCareer ? p.careerHistory : [],
+          detailedStats: playerCanShowStats && teamCanSeeStats ? p.detailedStats : null,
+          createdAt: p.createdAt.toISOString(),
+          updatedAt: p.updatedAt.toISOString(),
+        }
+      })
 
       return list(data, page, effectivePageSize, total)
     }
