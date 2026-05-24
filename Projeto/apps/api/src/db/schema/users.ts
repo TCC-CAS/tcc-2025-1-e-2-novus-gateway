@@ -1,7 +1,7 @@
 import { pgTable, text, timestamp, boolean, integer, pgEnum } from "drizzle-orm/pg-core"
 
 export const roleEnum = pgEnum("role", ["player", "team", "admin"])
-export const planIdEnum = pgEnum("plan_id", ["free", "craque", "titular", "campeao"])
+export const planIdEnum = pgEnum("plan_id", ["free", "craque", "fenomeno", "titular", "campeao", "profissional"])
 
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
