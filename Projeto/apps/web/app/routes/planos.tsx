@@ -11,24 +11,23 @@ import {
   X,
   Zap,
   Shield,
-  Trophy,
   Crown,
   Star,
+  Flame,
   ArrowLeft,
   ArrowDown,
   MessageCircle,
   Search,
   Video,
-  Eye,
   BadgeCheck,
   Users,
   BarChart3,
-  Send,
   Sparkles,
   Headphones,
   ChevronDown,
   XCircle,
   AlertTriangle,
+  ClipboardList,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -42,8 +41,8 @@ export function meta() {
 const PLAN_ICONS: Record<string, React.ReactNode> = {
   free: <Shield className="size-8" />,
   craque: <Star className="size-8" />,
-  titular: <Trophy className="size-8" />,
-  campeao: <Crown className="size-8" />,
+  fenomeno: <Flame className="size-8" />,
+  profissional: <Crown className="size-8" />,
 };
 
 type FeatureRow = {
@@ -70,24 +69,32 @@ const PLAYER_FEATURES: FeatureRow[] = [
       isUnlimited(p.limits.conversations) ? "Ilimitado" : `${p.limits.conversations}`,
   },
   {
-    label: "VÍDEO HIGHLIGHT",
+    label: "GALERIA DE MÍDIA",
     icon: <Video className="size-4" />,
-    getValue: (p) => (p.limits.videoHighlights ? "Até 3 vídeos" : false),
+    getValue: (p) =>
+      p.limits.maxGalleryItems === 0
+        ? false
+        : `Até ${p.limits.maxGalleryItems} itens`,
   },
   {
-    label: "PERFIL EXPANDIDO",
-    icon: <Eye className="size-4" />,
-    getValue: (p) => (p.limits.expandedProfile ? "Histórico + Stats" : false),
+    label: "VÍDEO HIGHLIGHT",
+    icon: <Video className="size-4" />,
+    getValue: (p) => p.limits.videoHighlights,
+  },
+  {
+    label: "HISTÓRICO DE CLUBES",
+    icon: <ClipboardList className="size-4" />,
+    getValue: (p) => p.limits.careerHistoryVisible,
+  },
+  {
+    label: "ESTATÍSTICAS COMPLETAS",
+    icon: <BarChart3 className="size-4" />,
+    getValue: (p) => p.limits.detailedStatsVisible,
   },
   {
     label: "BADGE VERIFICADO",
     icon: <BadgeCheck className="size-4" />,
     getValue: (p) => p.limits.verifiedBadge,
-  },
-  {
-    label: "QUEM VIU SEU PERFIL",
-    icon: <Eye className="size-4" />,
-    getValue: (p) => p.limits.profileViews,
   },
 ];
 
@@ -116,37 +123,24 @@ const TEAM_FEATURES: FeatureRow[] = [
       isUnlimited(p.limits.openPositions) ? "Ilimitado" : `${p.limits.openPositions}`,
   },
   {
+    label: "VER HISTÓRICO DE CLUBES",
+    icon: <ClipboardList className="size-4" />,
+    getValue: (p) => p.limits.playerCareerAccess,
+  },
+  {
+    label: "VER ESTATÍSTICAS COMPLETAS",
+    icon: <BarChart3 className="size-4" />,
+    getValue: (p) => p.limits.playerStatsAccess,
+  },
+  {
     label: "FILTROS AVANÇADOS",
     icon: <Search className="size-4" />,
     getValue: (p) => p.limits.advancedFilters,
   },
   {
-    label: "LISTA DE FAVORITOS",
-    icon: <Star className="size-4" />,
-    getValue: (p) => {
-      if (p.limits.favorites === 0) return false;
-      return isUnlimited(p.limits.favorites) ? "Ilimitado" : `Até ${p.limits.favorites}`;
-    },
-  },
-  {
-    label: "DESTAQUE NA BUSCA",
-    icon: <Zap className="size-4" />,
-    getValue: (p) => p.limits.featuredListing,
-  },
-  {
-    label: "ANALYTICS",
-    icon: <BarChart3 className="size-4" />,
-    getValue: (p) => p.limits.analytics,
-  },
-  {
-    label: "MENSAGEM EM MASSA",
-    icon: <Send className="size-4" />,
-    getValue: (p) => (p.limits.bulkOutreach ? "Até 10/dia" : false),
-  },
-  {
-    label: "RECOMENDAÇÕES AI",
+    label: "RECOMENDAÇÕES POR ESTILO",
     icon: <Sparkles className="size-4" />,
-    getValue: (p) => p.limits.smartRecommendations,
+    getValue: (p) => (p.limits.smartRecommendations ? "Melhores por perfil" : false),
   },
   {
     label: "SUPORTE PRIORITÁRIO",
@@ -163,6 +157,14 @@ const FAQ_ITEMS = [
   {
     q: "Jogadores precisam pagar para aparecer na busca?",
     a: "Não. A busca é 100% por relevância (posição, região, disponibilidade). Nenhum plano pago altera a ordem de aparição. O campo de jogo é nivelado.",
+  },
+  {
+    q: "Por que times precisam de um plano pago?",
+    a: "O plano gratuito permite buscar jogadores e conversar com limite. O plano Profissional desbloqueia o acesso ao histórico de clubes e às estatísticas completas dos jogadores — dados que os próprios jogadores registram nos planos Craque e Fenômeno. Quanto mais jogadores investem no próprio currículo, mais valioso é o acesso para os times recrutadores.",
+  },
+  {
+    q: "Por que não fizeram um aplicativo?",
+    a: "Web primeiro: sem esperar aprovação de loja, funciona em qualquer celular com navegador, e é muito mais rápido de construir e validar. A plataforma pode ser instalada como PWA diretamente na tela inicial do celular. Um app nativo é o próximo passo natural após validar o modelo com usuários reais.",
   },
   {
     q: "Posso mudar de plano depois?",
@@ -300,8 +302,8 @@ export default function Planos() {
               </span>
             </h1>
             <p className="mx-auto mt-6 max-w-xl text-lg font-medium text-muted-foreground">
-              Jogadores jogam de graça. Times investem no elenco.
-              A busca de jogadores é sempre por relevância, nunca por quem paga mais.
+              Jogadores constroem o currículo. Times acessam os dados para contratar.
+              A busca é sempre por relevância — nunca por quem paga mais.
             </p>
           </div>
 
@@ -568,12 +570,21 @@ export default function Planos() {
           {view === "player" ? (
             <div className="mx-auto mt-12 max-w-3xl border-l-4 border-primary bg-primary/5 p-6">
               <p className="font-bold uppercase tracking-widest text-sm text-foreground">
-                Campo nivelado: A busca de jogadores é 100% por relevância.
-                Nenhum plano pago altera sua posição nos resultados.
-                O CRAQUE oferece ferramentas de apresentação, não vantagem competitiva.
+                Campo nivelado: A busca é 100% por relevância.
+                Nenhum plano altera sua posição nos resultados.
+                CRAQUE e FENÔMENO oferecem ferramentas de apresentação — currículo, estatísticas e histórico — não vantagem competitiva.
               </p>
             </div>
-          ) : null}
+          ) : (
+            <div className="mx-auto mt-12 max-w-3xl border-l-4 border-primary bg-primary/5 p-6">
+              <p className="font-bold uppercase tracking-widest text-sm text-foreground">
+                O plano gratuito deixa buscar e contatar jogadores.
+                O plano Profissional desbloqueia histórico de clubes e estatísticas completas —
+                dados que os jogadores Craque e Fenômeno registram nos perfis.
+                Quanto mais jogadores sobem de plano, mais rico é o banco de dados para os times.
+              </p>
+            </div>
+          )}
 
           {/* FAQ */}
           <section className="mx-auto mt-24 max-w-3xl">
