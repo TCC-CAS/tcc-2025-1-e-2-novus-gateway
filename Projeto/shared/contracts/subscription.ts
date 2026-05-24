@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const PLAYER_PLANS = ["free", "craque", "fenomeno"] as const;
 export const TEAM_PLANS = ["free", "profissional"] as const;
-export const ALL_PLANS = [...PLAYER_PLANS, ...TEAM_PLANS] as const;
+export const ALL_PLANS = ["free", "craque", "fenomeno", "profissional"] as const;
 
 export const PlayerPlanSchema = z.enum(PLAYER_PLANS);
 export type PlayerPlan = z.infer<typeof PlayerPlanSchema>;
@@ -228,9 +228,9 @@ export function getDefaultLimitsForRole(role: "player" | "team"): PlanLimits {
   return PLAN_CONFIGS.free.limits;
 }
 
-export function getPlanLimits(planId: PlanId, role: "player" | "team"): PlanLimits {
-  if (planId === "free") return getDefaultLimitsForRole(role);
-  return PLAN_CONFIGS[planId].limits;
+export function getPlanLimits(planId: PlanId | string, role: "player" | "team"): PlanLimits {
+  if (planId === "free" || !(planId in PLAN_CONFIGS)) return getDefaultLimitsForRole(role);
+  return PLAN_CONFIGS[planId as PlanId].limits;
 }
 
 export function getPlansForRole(role: "player" | "team"): PlanConfig[] {

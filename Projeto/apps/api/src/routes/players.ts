@@ -104,8 +104,9 @@ const playersRoutes: FastifyPluginAsync = async (fastify) => {
       const playerCanShowStats = playerPlanId === "fenomeno"
 
       // Get viewer's subscription to know what they can see
-      let viewerCanSeeCareer = true
-      let viewerCanSeeStats = true
+      // Default false: only teams with profissional plan can see career/stats
+      let viewerCanSeeCareer = false
+      let viewerCanSeeStats = false
       if (viewerRole === "team") {
         const viewerSub = await fastify.db.query.subscriptions.findFirst({
           where: eq(subscriptions.userId, viewerUserId),
