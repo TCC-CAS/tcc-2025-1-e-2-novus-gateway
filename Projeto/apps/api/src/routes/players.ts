@@ -6,6 +6,9 @@ import { nanoid } from "nanoid"
 import { requireSession, requireRole } from "../hooks/require-auth.js"
 import { ok } from "../lib/response.js"
 import { players } from "../db/schema/index.js"
+import { subscriptions } from "../db/schema/subscriptions.js"
+import { getPlanLimits } from "../../../../shared/contracts/subscription.js"
+import type { PlanId } from "../../../../shared/contracts/subscription.js"
 import { UpsertPlayerProfileRequestSchema } from "../../../../shared/contracts/players.js"
 
 const playersRoutes: FastifyPluginAsync = async (fastify) => {
@@ -63,7 +66,7 @@ const playersRoutes: FastifyPluginAsync = async (fastify) => {
     }
   )
 
-  // GET /:id — any authenticated user
+  // GET /:id — any authenticated user (career/stats gated by plan)
   fastify.withTypeProvider<ZodTypeProvider>().get(
     "/:id",
     {
@@ -71,6 +74,9 @@ const playersRoutes: FastifyPluginAsync = async (fastify) => {
       schema: { params: z.object({ id: z.string() }) },
     },
     async (request, reply) => {
+      const viewerUserId = request.session!.user.id
+      const viewerRole = request.session!.user.role as "player" | "team" | "admin"
+
       const profile = await fastify.db.query.players.findFirst({
         where: eq(players.id, request.params.id),
       })
@@ -79,8 +85,41 @@ const playersRoutes: FastifyPluginAsync = async (fastify) => {
           error: { code: "NOT_FOUND", message: "Profile not found" },
         })
       }
+
+      // Own profile: always full data
+      if (profile.userId === viewerUserId) {
+        return ok({
+          ...profile,
+          createdAt: profile.createdAt.toISOString(),
+          updatedAt: profile.updatedAt.toISOString(),
+        })
+      }
+
+      // Get player's subscription to know what they've unlocked to show
+      const playerSub = await fastify.db.query.subscriptions.findFirst({
+        where: eq(subscriptions.userId, profile.userId),
+      })
+      const playerPlanId = (playerSub?.planId ?? "free") as PlanId
+      const playerCanShowCareer = ["craque", "fenomeno"].includes(playerPlanId)
+      const playerCanShowStats = playerPlanId === "fenomeno"
+
+      // Get viewer's subscription to know what they can see
+      let viewerCanSeeCareer = true
+      let viewerCanSeeStats = true
+      if (viewerRole === "team") {
+        const viewerSub = await fastify.db.query.subscriptions.findFirst({
+          where: eq(subscriptions.userId, viewerUserId),
+        })
+        const viewerPlanId = (viewerSub?.planId ?? "free") as PlanId
+        const viewerLimits = getPlanLimits(viewerPlanId, "team")
+        viewerCanSeeCareer = viewerLimits.playerCareerAccess
+        viewerCanSeeStats = viewerLimits.playerStatsAccess
+      }
+
       return ok({
         ...profile,
+        careerHistory: playerCanShowCareer && viewerCanSeeCareer ? profile.careerHistory : [],
+        detailedStats: playerCanShowStats && viewerCanSeeStats ? profile.detailedStats : null,
         createdAt: profile.createdAt.toISOString(),
         updatedAt: profile.updatedAt.toISOString(),
       })
