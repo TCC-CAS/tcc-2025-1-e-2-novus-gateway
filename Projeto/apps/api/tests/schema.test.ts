@@ -41,7 +41,7 @@ describe("Schema: users", () => {
   })
 
   it("planIdEnum has correct values", () => {
-    expect(planIdEnum.enumValues).toEqual(["free", "craque", "titular", "campeao"])
+    expect(planIdEnum.enumValues).toEqual(["free", "craque", "fenomeno", "titular", "campeao", "profissional"])
   })
 })
 
