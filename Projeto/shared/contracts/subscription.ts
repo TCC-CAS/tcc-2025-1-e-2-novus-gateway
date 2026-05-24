@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-export const PLAYER_PLANS = ["free", "craque"] as const;
-export const TEAM_PLANS = ["free", "titular", "campeao"] as const;
+export const PLAYER_PLANS = ["free", "craque", "fenomeno"] as const;
+export const TEAM_PLANS = ["free", "profissional"] as const;
 export const ALL_PLANS = [...PLAYER_PLANS, ...TEAM_PLANS] as const;
 
 export const PlayerPlanSchema = z.enum(PLAYER_PLANS);
@@ -47,13 +47,6 @@ export const UsageSchema = z.object({
 });
 export type Usage = z.infer<typeof UsageSchema>;
 
-export const PlanInfoSchema = z.object({
-  subscription: SubscriptionSchema.nullable(),
-  usage: UsageSchema,
-  effectivePlan: PlanIdSchema,
-});
-export type PlanInfo = z.infer<typeof PlanInfoSchema>;
-
 export type PlanLimits = {
   conversations: number;
   searchResults: number;
@@ -70,6 +63,12 @@ export type PlanLimits = {
   bulkOutreach: boolean;
   smartRecommendations: boolean;
   prioritySupport: boolean;
+  // jogador: controla o que pode exibir no perfil
+  careerHistoryVisible: boolean;
+  detailedStatsVisible: boolean;
+  // time: controla o que pode ver nos perfis de jogadores
+  playerStatsAccess: boolean;
+  playerCareerAccess: boolean;
 };
 
 export type PlanConfig = {
@@ -88,7 +87,7 @@ export const PLAN_CONFIGS: Record<PlanId, PlanConfig> = {
   free: {
     id: "free",
     name: "LIVRE",
-    description: "Tudo que você precisa para entrar em campo",
+    description: "Crie seu perfil e entre no jogo",
     price: 0,
     role: "player",
     limits: {
@@ -96,7 +95,7 @@ export const PLAN_CONFIGS: Record<PlanId, PlanConfig> = {
       searchResults: UNLIMITED,
       openPositions: 0,
       favorites: 5,
-      maxGalleryItems: 5,
+      maxGalleryItems: 3,
       videoHighlights: false,
       expandedProfile: false,
       verifiedBadge: false,
@@ -107,12 +106,16 @@ export const PLAN_CONFIGS: Record<PlanId, PlanConfig> = {
       bulkOutreach: false,
       smartRecommendations: false,
       prioritySupport: false,
+      careerHistoryVisible: false,
+      detailedStatsVisible: false,
+      playerStatsAccess: false,
+      playerCareerAccess: false,
     },
   },
   craque: {
     id: "craque",
     name: "CRAQUE",
-    description: "Mostre seu talento com ferramentas profissionais",
+    description: "Histórico de clubes, vídeos e destaque nos resultados",
     price: 9.9,
     role: "player",
     popular: true,
@@ -121,7 +124,7 @@ export const PLAN_CONFIGS: Record<PlanId, PlanConfig> = {
       searchResults: UNLIMITED,
       openPositions: 0,
       favorites: 50,
-      maxGalleryItems: 20,
+      maxGalleryItems: 15,
       videoHighlights: true,
       expandedProfile: true,
       verifiedBadge: true,
@@ -132,41 +135,48 @@ export const PLAN_CONFIGS: Record<PlanId, PlanConfig> = {
       bulkOutreach: false,
       smartRecommendations: false,
       prioritySupport: false,
+      careerHistoryVisible: true,
+      detailedStatsVisible: false,
+      playerStatsAccess: false,
+      playerCareerAccess: false,
     },
   },
-
-  // --- Team plans use "free" for the base too, resolved by role ---
-  titular: {
-    id: "titular",
-    name: "TITULAR",
-    description: "Recrutamento profissional para seu elenco",
-    price: 29.9,
-    role: "team",
-    popular: true,
+  fenomeno: {
+    id: "fenomeno",
+    name: "FENÔMENO",
+    description: "Estatísticas completas + currículo visível a times premium",
+    price: 19.9,
+    role: "player",
     limits: {
       conversations: UNLIMITED,
       searchResults: UNLIMITED,
-      openPositions: 5,
-      favorites: 50,
-      maxGalleryItems: 0,
-      videoHighlights: false,
-      expandedProfile: false,
-      verifiedBadge: false,
-      profileViews: false,
-      advancedFilters: true,
+      openPositions: 0,
+      favorites: UNLIMITED,
+      maxGalleryItems: 30,
+      videoHighlights: true,
+      expandedProfile: true,
+      verifiedBadge: true,
+      profileViews: true,
+      advancedFilters: false,
       featuredListing: true,
       analytics: false,
       bulkOutreach: false,
       smartRecommendations: false,
-      prioritySupport: false,
+      prioritySupport: true,
+      careerHistoryVisible: true,
+      detailedStatsVisible: true,
+      playerStatsAccess: false,
+      playerCareerAccess: false,
     },
   },
-  campeao: {
-    id: "campeao",
-    name: "CAMPEÃO",
-    description: "Domine o mercado com inteligência e velocidade",
-    price: 59.9,
+
+  profissional: {
+    id: "profissional",
+    name: "PROFISSIONAL",
+    description: "Acesse carreira e estatísticas dos jogadores para recrutar com dados",
+    price: 49.9,
     role: "team",
+    popular: true,
     limits: {
       conversations: UNLIMITED,
       searchResults: UNLIMITED,
@@ -178,11 +188,15 @@ export const PLAN_CONFIGS: Record<PlanId, PlanConfig> = {
       verifiedBadge: true,
       profileViews: false,
       advancedFilters: true,
-      featuredListing: true,
+      featuredListing: false,
       analytics: true,
       bulkOutreach: true,
       smartRecommendations: true,
       prioritySupport: true,
+      careerHistoryVisible: false,
+      detailedStatsVisible: false,
+      playerStatsAccess: true,
+      playerCareerAccess: true,
     },
   },
 };
@@ -191,9 +205,9 @@ export function getDefaultLimitsForRole(role: "player" | "team"): PlanLimits {
   if (role === "team") {
     return {
       conversations: 5,
-      searchResults: 10,
+      searchResults: 20,
       openPositions: 1,
-      favorites: 3,
+      favorites: 5,
       maxGalleryItems: 0,
       videoHighlights: false,
       expandedProfile: false,
@@ -205,6 +219,10 @@ export function getDefaultLimitsForRole(role: "player" | "team"): PlanLimits {
       bulkOutreach: false,
       smartRecommendations: false,
       prioritySupport: false,
+      careerHistoryVisible: false,
+      detailedStatsVisible: false,
+      playerStatsAccess: false,
+      playerCareerAccess: false,
     };
   }
   return PLAN_CONFIGS.free.limits;
@@ -223,14 +241,14 @@ export function getPlansForRole(role: "player" | "team"): PlanConfig[] {
     name: role === "team" ? "PELADA" : "LIVRE",
     description:
       role === "team"
-        ? "Para o time casual de fim de semana"
+        ? "Busque jogadores e envie mensagens com limite"
         : "Tudo que você precisa para entrar em campo",
   };
 
   if (role === "player") {
-    return [freePlan, PLAN_CONFIGS.craque];
+    return [freePlan, PLAN_CONFIGS.craque, PLAN_CONFIGS.fenomeno];
   }
-  return [freePlan, PLAN_CONFIGS.titular, PLAN_CONFIGS.campeao];
+  return [freePlan, PLAN_CONFIGS.profissional];
 }
 
 export function isUnlimited(value: number): boolean {
