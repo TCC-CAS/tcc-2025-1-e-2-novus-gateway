@@ -113,16 +113,16 @@ const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
       const { planId } = request.body
 
       // D-18: Role-plan compatibility validation
-      const playerPlans = ["free", "craque"]
-      const teamPlans = ["free", "titular", "campeao"]
+      const playerPlans = ["free", "craque", "fenomeno"]
+      const teamPlans = ["free", "profissional"]
       if (role === "player" && !playerPlans.includes(planId)) {
         return reply.status(400).send({
-          error: { code: "INVALID_PLAN", message: "Players can only upgrade to craque" },
+          error: { code: "INVALID_PLAN", message: "Jogadores só podem assinar os planos Craque ou Fenômeno" },
         })
       }
       if (role === "team" && !teamPlans.includes(planId)) {
         return reply.status(400).send({
-          error: { code: "INVALID_PLAN", message: "Teams can only upgrade to titular or campeao" },
+          error: { code: "INVALID_PLAN", message: "Times só podem assinar o plano Profissional" },
         })
       }
 
@@ -239,16 +239,16 @@ const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
       }
 
       // Role-plan compatibility
-      const playerPlans = ["free", "craque"]
-      const teamPlans = ["free", "titular", "campeao"]
+      const playerPlans = ["free", "craque", "fenomeno"]
+      const teamPlans = ["free", "profissional"]
       if (role === "player" && !playerPlans.includes(planId)) {
         return reply.status(400).send({
-          error: { code: "INVALID_PLAN", message: "Jogadores só podem assinar o plano Craque" },
+          error: { code: "INVALID_PLAN", message: "Jogadores só podem assinar os planos Craque ou Fenômeno" },
         })
       }
       if (role === "team" && !teamPlans.includes(planId)) {
         return reply.status(400).send({
-          error: { code: "INVALID_PLAN", message: "Times só podem assinar os planos Titular ou Campeão" },
+          error: { code: "INVALID_PLAN", message: "Times só podem assinar o plano Profissional" },
         })
       }
 
