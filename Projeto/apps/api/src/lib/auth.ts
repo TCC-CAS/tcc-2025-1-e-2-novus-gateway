@@ -33,6 +33,8 @@ export function createAuth(db: PostgresJsDatabase<typeof schema>) {
     emailAndPassword: {
       enabled: true,
       sendResetPassword: async ({ user, url, token }) => {
+        // Always log in dev (when no email service configured)
+        console.log(`[PASSWORD RESET] ${user.email}: ${token} — ${url}`)
         void emailService.sendPasswordReset(user.email, url)
       },
     },

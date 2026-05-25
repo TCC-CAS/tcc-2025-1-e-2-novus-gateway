@@ -1,4 +1,4 @@
-CREATE TYPE "public"."plan_id" AS ENUM('free', 'craque', 'titular', 'campeao');--> statement-breakpoint
+CREATE TYPE "public"."plan_id" AS ENUM('free', 'craque', 'fenomeno', 'titular', 'campeao', 'profissional');--> statement-breakpoint
 CREATE TYPE "public"."role" AS ENUM('player', 'team', 'admin');--> statement-breakpoint
 CREATE TYPE "public"."team_level" AS ENUM('amador', 'recreativo', 'semi-profissional', 'outro');--> statement-breakpoint
 CREATE TYPE "public"."subscription_status" AS ENUM('active', 'canceled', 'past_due', 'trialing');--> statement-breakpoint
@@ -39,6 +39,8 @@ CREATE TABLE "players" (
 	"region" text,
 	"city" text,
 	"level" text,
+	"career_history" json DEFAULT '[]'::json NOT NULL,
+	"detailed_stats" json,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "players_user_id_unique" UNIQUE("user_id")
@@ -200,6 +202,13 @@ CREATE TABLE "gallery_media" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "profile_views" (
+	"id" bigserial PRIMARY KEY NOT NULL,
+	"viewer_id" text NOT NULL,
+	"player_user_id" text NOT NULL,
+	"viewed_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 ALTER TABLE "players" ADD CONSTRAINT "players_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "teams" ADD CONSTRAINT "teams_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "conversations" ADD CONSTRAINT "conversations_participant_a_users_id_fk" FOREIGN KEY ("participant_a") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -215,5 +224,9 @@ ALTER TABLE "favorites" ADD CONSTRAINT "favorites_user_id_users_id_fk" FOREIGN K
 ALTER TABLE "favorites" ADD CONSTRAINT "favorites_target_user_id_users_id_fk" FOREIGN KEY ("target_user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "media_assets" ADD CONSTRAINT "media_assets_owner_user_id_users_id_fk" FOREIGN KEY ("owner_user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "gallery_media" ADD CONSTRAINT "gallery_media_owner_user_id_users_id_fk" FOREIGN KEY ("owner_user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "profile_views" ADD CONSTRAINT "profile_views_viewer_id_users_id_fk" FOREIGN KEY ("viewer_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "profile_views" ADD CONSTRAINT "profile_views_player_user_id_users_id_fk" FOREIGN KEY ("player_user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "messages_conversation_id_idx" ON "messages" USING btree ("conversation_id");--> statement-breakpoint
-CREATE UNIQUE INDEX "unique_favorite" ON "favorites" USING btree ("user_id","target_user_id");
+CREATE UNIQUE INDEX "unique_favorite" ON "favorites" USING btree ("user_id","target_user_id");--> statement-breakpoint
+CREATE INDEX "profile_views_player_idx" ON "profile_views" USING btree ("player_user_id");--> statement-breakpoint
+CREATE INDEX "profile_views_viewer_idx" ON "profile_views" USING btree ("viewer_id");

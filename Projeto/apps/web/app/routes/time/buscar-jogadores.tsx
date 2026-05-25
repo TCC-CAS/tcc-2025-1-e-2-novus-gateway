@@ -45,6 +45,7 @@ export default function TimeBuscarJogadores() {
       searchApi.players({
         page,
         pageSize: 12,
+        order: "asc",
         position: position as import("~shared/contracts").Position | undefined,
         skills: skills || undefined,
         region: region || undefined,

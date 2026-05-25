@@ -10,6 +10,7 @@ import { subscriptions } from "../db/schema/subscriptions.js"
 import { SearchPlayersQuerySchema, SearchTeamsQuerySchema } from "../../../../shared/contracts/search.js"
 import { getPlanLimits } from "../../../../shared/contracts/subscription.js"
 import type { PlanId } from "../../../../shared/contracts/subscription.js"
+import { buildProximityScore, getRegionsInSameMacro } from "../lib/geo.js"
 
 const searchRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /players — authenticated team users search for players
@@ -29,6 +30,14 @@ const searchRoutes: FastifyPluginAsync = async (fastify) => {
         where: eq(subscriptions.userId, userId),
       })
       const planId = sub?.planId ?? "free"
+
+      // Fetch viewer (team) location for proximity ranking
+      const viewerTeam = await fastify.db.query.teams.findFirst({
+        where: eq(teams.userId, userId),
+      })
+      const viewerRegion = viewerTeam?.region ?? null
+      const viewerCity   = viewerTeam?.city   ?? null
+      const sameRegions  = getRegionsInSameMacro(viewerRegion)
       const limits = getPlanLimits(planId, role as "player" | "team")
       const effectivePageSize = Math.min(
         Math.min(pageSize ?? 10, 50), // D-07: hard cap 50
@@ -92,11 +101,20 @@ const searchRoutes: FastifyPluginAsync = async (fastify) => {
         .from(players)
         .where(whereClause)
 
+      // Build proximity score expression — 100/50/20/0 based on region match
+      const proximityExpr = buildProximityScore(
+        players.region, players.city,
+        viewerRegion, viewerCity, sameRegions
+      )
+
       const rows = await fastify.db
         .select()
         .from(players)
         .where(whereClause)
-        .orderBy(desc(players.updatedAt))
+        .orderBy(
+          ...(proximityExpr ? [sql`(${proximityExpr}) DESC` as ReturnType<typeof sql>] : []),
+          desc(players.updatedAt)
+        )
         .limit(effectivePageSize)
         .offset((page - 1) * effectivePageSize)
 
@@ -155,6 +173,14 @@ const searchRoutes: FastifyPluginAsync = async (fastify) => {
       })
       const planId = sub?.planId ?? "free"
       const limits = getPlanLimits(planId, role as "player" | "team")
+
+      // Fetch viewer (player) location for proximity ranking
+      const viewerPlayer = await fastify.db.query.players.findFirst({
+        where: eq(players.userId, userId),
+      })
+      const viewerRegion = viewerPlayer?.region ?? null
+      const viewerCity   = viewerPlayer?.city   ?? null
+      const sameRegions  = getRegionsInSameMacro(viewerRegion)
       const effectivePageSize = Math.min(
         Math.min(pageSize ?? 10, 50), // D-07: hard cap 50
         limits.searchResults           // D-11: plan cap
@@ -192,12 +218,27 @@ const searchRoutes: FastifyPluginAsync = async (fastify) => {
         .from(teams)
         .where(whereClause)
 
+      // Build proximity score expression
+      const proximityExpr = buildProximityScore(
+        teams.region, teams.city,
+        viewerRegion, viewerCity, sameRegions
+      )
+
+      // Level weight: semi-profissional ranks higher as it signals serious commitment
+      const levelWeight = sql<number>`CASE ${teams.level}
+        WHEN 'semi-profissional' THEN 3
+        WHEN 'recreativo'        THEN 2
+        WHEN 'amador'            THEN 1
+        ELSE                          0
+      END`
+
       const rows = await fastify.db
         .select()
         .from(teams)
         .where(whereClause)
         .orderBy(
-          sql`CASE ${teams.level} WHEN 'semi-profissional' THEN 1 WHEN 'outro' THEN 2 WHEN 'recreativo' THEN 3 WHEN 'amador' THEN 4 END`,
+          ...(proximityExpr ? [sql`(${proximityExpr}) DESC` as ReturnType<typeof sql>] : []),
+          sql`(${levelWeight}) DESC`,
           desc(teams.updatedAt)
         )
         .limit(effectivePageSize)

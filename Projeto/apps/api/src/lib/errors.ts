@@ -26,24 +26,29 @@ export function registerErrorHandler(fastify: FastifyInstance) {
       }
 
       if (error instanceof ZodError) {
+        const details = error.issues.map((i) => ({
+          path: i.path.join("."),
+          message: i.message,
+        }))
+        // Use first issue message as the top-level message when there's only one field error
+        const topMessage = details.length === 1
+          ? details[0].message
+          : "Dados inválidos. Verifique os campos e tente novamente."
         return reply.status(400).send({
           error: {
             code: "VALIDATION_ERROR",
-            message: "Validation failed",
-            details: error.issues.map((i) => ({
-              path: i.path.join("."),
-              message: i.message,
-            })),
+            message: topMessage,
+            details,
           },
         })
       }
 
-      // Fastify validation errors
-      if ("statusCode" in error && error.statusCode === 400) {
+      // Fastify schema validation errors (422 from Zod type provider)
+      if ("statusCode" in error && (error.statusCode === 400 || error.statusCode === 422)) {
         return reply.status(400).send({
           error: {
             code: "VALIDATION_ERROR",
-            message: error.message,
+            message: "Dados inválidos. Verifique os campos e tente novamente.",
           },
         })
       }
@@ -58,7 +63,7 @@ export function registerErrorHandler(fastify: FastifyInstance) {
       return reply.status(500).send({
         error: {
           code: "INTERNAL_SERVER_ERROR",
-          message: "An unexpected error occurred",
+          message: "Ocorreu um erro interno. Tente novamente mais tarde.",
         },
       })
     }

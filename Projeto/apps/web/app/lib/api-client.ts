@@ -81,6 +81,19 @@ export const authApi = {
 };
 
 // --- Players ---
+export type ProfileView = {
+  id: string
+  viewedAt: string
+  viewer: {
+    userId: string
+    name: string
+    logoUrl: string | null
+    region: string | null
+    city: string | null
+    level: string | null
+  }
+}
+
 export const playersApi = {
   getMe: () =>
     request<import("~shared/contracts").PlayerProfile>(
@@ -93,6 +106,8 @@ export const playersApi = {
       "/players/me",
       { method: "PUT", body: JSON.stringify(body)}
     ),
+  getViews: () =>
+    request<ProfileView[]>("/players/me/views"),
 };
 
 // --- Teams ---

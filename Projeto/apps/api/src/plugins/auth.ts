@@ -10,9 +10,29 @@ declare module "fastify" {
   }
 }
 
+/** Maps Better Auth error codes to user-friendly Portuguese messages */
+const AUTH_ERROR_MESSAGES: Record<string, { status: number; message: string }> = {
+  USER_ALREADY_EXISTS:                    { status: 409, message: "Este e-mail já está cadastrado. Tente fazer login." },
+  USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL:  { status: 409, message: "Este e-mail já está cadastrado. Use outro e-mail ou faça login." },
+  INVALID_EMAIL_OR_PASSWORD:              { status: 401, message: "E-mail ou senha incorretos." },
+  INVALID_EMAIL:                          { status: 400, message: "E-mail inválido." },
+  INVALID_PASSWORD:                       { status: 400, message: "Senha inválida." },
+  USER_NOT_FOUND:                         { status: 404, message: "Usuário não encontrado." },
+  INVALID_TOKEN:                          { status: 400, message: "Token inválido ou expirado." },
+  SESSION_EXPIRED:                        { status: 401, message: "Sessão expirada. Faça login novamente." },
+  UNAUTHORIZED:                           { status: 401, message: "Você precisa estar autenticado para realizar esta ação." },
+  FORBIDDEN:                              { status: 403, message: "Você não tem permissão para realizar esta ação." },
+  TOO_MANY_ATTEMPTS:                      { status: 429, message: "Muitas tentativas. Aguarde alguns minutos e tente novamente." },
+  UNPROCESSABLE_ENTITY:                   { status: 422, message: "Os dados enviados são inválidos. Verifique e tente novamente." },
+  BAD_REQUEST:                            { status: 400, message: "Requisição inválida. Verifique os dados e tente novamente." },
+  NOT_FOUND:                              { status: 404, message: "Recurso não encontrado." },
+  USER_ALREADY_HAS_PASSWORD:              { status: 400, message: "Esta conta já possui uma senha definida." },
+}
+
 /**
  * Converts a Fastify request into a web fetch Request and pipes
  * the web Response back to Fastify reply — compatible with inject().
+ * Translates Better Auth error codes to Portuguese user-friendly messages.
  */
 async function handleAuthRequest(
   request: import("fastify").FastifyRequest,
@@ -49,12 +69,30 @@ async function handleAuthRequest(
     reply.header(key, value)
   })
   const responseBody = await response.text()
-  // Strip token from JSON responses — token must only live in the HttpOnly cookie (AUTH-02)
+  // Strip token + translate errors in JSON responses
   const contentType = response.headers.get("content-type") ?? ""
   if (contentType.includes("application/json")) {
     try {
       const json = JSON.parse(responseBody)
       if ("token" in json) delete json.token
+
+      // Translate Better Auth error codes to Portuguese
+      const errorCode: string | undefined = json.code ?? json.error?.code
+      if (errorCode && response.status >= 400) {
+        const translated = AUTH_ERROR_MESSAGES[errorCode]
+        if (translated) {
+          reply.status(translated.status)
+          return reply.send(JSON.stringify({
+            error: { code: errorCode, message: translated.message },
+          }))
+        }
+        // Fallback: wrap in our standard error shape with original message translated
+        const fallbackMessage = json.message ?? json.error?.message ?? "Ocorreu um erro. Tente novamente."
+        return reply.send(JSON.stringify({
+          error: { code: errorCode, message: fallbackMessage },
+        }))
+      }
+
       return reply.send(JSON.stringify(json))
     } catch {
       // not valid JSON — send as-is

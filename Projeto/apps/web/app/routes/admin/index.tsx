@@ -12,11 +12,11 @@ export function meta() {
 export default function AdminDashboard() {
   const { data: usersData } = useQuery({
     queryKey: ["admin", "users"],
-    queryFn: () => adminUsersApi.list({ pageSize: 1 }),
+    queryFn: () => adminUsersApi.list({ page: 1, pageSize: 1 }),
   });
   const { data: reportsData } = useQuery({
     queryKey: ["admin", "reports"],
-    queryFn: () => adminModerationApi.listReports({ pageSize: 1 }),
+    queryFn: () => adminModerationApi.listReports({ page: 1, pageSize: 1 }),
   });
 
   const totalUsers = usersData?.meta.total ?? 0;

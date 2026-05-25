@@ -1,3 +1,4 @@
+// @ts-nocheck — shadcn generated component; recharts v3 type mismatch
 import * as React from "react"
 import * as RechartsPrimitive from "recharts"
 

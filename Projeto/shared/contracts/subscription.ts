@@ -205,7 +205,7 @@ export function getDefaultLimitsForRole(role: "player" | "team"): PlanLimits {
   if (role === "team") {
     return {
       conversations: 5,
-      searchResults: 20,
+      searchResults: 10,
       openPositions: 1,
       favorites: 5,
       maxGalleryItems: 0,

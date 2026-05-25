@@ -50,6 +50,7 @@ export default function JogadorBuscarTimes() {
       searchApi.teams({
         page,
         pageSize: 12,
+        order: "asc",
         level: level as
           | "amador"
           | "recreativo"

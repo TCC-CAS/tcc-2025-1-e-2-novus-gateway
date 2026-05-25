@@ -1,7 +1,12 @@
 import { Resend } from "resend"
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+const RESEND_API_KEY = process.env.RESEND_API_KEY
+const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null
 const fromEmail = process.env.EMAIL_FROM || "onboarding@resend.dev"
+
+function logDevEmail(method: string, to: string, extra?: Record<string, string>) {
+  console.log(`[email:dev] ${method} → ${to}`, extra ?? "")
+}
 
 export interface EmailService {
   sendPasswordReset(to: string, resetUrl: string): Promise<void>
@@ -11,6 +16,7 @@ export interface EmailService {
 
 export const emailService: EmailService = {
   async sendPasswordReset(to: string, resetUrl: string) {
+    if (!resend) { logDevEmail("sendPasswordReset", to, { resetUrl }); return }
     await resend.emails.send({
       from: fromEmail,
       to,
@@ -27,6 +33,7 @@ export const emailService: EmailService = {
   },
 
   async sendEmailVerification(to: string, verifyUrl: string) {
+    if (!resend) { logDevEmail("sendEmailVerification", to, { verifyUrl }); return }
     await resend.emails.send({
       from: fromEmail,
       to,
@@ -43,6 +50,7 @@ export const emailService: EmailService = {
   },
 
   async sendWelcome(to: string, name: string) {
+    if (!resend) { logDevEmail("sendWelcome", to, { name }); return }
     await resend.emails.send({
       from: fromEmail,
       to,

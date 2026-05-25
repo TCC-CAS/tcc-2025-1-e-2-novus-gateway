@@ -1,5 +1,4 @@
 import type { SessionUser } from "~shared/contracts";
-import type { DataFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { getRole, getHomeForRole } from "~/lib/auth/permissions";
 
@@ -34,7 +33,7 @@ export function clearSessionCookie(): void {
 }
 
 /** Require auth in loader; redirect to /login if no session. Uses cookie. Return user for child loaders. */
-export function requireAuth({ request }: DataFunctionArgs): SessionUser | null {
+export function requireAuth({ request }: { request: Request }): SessionUser | null {
   const user = getSessionFromRequest(request);
   if (!user) {
     const url = new URL(request.url);

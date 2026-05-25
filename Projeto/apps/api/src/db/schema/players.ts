@@ -1,4 +1,5 @@
-import { pgTable, text, timestamp, integer, boolean } from "drizzle-orm/pg-core"
+import { pgTable, text, timestamp, integer, boolean, json } from "drizzle-orm/pg-core"
+import type { CareerEntry, DetailedStats } from "../../../../../shared/contracts/players.js"
 import { users } from "./users.js"
 
 export const players = pgTable("players", {
@@ -18,6 +19,8 @@ export const players = pgTable("players", {
   region: text("region"),
   city: text("city"),
   level: text("level"),
+  careerHistory: json("career_history").$type<CareerEntry[]>().notNull().default([]),
+  detailedStats: json("detailed_stats").$type<DetailedStats | null>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 })

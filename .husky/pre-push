@@ -1,0 +1,16 @@
+#!/usr/bin/env sh
+
+echo "🧪 [pre-push] Running API test suite..."
+
+cd Projeto/apps/api && npm test
+TEST_EXIT=$?
+cd ../../..
+
+if [ $TEST_EXIT -ne 0 ]; then
+  echo ""
+  echo "❌ Tests failed. Fix them before pushing."
+  echo "   Run: cd Projeto/apps/api && npm test"
+  exit 1
+fi
+
+echo "✅ All tests passed"

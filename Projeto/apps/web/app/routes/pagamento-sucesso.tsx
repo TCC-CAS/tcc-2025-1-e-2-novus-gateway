@@ -28,7 +28,7 @@ export default function PagamentoSucesso() {
 
     async function activate() {
       try {
-        await subscriptionApi.upgrade({ planId })
+        await subscriptionApi.upgrade({ planId: planId! })
         setActivated(true)
         toast.success("Plano ativado com sucesso!")
       } catch (err) {

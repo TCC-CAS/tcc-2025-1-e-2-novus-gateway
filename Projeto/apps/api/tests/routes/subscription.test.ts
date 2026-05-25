@@ -98,7 +98,21 @@ describe("Subscription routes", () => {
       expect(typeof body.data.message).toBe("string")
     })
 
-    it("SUB-02b: team can upgrade to titular — returns 200", async () => {
+    it("SUB-02b: team can upgrade to profissional — returns 200", async () => {
+      const freshTeam = await signUpAndGetCookie(app, "team")
+      const res = await app.inject({
+        method: "POST",
+        url: "/api/subscription/upgrade",
+        headers: { cookie: freshTeam.sessionCookie },
+        payload: { planId: "profissional" },
+      })
+      expect(res.statusCode).toBe(200)
+      const body = res.json()
+      expect(body.data.success).toBe(true)
+      expect(body.data.planId).toBe("profissional")
+    })
+
+    it("SUB-02c: team cannot upgrade to titular (removed plan) — returns 400", async () => {
       const freshTeam = await signUpAndGetCookie(app, "team")
       const res = await app.inject({
         method: "POST",
@@ -106,33 +120,16 @@ describe("Subscription routes", () => {
         headers: { cookie: freshTeam.sessionCookie },
         payload: { planId: "titular" },
       })
-      expect(res.statusCode).toBe(200)
-      const body = res.json()
-      expect(body.data.success).toBe(true)
-      expect(body.data.planId).toBe("titular")
+      expect(res.statusCode).toBe(400)
     })
 
-    it("SUB-02c: team can upgrade to campeao — returns 200", async () => {
-      const freshTeam = await signUpAndGetCookie(app, "team")
-      const res = await app.inject({
-        method: "POST",
-        url: "/api/subscription/upgrade",
-        headers: { cookie: freshTeam.sessionCookie },
-        payload: { planId: "campeao" },
-      })
-      expect(res.statusCode).toBe(200)
-      const body = res.json()
-      expect(body.data.success).toBe(true)
-      expect(body.data.planId).toBe("campeao")
-    })
-
-    it("SUB-02d: player cannot upgrade to titular (D-18: cross-role plan) — returns 400", async () => {
+    it("SUB-02d: player cannot upgrade to profissional (D-18: cross-role plan) — returns 400", async () => {
       const freshPlayer = await signUpAndGetCookie(app, "player")
       const res = await app.inject({
         method: "POST",
         url: "/api/subscription/upgrade",
         headers: { cookie: freshPlayer.sessionCookie },
-        payload: { planId: "titular" },
+        payload: { planId: "profissional" },
       })
       expect(res.statusCode).toBe(400)
     })

@@ -40,6 +40,20 @@ export const PlayerProfileSchema = z.object({
   region: z.string().optional(),
   city: z.string().optional(),
   level: PlayerLevelSchema.optional(),
+  careerHistory: z.array(z.object({
+    clubName: z.string(),
+    period: z.string(),
+    gamesPlayed: z.number().optional(),
+    goals: z.number().optional(),
+    assists: z.number().optional(),
+    championships: z.string().optional(),
+  })).optional(),
+  detailedStats: z.object({
+    gamesPlayed: z.number().optional(),
+    goals: z.number().optional(),
+    assists: z.number().optional(),
+    cleanSheets: z.number().optional(),
+  }).optional(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
@@ -73,7 +87,41 @@ export const UpsertPlayerProfileRequestSchema = z.object({
   region: z.string().optional(),
   city: z.string().optional(),
   level: PlayerLevelSchema.optional(),
+  careerHistory: z.array(z.object({
+    clubName: z.string(),
+    period: z.string(),
+    gamesPlayed: z.number().optional(),
+    goals: z.number().optional(),
+    assists: z.number().optional(),
+    championships: z.string().optional(),
+  })).optional(),
+  detailedStats: z.object({
+    gamesPlayed: z.number().optional(),
+    goals: z.number().optional(),
+    assists: z.number().optional(),
+    cleanSheets: z.number().optional(),
+  }).optional(),
 });
 export type UpsertPlayerProfileRequest = z.infer<
   typeof UpsertPlayerProfileRequestSchema
 >;
+
+/** Single career entry — one club/period */
+export const CareerEntrySchema = z.object({
+  clubName: z.string(),
+  period: z.string(),
+  gamesPlayed: z.number().optional(),
+  goals: z.number().optional(),
+  assists: z.number().optional(),
+  championships: z.string().optional(),
+});
+export type CareerEntry = z.infer<typeof CareerEntrySchema>;
+
+/** Aggregate career statistics */
+export const DetailedStatsSchema = z.object({
+  gamesPlayed: z.number().optional(),
+  goals: z.number().optional(),
+  assists: z.number().optional(),
+  cleanSheets: z.number().optional(),
+});
+export type DetailedStats = z.infer<typeof DetailedStatsSchema>;

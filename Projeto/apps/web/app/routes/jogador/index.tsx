@@ -6,7 +6,7 @@ import { usePlan } from "~/lib/plan"
 import { PlanGate, UpsellCard } from "~/lib/plan/plan-gate"
 import { Button } from "~/components/ui/button"
 import { Skeleton } from "~/components/ui/skeleton"
-import { searchApi, playersApi } from "~/lib/api-client"
+import { searchApi, playersApi, type ProfileView } from "~/lib/api-client"
 import { PLAN_CONFIGS } from "~shared/contracts"
 import type { TeamSummary } from "~shared/contracts"
 import {
@@ -54,6 +54,19 @@ export default function JogadorHome() {
   const { data: profile } = useQuery({
     queryKey: ["player", "me"],
     queryFn: () => playersApi.getMe(),
+    retry: false,
+  })
+
+  // Fetch profile views (only available for craque/fenomeno — returns [] or 403 otherwise)
+  const { data: profileViewsData } = useQuery({
+    queryKey: ["player", "me", "views"],
+    queryFn: async () => {
+      try {
+        return await playersApi.getViews()
+      } catch {
+        return [] as ProfileView[]
+      }
+    },
     retry: false,
   })
 
@@ -325,9 +338,38 @@ export default function JogadorHome() {
             </h2>
             <BadgeCheck className="size-5 text-primary" />
           </div>
-          <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
-            RECURSO DISPONÍVEL NO PLANO CRAQUE
-          </p>
+          {!profileViewsData || profileViewsData.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhuma visualização ainda. Quando times visitarem seu perfil, eles aparecerão aqui.</p>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {profileViewsData.map((view) => (
+                <div
+                  key={view.id}
+                  className="flex items-center gap-4 border-2 border-foreground p-4"
+                >
+                  {view.viewer.logoUrl ? (
+                    <img
+                      src={view.viewer.logoUrl}
+                      alt={view.viewer.name}
+                      className="size-10 border-2 border-foreground object-cover"
+                    />
+                  ) : (
+                    <div className="size-10 border-2 border-foreground bg-muted flex items-center justify-center">
+                      <Trophy className="size-5 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-sm truncate">{view.viewer.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {view.viewer.city ?? view.viewer.region ?? ""}
+                      {" · "}
+                      {new Date(view.viewedAt).toLocaleDateString("pt-BR")}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </PlanGate>
       </section>
     </div>

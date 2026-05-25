@@ -1,2 +1,9 @@
 node-compile-cache/
 .serena/
+
+# Root-level package manager artifacts (husky install only)
+node_modules/
+package-lock.json
+
+# Seed output
+Projeto/apps/api/seed-credentials.csv

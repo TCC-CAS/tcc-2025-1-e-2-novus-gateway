@@ -38,6 +38,12 @@ type PlanActions = {
   getFavoritesLimit: () => number;
   isPaid: () => boolean;
   refreshUsage: () => void;
+  // jogador: o que pode exibir no perfil
+  hasCareerHistoryVisible: () => boolean;
+  hasDetailedStatsVisible: () => boolean;
+  // time: o que pode ver nos perfis de jogadores
+  canSeePlayerStats: () => boolean;
+  canSeePlayerCareer: () => boolean;
 };
 
 const PlanStateContext = createContext<PlanState | null>(null);
@@ -103,6 +109,10 @@ export function PlanProvider({ children }: { children: React.ReactNode }) {
       getFavoritesLimit: () => limits.favorites,
       isPaid: () => planId !== "free",
       refreshUsage: fetchUsage,
+      hasCareerHistoryVisible: () => limits.careerHistoryVisible,
+      hasDetailedStatsVisible: () => limits.detailedStatsVisible,
+      canSeePlayerStats: () => limits.playerStatsAccess,
+      canSeePlayerCareer: () => limits.playerCareerAccess,
     };
   }, [limits, usage, planId, fetchUsage]);
 
