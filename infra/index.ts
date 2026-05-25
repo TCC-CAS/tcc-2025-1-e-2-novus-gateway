@@ -164,6 +164,10 @@ echo "=== $(date) — Starting VarzeaPro bootstrap ==="
 # --- System ---
 apt-get update && apt-get upgrade -y
 
+# --- Node.js 20 (para rodar seed no host) ---
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+apt-get install -y nodejs
+
 # --- Docker ---
 curl -fsSL https://get.docker.com | sh
 usermod -aG docker ubuntu
@@ -229,6 +233,13 @@ done
 
 # --- Migrations ---
 docker compose -f docker-compose.prod.yml exec -T api npx drizzle-kit push
+
+# --- Seed (roda uma vez no provision, chama a API via HTTP) ---
+echo "=== Running seed ==="
+cd /opt/varzeapro/Projeto/apps/api
+npm ci
+API_URL=http://localhost:3000 CORS_ORIGIN=https://${domain} npm run db:seed 2>&1 | tee /var/log/varzeapro-seed.log || echo "Seed terminou com erros — ver /var/log/varzeapro-seed.log"
+cd /opt/varzeapro/Projeto
 
 # --- Nginx ---
 cp nginx/varzeapro.conf /etc/nginx/sites-available/varzeapro

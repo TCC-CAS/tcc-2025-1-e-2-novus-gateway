@@ -10,7 +10,8 @@
     "test:auth": "vitest run tests/auth/",
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "db:seed": "tsx src/db/seed.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1048.0",
