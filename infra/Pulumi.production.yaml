@@ -4,11 +4,13 @@ config:
   varzeapro-infra:githubBranch: main
   varzeapro-infra:sshPublicKey: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAID6KZXgbm6OKhzzTOXchqa8qb13ZjAxEKOTWQiz+34cE diogo@diogo-pc
   varzeapro-infra:postgresPassword:
-    secure: AAABAGMWUl2mfNIqerGHzlty08I5pxxFWiSlFJx569QMVdwSEMb2VQIjUKjN02P2mjBaneJ3AThShiHIDNqhUA==
+    secure: AAABAEHDZPvUV2smQv9fP8yeHvGhPTTgC/IHPsMVxBVadLTyHJVVwZiP8agyZlXISw6DM/p0NJwqu6adJ/YCLA==
   varzeapro-infra:jwtSecret:
-    secure: AAABAJZSB6lNAUQnRAHO7XLDRdq8eW59VvQBgePBiO2fn+X7DSl08JqWoEHpEk25PzhAkMxgJTgK4FDPyrFGoojl5kiTnGcZqmF9/xfCtBs0Pori2sqlql7SF6jNW+VE
+    secure: AAABADfZkJzMGPmjScDDV3t8wA5uWQClm8c5mFxXdZpsvmt/YL5FGEgUPi/BiEOmYFY61xcur+EOBFCB/WE0WVZz43OI/S080yEZQHrln6OnXMZSG2AJ+vdwhoWZDo/O
   varzeapro-infra:betterAuthSecret:
-    secure: AAABAJZSB6lNAUQnRAHO7XLDRdq8eW59VvQBgePBiO2fn+X7DSl08JqWoEHpEk25PzhAkMxgJTgK4FDPyrFGoojl5kiTnGcZqmF9/xfCtBs0Pori2sqlql7SF6jNW+VE
+    secure: AAABABMRZ1S9Y8FO9VjkjDI6cZgFTobnTTjyyPB4X3k1A5Li73J3rjKYkdo2TErYxeWAuhDJ2dHvPzyTzWCCcC/5CNhJlcYDTp9J2HkcpPI1AXXm2pGNgNIeVtLkM7qf
+  varzeapro-infra:resendApiKey:
+    secure: AAABAHsZ60UvuUmgQpG0n0JetAS7lmilsazjHVZuSmNf1/QHbWS/uW+3oGEi3EQiK05r1AVCwb13zYxyudy66/nKu18=
 
 # Secrets — NÃO coloque aqui, use o CLI:
 # pulumi config set --secret postgresPassword "$(openssl rand -hex 16)"
