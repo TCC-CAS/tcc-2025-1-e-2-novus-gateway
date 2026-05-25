@@ -189,7 +189,7 @@ swapon /swapfile
 echo '/swapfile none swap sw 0 0' >> /etc/fstab
 
 # --- Environment ---
-cat > .env << 'ENVEOF'
+cat > Projeto/.env << 'ENVEOF'
 POSTGRES_PASSWORD=${postgresPassword}
 DATABASE_URL=postgresql://varzeapro:${postgresPassword}@postgres:5432/varzeapro
 NODE_ENV=production
