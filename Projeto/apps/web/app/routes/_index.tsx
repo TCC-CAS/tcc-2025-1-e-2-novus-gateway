@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { useAuth } from "~/lib/auth/auth-context";
 import { getHomeForRole } from "~/lib/auth/permissions";
@@ -285,107 +285,7 @@ export default function Index() {
         </section>
 
         {/* PRICING PREVIEW */}
-        <section className="border-t-8 border-foreground bg-background px-6 py-32 sm:px-12">
-          <div className="mx-auto max-w-7xl">
-            <div className="mb-16 text-center">
-              <h2 className="font-display text-[10vw] leading-[0.85] text-foreground md:text-[6vw]">
-                QUANTO{" "}
-                <span className="text-transparent [-webkit-text-stroke:2px_var(--color-primary)]">
-                  CUSTA
-                </span>
-                ?
-              </h2>
-              <p className="mx-auto mt-6 max-w-xl text-xl font-medium text-muted-foreground">
-                Jogadores jogam de graça. Times investem no elenco.
-                A busca é sempre justa.
-              </p>
-            </div>
-
-            <div className="grid gap-8 md:grid-cols-3">
-              {/* Player Free */}
-              <div className="border-4 border-foreground bg-background p-8 transition-transform hover:-translate-y-2 hover:shadow-[6px_6px_0px_0px_var(--color-primary)]">
-                <p className="font-display text-sm tracking-widest text-muted-foreground">
-                  JOGADOR
-                </p>
-                <h3 className="mt-2 font-display text-4xl text-foreground">
-                  LIVRE
-                </h3>
-                <p className="mt-1 font-display text-5xl text-primary">
-                  GRÁTIS
-                </p>
-                <ul className="mt-6 space-y-2 text-sm font-bold uppercase tracking-widest text-muted-foreground">
-                  <li>Perfil completo</li>
-                  <li>Buscar times sem limite</li>
-                  <li>10 mensagens/mês</li>
-                </ul>
-              </div>
-
-              {/* Team Titular */}
-              <div className="relative border-4 border-primary bg-background p-8 shadow-[6px_6px_0px_0px_var(--color-primary)] transition-transform hover:-translate-y-2">
-                <div className="absolute -right-2 -top-4 rotate-2 bg-primary px-3 py-1 font-display text-xs tracking-widest text-primary-foreground">
-                  MAIS POPULAR
-                </div>
-                <p className="font-display text-sm tracking-widest text-muted-foreground">
-                  TIME
-                </p>
-                <h3 className="mt-2 font-display text-4xl text-foreground">
-                  TITULAR
-                </h3>
-                <p className="mt-1">
-                  <span className="font-display text-lg text-muted-foreground">
-                    R$
-                  </span>
-                  <span className="font-display text-5xl text-primary">
-                    29,90
-                  </span>
-                  <span className="text-sm font-bold text-muted-foreground">
-                    /mês
-                  </span>
-                </p>
-                <ul className="mt-6 space-y-2 text-sm font-bold uppercase tracking-widest text-muted-foreground">
-                  <li>Busca ilimitada</li>
-                  <li>Mensagens ilimitadas</li>
-                  <li>Filtros avançados</li>
-                </ul>
-              </div>
-
-              {/* Team Campeao */}
-              <div className="border-4 border-foreground bg-background p-8 transition-transform hover:-translate-y-2 hover:shadow-[6px_6px_0px_0px_var(--color-foreground)]">
-                <p className="font-display text-sm tracking-widest text-muted-foreground">
-                  TIME
-                </p>
-                <h3 className="mt-2 font-display text-4xl text-foreground">
-                  CAMPEÃO
-                </h3>
-                <p className="mt-1">
-                  <span className="font-display text-lg text-muted-foreground">
-                    R$
-                  </span>
-                  <span className="font-display text-5xl text-foreground">
-                    59,90
-                  </span>
-                  <span className="text-sm font-bold text-muted-foreground">
-                    /mês
-                  </span>
-                </p>
-                <ul className="mt-6 space-y-2 text-sm font-bold uppercase tracking-widest text-muted-foreground">
-                  <li>Tudo do Titular</li>
-                  <li>Analytics + Recomendações AI</li>
-                  <li>Mensagem em massa</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="mt-12 flex justify-center">
-              <Button
-                asChild
-                className="h-auto rounded-none border-4 border-foreground bg-foreground px-10 py-5 font-display text-3xl tracking-widest text-background transition-all hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_var(--color-primary)]"
-              >
-                <Link to="/planos">VER TODOS OS PLANOS</Link>
-              </Button>
-            </div>
-          </div>
-        </section>
+        <PricingSection />
 
         {/* FINAL CTA MASSIVE */}
         <section className="bg-primary px-6 py-40 sm:px-12">
@@ -420,5 +320,170 @@ export default function Index() {
         </div>
       </footer>
     </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Pricing preview section with Jogador / Time tabs                    */
+/* ------------------------------------------------------------------ */
+
+function PricingSection() {
+  const [tab, setTab] = useState<"player" | "team">("player");
+
+  return (
+    <section className="border-t-8 border-foreground bg-background px-6 py-32 sm:px-12">
+      <div className="mx-auto max-w-7xl">
+        {/* Heading */}
+        <div className="mb-12 text-center">
+          <h2 className="font-display text-[10vw] leading-[0.85] text-foreground md:text-[6vw]">
+            QUANTO{" "}
+            <span className="text-transparent [-webkit-text-stroke:2px_var(--color-primary)]">
+              CUSTA
+            </span>
+            ?
+          </h2>
+          <p className="mx-auto mt-6 max-w-xl text-xl font-medium text-muted-foreground">
+            Jogadores jogam de graça. Times investem no elenco.
+            A busca é sempre justa.
+          </p>
+        </div>
+
+        {/* Tab toggle */}
+        <div className="mb-12 flex justify-center">
+          <div className="flex border-4 border-foreground">
+            <button
+              onClick={() => setTab("player")}
+              className={`px-8 py-3 font-display text-lg tracking-widest transition-colors ${
+                tab === "player"
+                  ? "bg-foreground text-background"
+                  : "bg-background text-foreground hover:bg-muted"
+              }`}
+            >
+              JOGADOR
+            </button>
+            <button
+              onClick={() => setTab("team")}
+              className={`border-l-4 border-foreground px-8 py-3 font-display text-lg tracking-widest transition-colors ${
+                tab === "team"
+                  ? "bg-foreground text-background"
+                  : "bg-background text-foreground hover:bg-muted"
+              }`}
+            >
+              TIME
+            </button>
+          </div>
+        </div>
+
+        {/* Cards */}
+        {tab === "player" ? (
+          <div className="grid gap-8 md:grid-cols-3">
+            {/* LIVRE */}
+            <div className="border-4 border-foreground bg-background p-8 transition-transform hover:-translate-y-2 hover:shadow-[6px_6px_0px_0px_var(--color-primary)]">
+              <p className="font-display text-sm tracking-widest text-muted-foreground">
+                JOGADOR
+              </p>
+              <h3 className="mt-2 font-display text-4xl text-foreground">LIVRE</h3>
+              <p className="mt-1 font-display text-5xl text-primary">GRÁTIS</p>
+              <ul className="mt-6 space-y-2 text-sm font-bold uppercase tracking-widest text-muted-foreground">
+                <li>Perfil público completo</li>
+                <li>Buscar times sem limite</li>
+                <li>10 mensagens/mês</li>
+                <li>5 favoritos</li>
+              </ul>
+            </div>
+
+            {/* CRAQUE */}
+            <div className="relative border-4 border-primary bg-background p-8 shadow-[6px_6px_0px_0px_var(--color-primary)] transition-transform hover:-translate-y-2">
+              <div className="absolute -right-2 -top-4 rotate-2 bg-primary px-3 py-1 font-display text-xs tracking-widest text-primary-foreground">
+                MAIS POPULAR
+              </div>
+              <p className="font-display text-sm tracking-widest text-muted-foreground">
+                JOGADOR
+              </p>
+              <h3 className="mt-2 font-display text-4xl text-foreground">CRAQUE</h3>
+              <p className="mt-1">
+                <span className="font-display text-lg text-muted-foreground">R$</span>
+                <span className="font-display text-5xl text-primary">9,90</span>
+                <span className="text-sm font-bold text-muted-foreground">/mês</span>
+              </p>
+              <ul className="mt-6 space-y-2 text-sm font-bold uppercase tracking-widest text-muted-foreground">
+                <li>Mensagens ilimitadas</li>
+                <li>Vídeos de destaque</li>
+                <li>Badge verificado</li>
+                <li>Histórico de clubes</li>
+              </ul>
+            </div>
+
+            {/* FENÔMENO */}
+            <div className="border-4 border-foreground bg-background p-8 transition-transform hover:-translate-y-2 hover:shadow-[6px_6px_0px_0px_var(--color-foreground)]">
+              <p className="font-display text-sm tracking-widest text-muted-foreground">
+                JOGADOR
+              </p>
+              <h3 className="mt-2 font-display text-4xl text-foreground">FENÔMENO</h3>
+              <p className="mt-1">
+                <span className="font-display text-lg text-muted-foreground">R$</span>
+                <span className="font-display text-5xl text-foreground">19,90</span>
+                <span className="text-sm font-bold text-muted-foreground">/mês</span>
+              </p>
+              <ul className="mt-6 space-y-2 text-sm font-bold uppercase tracking-widest text-muted-foreground">
+                <li>Tudo do Craque</li>
+                <li>Estatísticas completas</li>
+                <li>Destaque nos resultados</li>
+                <li>Suporte prioritário</li>
+              </ul>
+            </div>
+          </div>
+        ) : (
+          <div className="grid gap-8 md:grid-cols-2 md:max-w-3xl md:mx-auto">
+            {/* PELADA */}
+            <div className="border-4 border-foreground bg-background p-8 transition-transform hover:-translate-y-2 hover:shadow-[6px_6px_0px_0px_var(--color-primary)]">
+              <p className="font-display text-sm tracking-widest text-muted-foreground">
+                TIME
+              </p>
+              <h3 className="mt-2 font-display text-4xl text-foreground">PELADA</h3>
+              <p className="mt-1 font-display text-5xl text-primary">GRÁTIS</p>
+              <ul className="mt-6 space-y-2 text-sm font-bold uppercase tracking-widest text-muted-foreground">
+                <li>Perfil do time</li>
+                <li>5 mensagens/mês</li>
+                <li>10 resultados de busca</li>
+                <li>1 vaga aberta</li>
+              </ul>
+            </div>
+
+            {/* PROFISSIONAL */}
+            <div className="relative border-4 border-primary bg-background p-8 shadow-[6px_6px_0px_0px_var(--color-primary)] transition-transform hover:-translate-y-2">
+              <div className="absolute -right-2 -top-4 rotate-2 bg-primary px-3 py-1 font-display text-xs tracking-widest text-primary-foreground">
+                MAIS POPULAR
+              </div>
+              <p className="font-display text-sm tracking-widest text-muted-foreground">
+                TIME
+              </p>
+              <h3 className="mt-2 font-display text-4xl text-foreground">PROFISSIONAL</h3>
+              <p className="mt-1">
+                <span className="font-display text-lg text-muted-foreground">R$</span>
+                <span className="font-display text-5xl text-primary">49,90</span>
+                <span className="text-sm font-bold text-muted-foreground">/mês</span>
+              </p>
+              <ul className="mt-6 space-y-2 text-sm font-bold uppercase tracking-widest text-muted-foreground">
+                <li>Busca e mensagens ilimitadas</li>
+                <li>Filtros avançados</li>
+                <li>Stats e carreira dos jogadores</li>
+                <li>Analytics + Recomendações IA</li>
+                <li>Mensagem em massa</li>
+              </ul>
+            </div>
+          </div>
+        )}
+
+        <div className="mt-12 flex justify-center">
+          <Button
+            asChild
+            className="h-auto rounded-none border-4 border-foreground bg-foreground px-10 py-5 font-display text-3xl tracking-widest text-background transition-all hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_var(--color-primary)]"
+          >
+            <Link to="/planos">VER TODOS OS PLANOS</Link>
+          </Button>
+        </div>
+      </div>
+    </section>
   );
 }

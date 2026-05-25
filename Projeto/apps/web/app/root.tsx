@@ -18,6 +18,11 @@ import "./app.css";
 const queryClient = new QueryClient();
 
 export const links: Route.LinksFunction = () => [
+  // Favicon
+  { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+  { rel: "icon", href: "/favicon.ico", sizes: "32x32" },
+  { rel: "apple-touch-icon", href: "/icon-192.svg" },
+  // Fonts
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
   {
     rel: "preconnect",
@@ -36,6 +41,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <meta name="theme-color" content="#2d7a56" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="VárzeaPro" />
         <Meta />
         <Links />
       </head>
