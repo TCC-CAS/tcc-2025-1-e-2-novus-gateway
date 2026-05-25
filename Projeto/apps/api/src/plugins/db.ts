@@ -12,10 +12,12 @@ export default fp(async (fastify) => {
   const client = postgres(fastify.config.DATABASE_URL)
   const db = drizzle(client, { schema })
 
-  // Run pending migrations on startup
-  const migrationsFolder = join(__dirname, "../db/migrations")
-  await migrate(db, { migrationsFolder })
-  fastify.log.info("Database migrations applied")
+  // Run pending migrations on startup (skip in test env — tests use a fake DB)
+  if (process.env.NODE_ENV !== "test") {
+    const migrationsFolder = join(__dirname, "../db/migrations")
+    await migrate(db, { migrationsFolder })
+    fastify.log.info("Database migrations applied")
+  }
 
   fastify.decorate("db", db)
   fastify.addHook("onClose", async () => {
