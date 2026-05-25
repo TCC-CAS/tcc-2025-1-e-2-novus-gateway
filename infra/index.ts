@@ -2,7 +2,7 @@ import * as pulumi from "@pulumi/pulumi"
 import * as aws from "@pulumi/aws"
 
 const config = new pulumi.Config("varzeapro-infra")
-const awsRegion = config.get("awsRegion") || "sa-east-1"
+const awsRegion = config.get("awsRegion") || "us-east-1"
 const instanceType = config.get("instanceType") || "t3.micro"
 const domain = config.require("domain")
 const githubRepo = config.require("githubRepo")
@@ -239,7 +239,21 @@ sed -i 's/api.yourdomain.com/api.${domain}/g' /etc/nginx/sites-available/varzeap
 nginx -t && systemctl reload nginx
 
 # --- HTTPS (Certbot) ---
-certbot --nginx -n --agree-tos -m diogosarti13@gmail.com -d ${domain} -d www.${domain} -d api.${domain} || echo "Certbot failed — DNS may not be ready yet"
+# Tentativa imediata (pode falhar se DNS ainda nao propagou)
+certbot --nginx -n --agree-tos -m diogosarti13@gmail.com \
+  -d ${domain} -d www.${domain} -d api.${domain} || true
+
+# Retry em background: tenta a cada 5min por ate 2h
+(
+  for i in $(seq 1 24); do
+    sleep 300
+    certbot --nginx -n --agree-tos -m diogosarti13@gmail.com \
+      -d ${domain} -d www.${domain} -d api.${domain} \
+      && echo "Certbot OK na tentativa $i" \
+      && break
+    echo "Certbot tentativa $i falhou, aguardando DNS..."
+  done
+) &
 
 echo "=== Bootstrap complete ==="
 `

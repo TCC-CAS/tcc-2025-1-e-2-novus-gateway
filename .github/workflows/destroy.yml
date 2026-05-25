@@ -1,0 +1,58 @@
+name: Destroy Infrastructure
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Digite "yes" para confirmar destruição de TUDO'
+        required: true
+        default: ""
+
+jobs:
+  destroy:
+    name: pulumi destroy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate confirmation
+        env:
+          CONFIRM: ${{ github.event.inputs.confirm }}
+        run: |
+          if [[ "$CONFIRM" != "yes" ]]; then
+            echo "❌ Confirmação inválida. Digite exatamente 'yes' no input."
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install infra dependencies
+        working-directory: infra
+        run: npm ci
+
+      - name: Pulumi destroy
+        uses: pulumi/actions@v6
+        with:
+          command: destroy
+          stack-name: production
+          work-dir: infra
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Job summary
+        if: always()
+        run: |
+          echo "## 🗑️ Infraestrutura destruída" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "EC2, S3, Security Group e Key Pair removidos." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Custo atual: \$0.00**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Para subir novamente: execute o workflow **Provision Infrastructure**." >> $GITHUB_STEP_SUMMARY
