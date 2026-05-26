@@ -21,10 +21,10 @@ const EnvSchema = z.object({
   S3_USE_PATH_STYLE: z.coerce.boolean().default(false),
 
   // Rekognition moderation
-  REKOGNITION_ENABLED: z.coerce.boolean().default(false),
+  REKOGNITION_ENABLED: z.coerce.boolean().default(true),
   REKOGNITION_REGION: z.string().default("us-east-1"),
   REKOGNITION_MIN_CONFIDENCE: z.coerce.number().min(0).max(100).default(80),
-  REKOGNITION_BLOCKED_LABELS: z.string().default("Explicit Nudity,Violence,Visually Disturbing,Drugs,Alcohol,Tobacco,Gambling,Hate Symbols,Sexual Activity,Suggestive"),
+  REKOGNITION_BLOCKED_LABELS: z.string().default("Explicit Nudity,Violence,Blood & Gore,Visually Disturbing,Drugs,Alcohol,Tobacco,Gambling,Hate Symbols,Sexual Activity,Suggestive"),
 
   // Image processing
   IMAGE_MAX_SIZE_MB: z.coerce.number().default(10),

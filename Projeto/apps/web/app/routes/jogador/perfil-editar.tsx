@@ -335,8 +335,6 @@ export default function JogadorPerfilEditar() {
 
         {/* Positions */}
         <section className="space-y-6 border-4 border-foreground bg-background p-6 shadow-[8px_8px_0px_0px_var(--color-foreground)] dark:shadow-[8px_8px_0px_0px_var(--color-foreground)] relative">
-          <div className="absolute right-0 top-0 w-24 h-24 bg-primary/10 border-l-4 border-b-4 border-foreground" />
-
           <div className="border-b-4 border-foreground pb-4 relative z-10">
             <h2 className="font-display text-3xl tracking-wide text-foreground uppercase">
               ÁREA DE ATUAÇÃO
