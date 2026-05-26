@@ -144,7 +144,7 @@ export default function TimeMensagens() {
                       {c.otherParticipant.name}
                     </span>
                     {c.lastMessage && (
-                      <span className="font-bold tracking-widest text-[11px] text-muted-foreground uppercase truncate block opacity-80">
+                      <span className="font-bold text-[11px] text-muted-foreground truncate block opacity-80">
                         {c.lastMessage.content}
                       </span>
                     )}
@@ -247,12 +247,12 @@ export default function TimeMensagens() {
                             : "bg-muted/80 text-foreground shadow-[4px_4px_0px_0px_var(--color-primary)] dark:shadow-[4px_4px_0px_0px_var(--color-primary)]",
                         )}
                       >
-                        <p className="text-lg font-medium leading-relaxed">
+                        <p className="text-lg font-medium leading-relaxed break-words">
                           {msg.content}
                         </p>
                         <p
                           className={cn(
-                            "mt-3 text-[10px] font-bold tracking-widest uppercase flex items-center justify-end border-t border-dashed border-foreground/20 pt-2",
+                            "mt-3 text-[10px] font-bold flex items-center justify-end border-t border-dashed border-foreground/20 pt-2",
                             isMine
                               ? "text-background"
                               : "text-muted-foreground",
@@ -285,7 +285,7 @@ export default function TimeMensagens() {
             <div className="flex-shrink-0 border-t-4 border-foreground bg-background p-4 relative z-10">
               <div className="flex gap-4 max-w-5xl mx-auto">
                 <Input
-                  placeholder="ENVIE UMA PROPOSTA OU MENSAGEM..."
+                  placeholder="Envie uma proposta ou mensagem..."
                   value={message}
                   onChange={(e) => { setMessage(e.target.value); emitTypingStart() }}
                   onBlur={() => emitTypingStop()}
