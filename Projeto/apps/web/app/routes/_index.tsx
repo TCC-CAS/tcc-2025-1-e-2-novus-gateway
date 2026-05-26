@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useLocation } from "react-router";
+import { Home, Zap, LogIn, UserPlus } from "lucide-react";
+import { cn } from "~/lib/utils";
 import { useAuth } from "~/lib/auth/auth-context";
 import { getHomeForRole } from "~/lib/auth/permissions";
 import { Button } from "~/components/ui/button";
@@ -12,6 +14,52 @@ export function meta() {
       content: "Plataforma para conectar jogadores de futebol amador e times.",
     },
   ];
+}
+
+const PUBLIC_NAV = [
+  { label: "Início", href: "/", icon: Home },
+  { label: "Planos", href: "/planos", icon: Zap },
+  { label: "Entrar", href: "/login", icon: LogIn },
+  { label: "Cadastrar", href: "/cadastro", icon: UserPlus },
+]
+
+function PublicNav() {
+  const location = useLocation()
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 z-30 border-t-4 border-foreground bg-background md:hidden">
+      <div className="flex h-16 items-stretch">
+        {PUBLIC_NAV.map((item) => {
+          const active = location.pathname === item.href
+          return (
+            <Link
+              key={item.href}
+              to={item.href}
+              className={cn(
+                "relative flex flex-1 flex-col items-center justify-center gap-1 text-[10px] font-bold tracking-widest uppercase transition-colors border-r-2 border-foreground/20 last:border-r-0",
+                active
+                  ? "bg-foreground text-background"
+                  : "text-muted-foreground hover:bg-muted",
+              )}
+            >
+              {active && (
+                <div className="absolute top-0 left-0 w-full h-1 bg-primary" />
+              )}
+              <item.icon
+                className={cn(
+                  "size-6",
+                  active ? "text-primary" : "text-foreground",
+                )}
+              />
+              <span className="sr-only sm:not-sr-only sm:mt-1">
+                {item.label}
+              </span>
+            </Link>
+          )
+        })}
+      </div>
+      <div className="h-[env(safe-area-inset-bottom)] bg-background" />
+    </nav>
+  )
 }
 
 export default function Index() {
@@ -35,7 +83,7 @@ export default function Index() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background selection:bg-primary selection:text-primary-foreground">
+    <div className="flex min-h-screen flex-col bg-background selection:bg-primary selection:text-primary-foreground pb-16 md:pb-0">
       {/* Decorative Global Noise */}
       <div
         className="pointer-events-none fixed inset-0 z-50 opacity-[0.015] mix-blend-overlay"
@@ -319,6 +367,7 @@ export default function Index() {
           </p>
         </div>
       </footer>
+      <PublicNav />
     </div>
   );
 }
