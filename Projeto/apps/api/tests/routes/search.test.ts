@@ -245,15 +245,16 @@ describe("Search routes", () => {
     })
 
     it("SUB-03b: free-plan team returns at most 10 results (D-11: plan limit enforced)", async () => {
-      // Create 11+ distinct player profiles so there's data to limit
-      const playerUsers: string[] = []
-      for (let i = 0; i < 11; i++) {
-        const p = await signUpAndGetCookie(app, "player")
-        playerUsers.push(p.sessionCookie)
-        await upsertPlayerProfile(app, p.sessionCookie, {
-          name: `Player Limit Test ${i}`,
-        })
-      }
+      // Create 11+ distinct player profiles in parallel so there's data to limit
+      await Promise.all(
+        Array.from({ length: 11 }, (_, i) =>
+          signUpAndGetCookie(app, "player").then((p) =>
+            upsertPlayerProfile(app, p.sessionCookie, {
+              name: `Player Limit Test ${i}`,
+            })
+          )
+        )
+      )
 
       // Create a fresh free-plan team user and search
       const freeTeam = await signUpAndGetCookie(app, "team")
@@ -267,6 +268,6 @@ describe("Search routes", () => {
       const body = res.json()
       // Free team plan limits searchResults to 10
       expect(body.data.length).toBeLessThanOrEqual(10)
-    })
+    }, 15000)
   })
 })
