@@ -5,7 +5,7 @@ const SESSION_STORAGE_KEY = "varzeapro_user";
 export function getStoredUser(): SessionUser | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = sessionStorage.getItem(SESSION_STORAGE_KEY);
+    const raw = localStorage.getItem(SESSION_STORAGE_KEY);
     if (!raw) return null;
     return JSON.parse(raw) as SessionUser;
   } catch {
@@ -15,12 +15,12 @@ export function getStoredUser(): SessionUser | null {
 
 export function setStoredUser(user: SessionUser): void {
   if (typeof window === "undefined") return;
-  sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(user));
+  localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(user));
 }
 
 export function clearStoredUser(): void {
   if (typeof window === "undefined") return;
-  sessionStorage.removeItem(SESSION_STORAGE_KEY);
+  localStorage.removeItem(SESSION_STORAGE_KEY);
 }
 
 /** Check if we have user data in storage (cookie-based auth, no token in JS). */
