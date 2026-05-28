@@ -146,18 +146,14 @@ const teamsRoutes: FastifyPluginAsync = async (fastify) => {
         return reply.status(404).send({ error: { code: "NOT_FOUND", message: "Jogador não encontrado" } })
       }
 
-      try {
-        await fastify.db.insert(teamMembers).values({
-          id: nanoid(),
-          teamId: team.id,
-          playerId,
-        })
-      } catch (err: unknown) {
-        const msg = (err as Error).message ?? ""
-        if (msg.includes("unique") || msg.includes("duplicate") || msg.includes("UniqueConstraintViolation")) {
-          return reply.status(409).send({ error: { code: "CONFLICT", message: "Jogador já está no elenco" } })
-        }
-        throw err
+      const inserted = await fastify.db
+        .insert(teamMembers)
+        .values({ id: nanoid(), teamId: team.id, playerId })
+        .onConflictDoNothing()
+        .returning()
+
+      if (inserted.length === 0) {
+        return reply.status(409).send({ error: { code: "CONFLICT", message: "Jogador já está no elenco" } })
       }
 
       return reply.status(201).send(ok({ playerId, teamId: team.id }))

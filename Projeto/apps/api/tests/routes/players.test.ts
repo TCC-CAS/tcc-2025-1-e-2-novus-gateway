@@ -132,12 +132,12 @@ describe("Player profile routes", () => {
       expect(res.statusCode).toBe(404)
     })
 
-    it("PLAY-03c: returns 401 when not authenticated", async () => {
+    it("PLAY-03c: returns 404 when not authenticated (endpoint is now public)", async () => {
       const res = await app.inject({
         method: "GET",
         url: "/api/players/some-id",
       })
-      expect(res.statusCode).toBe(401)
+      expect(res.statusCode).toBe(404)
     })
   })
 })

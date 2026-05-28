@@ -125,12 +125,12 @@ describe("Team profile routes", () => {
       expect(res.statusCode).toBe(404)
     })
 
-    it("TEAM-03c: returns 401 when not authenticated", async () => {
+    it("TEAM-03c: returns 404 when not authenticated (endpoint is now public)", async () => {
       const res = await app.inject({
         method: "GET",
         url: "/api/teams/some-id",
       })
-      expect(res.statusCode).toBe(401)
+      expect(res.statusCode).toBe(404)
     })
   })
 })
