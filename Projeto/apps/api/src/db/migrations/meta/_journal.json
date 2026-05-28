@@ -22,6 +22,13 @@
       "when": 1779963658155,
       "tag": "0002_massive_santa_claus",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1780008271005,
+      "tag": "0003_fine_doctor_doom",
+      "breakpoints": true
     }
   ]
 }

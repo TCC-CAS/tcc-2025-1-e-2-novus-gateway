@@ -6,7 +6,7 @@ import { usePlan } from "~/lib/plan"
 import { PlanGate, UpsellCard } from "~/lib/plan/plan-gate"
 import { Button } from "~/components/ui/button"
 import { Skeleton } from "~/components/ui/skeleton"
-import { searchApi, teamsApi } from "~/lib/api-client"
+import { searchApi, teamsApi, matchesApi } from "~/lib/api-client"
 import { PLAN_CONFIGS } from "~shared/contracts"
 import type { PlayerSummary } from "~shared/contracts"
 import {
@@ -19,6 +19,7 @@ import {
   Sparkles,
   BarChart3,
   Crown,
+  Calendar,
 } from "lucide-react";
 
 export function meta() {
@@ -56,6 +57,16 @@ export default function TimeHome() {
     queryFn: () => teamsApi.getMe(),
     retry: false,
   });
+
+  const { data: matchesData } = useQuery({
+    queryKey: ["team", "me", "matches", "upcoming"],
+    queryFn: async () => {
+      const me = await teamsApi.getMe()
+      return matchesApi.getTeamMatches(me.id, { status: "scheduled", pageSize: 1 })
+    },
+    enabled: !!profile,
+  })
+  const nextMatch = matchesData?.data[0]
 
   const PROFILE_STEPS = useMemo(() => {
     if (!profile) return { labels: ["Nome do time", "Região", "Nível", "Logo", "Descrição"], completed: 0 };
@@ -173,6 +184,37 @@ export default function TimeHome() {
           </span>
         </Link>
       </section>
+
+      {/* Próximo jogo */}
+      <div className="border-2 border-foreground p-4 shadow-[4px_4px_0px_0px_var(--color-primary)]">
+        <div className="flex items-center gap-2 mb-3">
+          <Calendar className="size-4 text-primary" />
+          <h2 className="font-black uppercase text-sm tracking-widest">PRÓXIMO JOGO</h2>
+        </div>
+        {nextMatch ? (
+          <div className="flex flex-col gap-1">
+            <p className="font-bold text-base">
+              {nextMatch.opponentName ? `vs ${nextMatch.opponentName}` : "Adversário a confirmar"}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {new Date(nextMatch.matchDate + "T00:00:00").toLocaleDateString("pt-BR", {
+                weekday: "short",
+                day: "numeric",
+                month: "short",
+              })}
+              {nextMatch.matchTime && ` às ${nextMatch.matchTime}`}
+            </p>
+            {(nextMatch.venueName || nextMatch.neighborhood) && (
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <MapPin className="size-3" />
+                {[nextMatch.venueName, nextMatch.neighborhood].filter(Boolean).join(" — ")}
+              </p>
+            )}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">Nenhum jogo agendado. <a href="/time/perfil/editar" className="underline font-bold">Agendar agora →</a></p>
+        )}
+      </div>
 
       {/* Suggested players - BRUTALIST GRID */}
       <section className="pt-8">

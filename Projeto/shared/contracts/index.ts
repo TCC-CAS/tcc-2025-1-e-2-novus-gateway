@@ -10,3 +10,4 @@ export * from "./subscription.js";
 export * from "./favorites.js";
 export * from "./gallery.js";
 export * from "./payment.js";
+export * from "./matches.js";

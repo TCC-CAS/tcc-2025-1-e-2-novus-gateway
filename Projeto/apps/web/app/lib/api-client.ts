@@ -338,6 +338,32 @@ export const uploadApi = {
   deleteLogo: () => deleteUpload("/upload/logo"),
 };
 
+// --- Matches ---
+export const matchesApi = {
+  getTeamMatches: (
+    teamId: string,
+    params?: { status?: string; page?: number; pageSize?: number }
+  ) =>
+    request<{
+      data: import("~shared/contracts").Match[]
+      meta: { page: number; pageSize: number; total: number; totalPages: number }
+    }>(`/teams/${teamId}/matches`, {
+      params: params as Record<string, string | number | undefined>,
+    }),
+  createMatch: (data: import("~shared/contracts").CreateMatchRequest) =>
+    request<import("~shared/contracts").Match>("/teams/me/matches", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  updateMatch: (matchId: string, data: import("~shared/contracts").UpdateMatchRequest) =>
+    request<import("~shared/contracts").Match>(`/teams/me/matches/${matchId}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  deleteMatch: (matchId: string) =>
+    request<void>(`/teams/me/matches/${matchId}`, { method: "DELETE" }),
+}
+
 // --- Public (no auth) ---
 export type ShowcasePlayer = {
   id: string

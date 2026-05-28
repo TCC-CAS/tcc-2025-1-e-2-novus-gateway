@@ -2,7 +2,7 @@ import { ReportButton } from "~/components/report-button";
 import { useParams, useNavigate, Link } from "react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "~/lib/auth/auth-context";
-import { teamsApi, messagingApi, favoritesApi, type RosterMember } from "~/lib/api-client";
+import { teamsApi, messagingApi, favoritesApi, matchesApi, type RosterMember } from "~/lib/api-client";
 import { canSearchTeams } from "~/lib/auth";
 import { OptimizedImage } from "~/components/optimized-image";
 import { Button } from "~/components/ui/button";
@@ -38,6 +38,18 @@ export default function TimePublicProfile() {
   const { data: rosterData } = useQuery({
     queryKey: ["team", id, "roster"],
     queryFn: () => teamsApi.getRoster(id!),
+    enabled: !!id,
+  });
+
+  const { data: upcomingMatches } = useQuery({
+    queryKey: ["team", id, "matches", "upcoming"],
+    queryFn: () => matchesApi.getTeamMatches(id!, { status: "scheduled", pageSize: 1 }),
+    enabled: !!id,
+  });
+
+  const { data: recentMatches } = useQuery({
+    queryKey: ["team", id, "matches", "completed"],
+    queryFn: () => matchesApi.getTeamMatches(id!, { status: "completed", pageSize: 5 }),
     enabled: !!id,
   });
 
@@ -285,6 +297,63 @@ export default function TimePublicProfile() {
                 </Link>
               ))}
             </div>
+          </section>
+        )}
+
+        {/* Partidas */}
+        {((upcomingMatches?.data && upcomingMatches.data.length > 0) ||
+          (recentMatches?.data && recentMatches.data.length > 0)) && (
+          <section className="border-t-2 border-foreground pt-6 mt-0 px-8 sm:px-12 pb-8">
+            <h2 className="text-lg font-black uppercase mb-4">PARTIDAS</h2>
+
+            {upcomingMatches?.data[0] && (
+              <div className="border-2 border-foreground p-4 mb-4 bg-foreground text-background">
+                <p className="text-xs font-bold uppercase opacity-70 mb-1">PRÓXIMO JOGO</p>
+                <p className="font-black text-base">
+                  {upcomingMatches.data[0].opponentName
+                    ? `vs ${upcomingMatches.data[0].opponentName}`
+                    : "Adversário a confirmar"}
+                </p>
+                <p className="text-sm opacity-80">
+                  {new Date(upcomingMatches.data[0].matchDate + "T00:00:00").toLocaleDateString("pt-BR", {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                  })}
+                  {upcomingMatches.data[0].matchTime && ` às ${upcomingMatches.data[0].matchTime}`}
+                </p>
+                {(upcomingMatches.data[0].venueName || upcomingMatches.data[0].neighborhood) && (
+                  <p className="text-xs opacity-70 mt-1 flex items-center gap-1">
+                    <MapPin className="size-3" />
+                    {[upcomingMatches.data[0].venueName, upcomingMatches.data[0].neighborhood].filter(Boolean).join(" — ")}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {recentMatches?.data && recentMatches.data.length > 0 && (
+              <div>
+                <p className="text-xs font-bold uppercase text-muted-foreground mb-2">ÚLTIMAS PARTIDAS</p>
+                <div className="flex flex-col gap-2">
+                  {recentMatches.data.map((match) => (
+                    <div key={match.id} className="flex items-start justify-between border border-foreground/30 p-3 text-sm">
+                      <div>
+                        <p className="font-bold">
+                          {match.opponentName ? `vs ${match.opponentName}` : "Adversário"}
+                        </p>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          {match.neighborhood && <><MapPin className="size-3" />{match.neighborhood} — </>}
+                          {new Date(match.matchDate + "T00:00:00").toLocaleDateString("pt-BR")}
+                        </p>
+                      </div>
+                      {match.result && (
+                        <span className="font-black text-sm">{match.result}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </section>
         )}
 

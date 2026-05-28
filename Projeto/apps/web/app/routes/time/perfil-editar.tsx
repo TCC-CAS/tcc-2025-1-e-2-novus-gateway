@@ -10,7 +10,12 @@ import {
   TEAM_LEVELS,
   POSITIONS,
 } from "~shared/contracts";
-import { teamsApi, searchApi, uploadApi, ApiError, type RosterMember } from "~/lib/api-client";
+import { teamsApi, searchApi, matchesApi, uploadApi, ApiError, type RosterMember } from "~/lib/api-client";
+import {
+  CreateMatchRequestSchema,
+  type CreateMatchRequest,
+  type Match,
+} from "~shared/contracts";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
@@ -84,6 +89,47 @@ export default function TimePerfilEditar() {
     onSuccess: () => {
       refetchRoster()
       toast.success("Jogador removido do elenco")
+    },
+  })
+
+  const [showMatchForm, setShowMatchForm] = useState(false)
+
+  const { data: matchesData, refetch: refetchMatches } = useQuery({
+    queryKey: ["team", "me", "matches"],
+    queryFn: () => profile ? matchesApi.getTeamMatches(profile.id, { pageSize: 20 }) : null,
+    enabled: !!profile,
+  })
+
+  const matchForm = useForm<CreateMatchRequest>({
+    resolver: zodResolver(CreateMatchRequestSchema),
+    defaultValues: {
+      matchDate: "",
+      opponentName: "",
+      matchTime: "",
+      venueName: "",
+      neighborhood: "",
+      city: "",
+    },
+  })
+
+  const createMatchMutation = useMutation({
+    mutationFn: (data: CreateMatchRequest) => matchesApi.createMatch(data),
+    onSuccess: () => {
+      refetchMatches()
+      setShowMatchForm(false)
+      matchForm.reset()
+      toast.success("Partida criada!")
+    },
+    onError: (err) => {
+      toast.error(err instanceof ApiError ? err.message : "Erro ao criar partida")
+    },
+  })
+
+  const cancelMatchMutation = useMutation({
+    mutationFn: (matchId: string) => matchesApi.deleteMatch(matchId),
+    onSuccess: () => {
+      refetchMatches()
+      toast.success("Partida cancelada")
     },
   })
 
@@ -460,6 +506,100 @@ export default function TimePerfilEditar() {
               <p className="text-xs text-muted-foreground">Nenhum jogador encontrado</p>
             )}
           </div>
+        </section>
+
+        {/* Gestão de Partidas */}
+        <section className="border-4 border-foreground bg-background p-6 shadow-[8px_8px_0px_0px_var(--color-foreground)] dark:shadow-[8px_8px_0px_0px_var(--color-foreground)]">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-display text-3xl tracking-wide text-foreground uppercase">JOGOS</h2>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setShowMatchForm((v) => !v)}
+            >
+              {showMatchForm ? "CANCELAR" : "+ NOVO JOGO"}
+            </Button>
+          </div>
+
+          {showMatchForm && (
+            <form
+              onSubmit={matchForm.handleSubmit((data) => createMatchMutation.mutate(data))}
+              className="border border-foreground p-4 mb-4 flex flex-col gap-3"
+            >
+              <h3 className="font-bold uppercase text-sm">NOVO JOGO</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="matchDate">DATA *</Label>
+                  <Input id="matchDate" type="date" {...matchForm.register("matchDate")} />
+                  {matchForm.formState.errors.matchDate && (
+                    <p className="text-xs text-red-500">{matchForm.formState.errors.matchDate.message}</p>
+                  )}
+                </div>
+                <div>
+                  <Label htmlFor="matchTime">HORÁRIO</Label>
+                  <Input id="matchTime" type="time" {...matchForm.register("matchTime")} />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="opponentName">ADVERSÁRIO</Label>
+                <Input id="opponentName" placeholder="Nome do time adversário" {...matchForm.register("opponentName")} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="venueName">LOCAL / CAMPO</Label>
+                  <Input id="venueName" placeholder="Ex: Campo do Zezão" {...matchForm.register("venueName")} />
+                </div>
+                <div>
+                  <Label htmlFor="neighborhood">BAIRRO</Label>
+                  <Input id="neighborhood" {...matchForm.register("neighborhood")} />
+                </div>
+              </div>
+              <Button type="submit" disabled={createMatchMutation.isPending} className="self-start">
+                {createMatchMutation.isPending ? "SALVANDO..." : "SALVAR JOGO"}
+              </Button>
+            </form>
+          )}
+
+          {matchesData && matchesData.data.length === 0 && !showMatchForm && (
+            <p className="text-sm text-muted-foreground">Nenhum jogo cadastrado ainda.</p>
+          )}
+          {matchesData && matchesData.data.length > 0 && (
+            <div className="flex flex-col gap-2">
+              {matchesData.data.map((match: Match) => (
+                <div key={match.id} className="flex items-start justify-between border border-foreground/30 p-3 text-sm">
+                  <div>
+                    <p className="font-bold">
+                      {match.opponentName ? `vs ${match.opponentName}` : "Adversário a confirmar"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(match.matchDate + "T00:00:00").toLocaleDateString("pt-BR")}
+                      {match.matchTime && ` às ${match.matchTime}`}
+                      {match.neighborhood && ` — ${match.neighborhood}`}
+                    </p>
+                    {match.status === "cancelled" && (
+                      <span className="text-xs text-red-500 font-bold">CANCELADO</span>
+                    )}
+                    {match.status === "completed" && match.result && (
+                      <span className="text-xs font-bold">{match.result}</span>
+                    )}
+                  </div>
+                  {match.status === "scheduled" && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs text-muted-foreground hover:text-destructive"
+                      onClick={() => cancelMatchMutation.mutate(match.id)}
+                      disabled={cancelMatchMutation.isPending}
+                    >
+                      CANCELAR
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Actions */}

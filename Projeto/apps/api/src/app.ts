@@ -59,6 +59,7 @@ export async function buildApp() {
   await fastify.register(import("./routes/gallery.js"), { prefix: "/api/gallery" })
   await fastify.register(import("./routes/webhooks/mercadopago.js"), { prefix: "/api/webhooks" })
   await fastify.register(import("./routes/admin.js"), { prefix: "/api/admin" })
+  await fastify.register(import("./routes/matches.js"), { prefix: "/api" })
 
   // Protected test route for AUTH-04 verification (401 without session, 403 with wrong role)
   fastify.get("/api/me", { preHandler: [requireSession] }, async (request, reply) => {
