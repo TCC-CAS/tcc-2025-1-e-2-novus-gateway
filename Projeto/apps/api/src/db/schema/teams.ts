@@ -7,6 +7,7 @@ export const teams = pgTable("teams", {
   id: text("id").primaryKey(),
   userId: text("user_id").notNull().references(() => users.id).unique(),
   name: text("name").notNull(),
+  responsibleName: text("responsible_name"),
   logoUrl: text("logo_url"),
   level: teamLevelEnum("level").notNull(),
   region: text("region"),
