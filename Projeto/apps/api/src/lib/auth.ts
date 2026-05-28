@@ -55,6 +55,16 @@ export function createAuth(db: PostgresJsDatabase<typeof schema>) {
           defaultValue: "player",
           input: true,
         },
+        cpf: {
+          type: "string",
+          required: false,
+          input: true,
+        },
+        teamName: {
+          type: "string",
+          required: false,
+          input: true,
+        },
       },
     },
     databaseHooks: {
@@ -70,6 +80,7 @@ export function createAuth(db: PostgresJsDatabase<typeof schema>) {
             const role = u.role as string
             const userId = u.id as string
             const name = (u.name as string | undefined) ?? ""
+            const teamName = (u.teamName as string | undefined) ?? name
 
             if (role === "player") {
               await db
@@ -79,7 +90,13 @@ export function createAuth(db: PostgresJsDatabase<typeof schema>) {
             } else if (role === "team") {
               await db
                 .insert(schema.teams)
-                .values({ id: nanoid(), userId, name, level: "outro" })
+                .values({
+                  id: nanoid(),
+                  userId,
+                  name: teamName,
+                  responsibleName: name,
+                  level: "outro",
+                })
                 .onConflictDoNothing()
             }
 
