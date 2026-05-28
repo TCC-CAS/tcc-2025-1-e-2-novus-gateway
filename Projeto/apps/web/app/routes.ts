@@ -13,10 +13,11 @@ export default [
   route("recuperar-senha", "routes/recuperar-senha.tsx"),
   route("planos", "routes/planos.tsx"),
   route("pagamento-sucesso", "routes/pagamento-sucesso.tsx"),
-  // Public profile routes — accessible without login
+  // Public listing + profile routes — accessible without login
+  route("jogadores", "routes/jogadores.tsx"),
   route("jogadores/:id", "routes/jogadores.$id.tsx"),
-  route("times/:id", "routes/times.$id.tsx"),
   route("times", "routes/times.tsx"),
+  route("times/:id", "routes/times.$id.tsx"),
   layout("routes/_authenticated-layout.tsx", [
     route("jogador", "routes/jogador/_player-layout.tsx", [
       index("routes/jogador/index.tsx"),

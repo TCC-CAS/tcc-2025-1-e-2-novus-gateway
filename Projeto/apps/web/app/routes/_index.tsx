@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { publicApi, type ShowcaseTeam, type ShowcasePlayer } from "~/lib/api-client";
 import { OptimizedImage } from "~/components/optimized-image";
-import { Home, Zap, LogIn, UserPlus, Shield, User } from "lucide-react";
+import { Home, Zap, LogIn, UserPlus, Shield, User, Users } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { useAuth } from "~/lib/auth/auth-context";
 import { getHomeForRole } from "~/lib/auth/permissions";
@@ -21,9 +21,9 @@ export function meta() {
 
 const PUBLIC_NAV = [
   { label: "Início", href: "/", icon: Home },
-  { label: "Planos", href: "/planos", icon: Zap },
+  { label: "Times", href: "/times", icon: Shield },
+  { label: "Jogadores", href: "/jogadores", icon: Users },
   { label: "Entrar", href: "/login", icon: LogIn },
-  { label: "Cadastrar", href: "/cadastro", icon: UserPlus },
 ]
 
 function PublicNav() {
@@ -112,14 +112,26 @@ export default function Index() {
           </Link>
           <nav className="flex items-center gap-6">
             <Link
+              to="/times"
+              className="hidden font-display text-xl tracking-wide text-foreground transition-colors hover:text-primary md:block"
+            >
+              TIMES
+            </Link>
+            <Link
+              to="/jogadores"
+              className="hidden font-display text-xl tracking-wide text-foreground transition-colors hover:text-primary md:block"
+            >
+              JOGADORES
+            </Link>
+            <Link
               to="/planos"
-              className="hidden font-display text-2xl tracking-wide text-foreground transition-colors hover:text-primary md:block"
+              className="hidden font-display text-xl tracking-wide text-foreground transition-colors hover:text-primary md:block"
             >
               PLANOS
             </Link>
             <Link
               to="/login"
-              className="hidden font-display text-2xl tracking-wide text-foreground transition-colors hover:text-primary sm:block"
+              className="hidden font-display text-xl tracking-wide text-foreground transition-colors hover:text-primary sm:block"
             >
               ENTRAR
             </Link>
@@ -307,7 +319,12 @@ export default function Index() {
         {showcase?.players && showcase.players.length > 0 && (
           <section className="py-12 px-6 border-t-4 border-foreground sm:px-12">
             <div className="max-w-5xl mx-auto">
-              <h2 className="text-2xl font-black uppercase mb-6">JOGADORES EM DESTAQUE</h2>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-black uppercase">JOGADORES EM DESTAQUE</h2>
+                <Link to="/jogadores" className="text-sm font-bold uppercase underline">
+                  VER TODOS →
+                </Link>
+              </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                 {showcase.players.map((player: ShowcasePlayer) => (
                   <Link key={player.id} to={`/jogadores/${player.id}`} className="border-2 border-foreground p-3 flex flex-col items-center gap-2 hover:bg-accent transition-colors">

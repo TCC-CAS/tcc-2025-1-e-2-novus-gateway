@@ -96,6 +96,58 @@ const publicRoutes: FastifyPluginAsync = async (fastify) => {
       })
     }
   )
+  // GET /players — paginated public player listing
+  fastify.withTypeProvider<ZodTypeProvider>().get(
+    "/players",
+    {},
+    async (request, reply) => {
+      const { page = "1", pageSize = "12", region } = request.query as {
+        page?: string
+        pageSize?: string
+        region?: string
+      }
+      const pageNum = Math.max(1, parseInt(page, 10))
+      const size = Math.min(50, Math.max(1, parseInt(pageSize, 10)))
+      const offset = (pageNum - 1) * size
+
+      const conditions = region
+        ? [eq(players.hidden, false), ilike(players.region, `%${region}%`)]
+        : [eq(players.hidden, false)]
+
+      const [rows, [countRow]] = await Promise.all([
+        fastify.db
+          .select({
+            id: players.id,
+            name: players.name,
+            photoUrl: players.photoUrl,
+            positions: players.positions,
+            level: players.level,
+            region: players.region,
+            city: players.city,
+          })
+          .from(players)
+          .where(and(...conditions))
+          .orderBy(desc(players.createdAt))
+          .limit(size)
+          .offset(offset),
+        fastify.db
+          .select({ total: count() })
+          .from(players)
+          .where(and(...conditions)),
+      ])
+
+      const total = Number(countRow?.total ?? 0)
+      return reply.send({
+        data: rows,
+        meta: {
+          page: pageNum,
+          pageSize: size,
+          total,
+          totalPages: Math.ceil(total / size),
+        },
+      })
+    }
+  )
 }
 
 export default publicRoutes

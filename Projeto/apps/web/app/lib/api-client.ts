@@ -393,6 +393,11 @@ export const publicApi = {
       "/public/teams",
       { params: params as Record<string, string | number | undefined> }
     ),
+  players: (params?: { page?: number; pageSize?: number; region?: string }) =>
+    request<{ data: ShowcasePlayer[]; meta: { page: number; pageSize: number; total: number; totalPages: number } }>(
+      "/public/players",
+      { params: params as Record<string, string | number | undefined> }
+    ),
 }
 
 // --- Gallery ---
