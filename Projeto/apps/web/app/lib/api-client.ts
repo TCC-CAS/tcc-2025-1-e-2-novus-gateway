@@ -111,6 +111,14 @@ export const playersApi = {
 };
 
 // --- Teams ---
+export type RosterMember = {
+  id: string
+  name: string
+  photoUrl: string | null
+  positions: string[]
+  region: string | null
+}
+
 export const teamsApi = {
   getMe: () =>
     request<import("~shared/contracts").TeamProfile>(
@@ -122,6 +130,18 @@ export const teamsApi = {
     request<import("~shared/contracts").TeamProfile>(
       "/teams/me",
       { method: "PUT", body: JSON.stringify(body)}
+    ),
+  getRoster: (teamId: string) =>
+    request<{ members: RosterMember[] }>(`/teams/${teamId}/roster`),
+  addToRoster: (playerId: string) =>
+    request<{ playerId: string; teamId: string }>(
+      "/teams/me/roster",
+      { method: "POST", body: JSON.stringify({ playerId }) }
+    ),
+  removeFromRoster: (playerId: string) =>
+    request<void>(
+      `/teams/me/roster/${playerId}`,
+      { method: "DELETE" }
     ),
 };
 
@@ -136,6 +156,27 @@ export const searchApi = {
     request<import("~shared/contracts").SearchTeamsResponse>(
       "/search/teams",
       { params: params as Record<string, string | number | undefined>}
+    ),
+  communityPlayers: (params: {
+    position?: string
+    region?: string
+    level?: string
+    page?: number
+  }) =>
+    request<{
+      data: Array<{
+        id: string
+        name: string
+        photoUrl: string | null
+        positions: string[]
+        level: string | null
+        region: string | null
+        city: string | null
+      }>
+      meta: { page: number; pageSize: number; total: number; totalPages: number }
+    }>(
+      "/search/community-players",
+      { params: params as Record<string, string | number | undefined> }
     ),
 };
 
@@ -296,6 +337,37 @@ export const uploadApi = {
   deleteAvatar: () => deleteUpload("/upload/avatar"),
   deleteLogo: () => deleteUpload("/upload/logo"),
 };
+
+// --- Public (no auth) ---
+export type ShowcasePlayer = {
+  id: string
+  name: string
+  photoUrl: string | null
+  positions: string[]
+  level: string | null
+  region: string | null
+  city: string | null
+}
+export type ShowcaseTeam = {
+  id: string
+  name: string
+  logoUrl: string | null
+  level: string
+  region: string | null
+  city: string | null
+}
+export type ShowcaseResponse = { teams: ShowcaseTeam[]; players: ShowcasePlayer[] }
+export type PublicTeam = ShowcaseTeam & { openPositions: string[] }
+
+export const publicApi = {
+  showcase: () =>
+    request<ShowcaseResponse>("/public/showcase"),
+  teams: (params?: { page?: number; pageSize?: number; region?: string }) =>
+    request<{ data: PublicTeam[]; meta: { page: number; pageSize: number; total: number; totalPages: number } }>(
+      "/public/teams",
+      { params: params as Record<string, string | number | undefined> }
+    ),
+}
 
 // --- Gallery ---
 export const galleryApi = {

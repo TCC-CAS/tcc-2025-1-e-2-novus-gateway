@@ -13,12 +13,17 @@ export default [
   route("recuperar-senha", "routes/recuperar-senha.tsx"),
   route("planos", "routes/planos.tsx"),
   route("pagamento-sucesso", "routes/pagamento-sucesso.tsx"),
+  // Public profile routes — accessible without login
+  route("jogadores/:id", "routes/jogadores.$id.tsx"),
+  route("times/:id", "routes/times.$id.tsx"),
+  route("times", "routes/times.tsx"),
   layout("routes/_authenticated-layout.tsx", [
     route("jogador", "routes/jogador/_player-layout.tsx", [
       index("routes/jogador/index.tsx"),
       route("perfil", "routes/jogador/perfil.tsx"),
       route("perfil/editar", "routes/jogador/perfil-editar.tsx"),
       route("buscar-times", "routes/jogador/buscar-times.tsx"),
+      route("buscar-jogadores", "routes/jogador/buscar-jogadores.tsx"),
       route("mensagens", "routes/jogador/mensagens.tsx"),
     ]),
     route("time", "routes/time/_team-layout.tsx", [
@@ -35,8 +40,6 @@ export default [
       route("moderation", "routes/admin/moderation.tsx"),
     ]),
     route("configuracoes", "routes/configuracoes.tsx"),
-    route("jogadores/:id", "routes/jogadores.$id.tsx"),
-    route("times/:id", "routes/times.$id.tsx"),
   ]),
   route("*", "routes/404.tsx"),
 ] satisfies RouteConfig;

@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router";
-import { Home, Zap, LogIn, UserPlus } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { publicApi, type ShowcaseTeam, type ShowcasePlayer } from "~/lib/api-client";
+import { OptimizedImage } from "~/components/optimized-image";
+import { Home, Zap, LogIn, UserPlus, Shield, User } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { useAuth } from "~/lib/auth/auth-context";
 import { getHomeForRole } from "~/lib/auth/permissions";
@@ -65,6 +68,11 @@ function PublicNav() {
 export default function Index() {
   const { user, role } = useAuth();
   const navigate = useNavigate();
+
+  const { data: showcase } = useQuery({
+    queryKey: ["public", "showcase"],
+    queryFn: () => publicApi.showcase(),
+  });
 
   useEffect(() => {
     if (user && role) {
@@ -266,6 +274,57 @@ export default function Index() {
             </div>
           </div>
         </section>
+
+        {/* Times em destaque */}
+        {showcase?.teams && showcase.teams.length > 0 && (
+          <section className="py-12 px-6 border-t-4 border-foreground sm:px-12">
+            <div className="max-w-5xl mx-auto">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-black uppercase">TIMES EM DESTAQUE</h2>
+                <Link to="/times" className="text-sm font-bold uppercase underline">
+                  VER TODOS →
+                </Link>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                {showcase.teams.map((team: ShowcaseTeam) => (
+                  <Link key={team.id} to={`/times/${team.id}`} className="border-2 border-foreground p-3 flex flex-col items-center gap-2 hover:bg-accent transition-colors">
+                    <div className="size-12 border border-foreground bg-muted flex items-center justify-center overflow-hidden">
+                      {team.logoUrl ? (
+                        <OptimizedImage src={team.logoUrl} alt={team.name} className="size-full object-cover" />
+                      ) : (
+                        <Shield className="size-5 text-muted-foreground" />
+                      )}
+                    </div>
+                    <p className="text-xs font-black uppercase text-center leading-tight line-clamp-2">{team.name}</p>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Jogadores em destaque */}
+        {showcase?.players && showcase.players.length > 0 && (
+          <section className="py-12 px-6 border-t-4 border-foreground sm:px-12">
+            <div className="max-w-5xl mx-auto">
+              <h2 className="text-2xl font-black uppercase mb-6">JOGADORES EM DESTAQUE</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                {showcase.players.map((player: ShowcasePlayer) => (
+                  <Link key={player.id} to={`/jogadores/${player.id}`} className="border-2 border-foreground p-3 flex flex-col items-center gap-2 hover:bg-accent transition-colors">
+                    <div className="size-12 rounded-full border-2 border-foreground bg-muted flex items-center justify-center overflow-hidden">
+                      {player.photoUrl ? (
+                        <OptimizedImage src={player.photoUrl} alt={player.name} className="size-full object-cover rounded-full" />
+                      ) : (
+                        <User className="size-5 text-muted-foreground" />
+                      )}
+                    </div>
+                    <p className="text-xs font-black uppercase text-center leading-tight line-clamp-2">{player.name}</p>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* SOCIAL PROOF / TESTIMONIALS */}
         <section className="border-t-8 border-primary bg-background px-6 py-32 sm:px-12">

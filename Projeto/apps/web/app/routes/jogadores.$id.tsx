@@ -17,7 +17,7 @@ export function meta() {
 export default function JogadorPublicProfile() {
   const { id } = useParams();
   const { user, role } = useAuth();
-  const canContact = canSearchPlayers(role);
+  const canContact = !!user && canSearchPlayers(role);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 

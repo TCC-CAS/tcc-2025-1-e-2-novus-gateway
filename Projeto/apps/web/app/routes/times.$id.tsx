@@ -1,8 +1,8 @@
 import { ReportButton } from "~/components/report-button";
-import { useParams, useNavigate } from "react-router";
+import { useParams, useNavigate, Link } from "react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "~/lib/auth/auth-context";
-import { teamsApi, messagingApi, favoritesApi } from "~/lib/api-client";
+import { teamsApi, messagingApi, favoritesApi, type RosterMember } from "~/lib/api-client";
 import { canSearchTeams } from "~/lib/auth";
 import { OptimizedImage } from "~/components/optimized-image";
 import { Button } from "~/components/ui/button";
@@ -14,6 +14,7 @@ import {
   Search,
   Calendar,
   Heart,
+  User,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -24,13 +25,19 @@ export function meta() {
 export default function TimePublicProfile() {
   const { id } = useParams();
   const { user, role } = useAuth();
-  const canContact = canSearchTeams(role);
+  const canContact = !!user && canSearchTeams(role);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["team", id],
     queryFn: () => teamsApi.getById(id!),
+    enabled: !!id,
+  });
+
+  const { data: rosterData } = useQuery({
+    queryKey: ["team", id, "roster"],
+    queryFn: () => teamsApi.getRoster(id!),
     enabled: !!id,
   });
 
@@ -253,6 +260,33 @@ export default function TimePublicProfile() {
             </div>
           </div>
         </div>
+
+        {/* Elenco */}
+        {rosterData && rosterData.members.length > 0 && (
+          <section className="border-t-2 border-foreground pt-6 mt-6 px-8 sm:px-12 pb-8">
+            <h2 className="text-lg font-black uppercase mb-4">ELENCO ({rosterData.members.length})</h2>
+            <div className="flex flex-wrap gap-3">
+              {rosterData.members.map((member: RosterMember) => (
+                <Link key={member.id} to={`/jogadores/${member.id}`} className="flex flex-col items-center gap-1 group">
+                  <div className="size-12 rounded-full border-2 border-foreground overflow-hidden bg-muted flex items-center justify-center">
+                    {member.photoUrl ? (
+                      <OptimizedImage
+                        src={member.photoUrl}
+                        alt={member.name}
+                        className="size-full object-cover rounded-full"
+                      />
+                    ) : (
+                      <User className="size-5 text-muted-foreground" />
+                    )}
+                  </div>
+                  <span className="text-xs font-bold uppercase text-center max-w-[64px] truncate group-hover:underline">
+                    {member.name.split(" ")[0]}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Mobile Contact Action */}
         {(canContact || (user && !isOwnProfile)) && (
