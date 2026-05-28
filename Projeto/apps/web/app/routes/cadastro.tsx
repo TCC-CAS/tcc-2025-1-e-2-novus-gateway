@@ -14,6 +14,10 @@ import { Label } from "~/components/ui/label";
 import { cn } from "~/lib/utils";
 import { Users, User } from "lucide-react";
 
+function formatCpf(value: string): string {
+  return value.replace(/\D/g, "").slice(0, 11)
+}
+
 export function meta() {
   return [{ title: "Cadastrar - VárzeaPro" }];
 }
@@ -51,6 +55,8 @@ export default function Cadastro() {
       password: "",
       confirmPassword: "",
       role: "player",
+      cpf: "",
+      teamName: "",
     },
   });
 
@@ -64,6 +70,8 @@ export default function Cadastro() {
         email: data.email,
         password: data.password,
         role: data.role,
+        cpf: data.cpf,
+        teamName: data.teamName,
       });
       const sessionUser = { ...res.user, planId: res.user.planId ?? "free" } as Parameters<typeof login>[0];
       login(sessionUser);
@@ -187,24 +195,96 @@ export default function Cadastro() {
                 <div className="grid gap-5 md:grid-cols-2">
                   <Field className="space-y-2 md:col-span-2">
                     <Label
-                      htmlFor="name"
+                      htmlFor="cpf"
                       className="font-display text-xl tracking-wide"
                     >
-                      NOME
+                      CPF
                     </Label>
                     <Input
-                      id="name"
-                      autoComplete="name"
+                      id="cpf"
+                      placeholder="Somente números (11 dígitos)"
+                      maxLength={11}
                       disabled={isSubmitting}
-                      className="h-14 rounded-none border-2 border-foreground bg-muted/50 px-4 text-lg focus-visible:ring-0 focus-visible:border-primary transition-colors uppercase"
-                      {...form.register("name")}
+                      className="h-14 rounded-none border-2 border-foreground bg-muted/50 px-4 text-lg focus-visible:ring-0 focus-visible:border-primary transition-colors"
+                      value={form.watch("cpf") ?? ""}
+                      onChange={(e) => {
+                        form.setValue("cpf", formatCpf(e.target.value), { shouldValidate: true })
+                      }}
                     />
-                    {form.formState.errors.name && (
+                    {form.formState.errors.cpf && (
                       <p className="font-bold tracking-wide text-destructive text-sm mt-1">
-                        {form.formState.errors.name.message}
+                        {form.formState.errors.cpf.message}
                       </p>
                     )}
                   </Field>
+
+                  {role !== "team" ? (
+                    <Field className="space-y-2 md:col-span-2">
+                      <Label
+                        htmlFor="name"
+                        className="font-display text-xl tracking-wide"
+                      >
+                        NOME COMPLETO
+                      </Label>
+                      <Input
+                        id="name"
+                        autoComplete="name"
+                        disabled={isSubmitting}
+                        placeholder="Seu nome completo"
+                        className="h-14 rounded-none border-2 border-foreground bg-muted/50 px-4 text-lg focus-visible:ring-0 focus-visible:border-primary transition-colors uppercase"
+                        {...form.register("name")}
+                      />
+                      {form.formState.errors.name && (
+                        <p className="font-bold tracking-wide text-destructive text-sm mt-1">
+                          {form.formState.errors.name.message}
+                        </p>
+                      )}
+                    </Field>
+                  ) : (
+                    <>
+                      <Field className="space-y-2 md:col-span-2">
+                        <Label
+                          htmlFor="teamName"
+                          className="font-display text-xl tracking-wide"
+                        >
+                          NOME DO TIME
+                        </Label>
+                        <Input
+                          id="teamName"
+                          disabled={isSubmitting}
+                          placeholder="Nome do seu time"
+                          className="h-14 rounded-none border-2 border-foreground bg-muted/50 px-4 text-lg focus-visible:ring-0 focus-visible:border-primary transition-colors uppercase"
+                          {...form.register("teamName")}
+                        />
+                        {form.formState.errors.teamName && (
+                          <p className="font-bold tracking-wide text-destructive text-sm mt-1">
+                            {form.formState.errors.teamName.message}
+                          </p>
+                        )}
+                      </Field>
+                      <Field className="space-y-2 md:col-span-2">
+                        <Label
+                          htmlFor="name"
+                          className="font-display text-xl tracking-wide"
+                        >
+                          NOME DO RESPONSÁVEL
+                        </Label>
+                        <Input
+                          id="name"
+                          autoComplete="name"
+                          disabled={isSubmitting}
+                          placeholder="Seu nome completo"
+                          className="h-14 rounded-none border-2 border-foreground bg-muted/50 px-4 text-lg focus-visible:ring-0 focus-visible:border-primary transition-colors uppercase"
+                          {...form.register("name")}
+                        />
+                        {form.formState.errors.name && (
+                          <p className="font-bold tracking-wide text-destructive text-sm mt-1">
+                            {form.formState.errors.name.message}
+                          </p>
+                        )}
+                      </Field>
+                    </>
+                  )}
 
                   <Field className="space-y-2 md:col-span-2">
                     <Label

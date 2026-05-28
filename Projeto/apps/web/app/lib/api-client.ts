@@ -68,7 +68,7 @@ export const authApi = {
       "/auth/sign-in/email",
       { method: "POST", body: JSON.stringify(body) }
     ),
-  signUp: (body: { name: string; email: string; password: string; role: string }) =>
+  signUp: (body: { name: string; email: string; password: string; role: string; cpf?: string; teamName?: string }) =>
     request<{ user: BetterAuthUser; token?: string }>(
       "/auth/sign-up/email",
       { method: "POST", body: JSON.stringify(body) }
