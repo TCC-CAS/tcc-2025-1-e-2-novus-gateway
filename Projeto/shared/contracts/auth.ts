@@ -39,11 +39,17 @@ export const SignUpRequestSchema = z
     password: PasswordSchema,
     confirmPassword: z.string(),
     role: RoleSchema,
+    cpf: z.string().regex(/^\d{11}$/, "CPF deve ter 11 dígitos sem pontuação"),
+    teamName: z.string().min(2, "Nome do time deve ter pelo menos 2 caracteres").optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "As senhas não coincidem",
     path: ["confirmPassword"],
-  });
+  })
+  .refine(
+    (data) => data.role !== "team" || (!!data.teamName && data.teamName.length >= 2),
+    { message: "Nome do time é obrigatório para times", path: ["teamName"] }
+  );
 export type SignUpRequest = z.infer<typeof SignUpRequestSchema>;
 
 /** Sign up response: same as login */
