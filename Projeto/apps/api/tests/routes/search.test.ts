@@ -230,6 +230,59 @@ describe("Search routes", () => {
     })
   })
 
+  // F3a: GET /api/search/community-players
+  describe("GET /api/search/community-players (F3a)", () => {
+    it("F3a-01: returns 200 for authenticated player", async () => {
+      const res = await app.inject({
+        method: "GET",
+        url: "/api/search/community-players",
+        headers: { cookie: playerCookie },
+      })
+      expect(res.statusCode).toBe(200)
+      const body = res.json()
+      expect(Array.isArray(body.data)).toBe(true)
+      expect(body.meta).toHaveProperty("total")
+    })
+
+    it("F3a-02: returns 200 for authenticated team user", async () => {
+      const res = await app.inject({
+        method: "GET",
+        url: "/api/search/community-players",
+        headers: { cookie: teamCookie },
+      })
+      expect(res.statusCode).toBe(200)
+    })
+
+    it("F3a-03: returns 401 without auth", async () => {
+      const res = await app.inject({
+        method: "GET",
+        url: "/api/search/community-players",
+      })
+      expect(res.statusCode).toBe(401)
+    })
+
+    it("F3a-04: results do not include userId field", async () => {
+      const res = await app.inject({
+        method: "GET",
+        url: "/api/search/community-players",
+        headers: { cookie: playerCookie },
+      })
+      const body = res.json()
+      for (const item of body.data) {
+        expect(item).not.toHaveProperty("userId")
+      }
+    })
+
+    it("F3a-05: accepts position filter without error", async () => {
+      const res = await app.inject({
+        method: "GET",
+        url: "/api/search/community-players?position=goleiro",
+        headers: { cookie: playerCookie },
+      })
+      expect(res.statusCode).toBe(200)
+    })
+  })
+
   // SUB-03: Plan limit enforcement on search results
   describe("Plan limit enforcement (SUB-03)", () => {
     it("SUB-03a: pageSize=100 returns at most 50 results (D-07: max pageSize enforced)", async () => {
