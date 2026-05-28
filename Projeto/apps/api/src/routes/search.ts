@@ -2,7 +2,8 @@ import type { FastifyPluginAsync } from "fastify"
 import { ZodTypeProvider } from "fastify-type-provider-zod"
 import { z } from "zod"
 import { and, eq, ne, ilike, desc, sql, count, inArray } from "drizzle-orm"
-import { requireRole } from "../hooks/require-auth.js"
+import type { SQL } from "drizzle-orm"
+import { requireRole, requireSession } from "../hooks/require-auth.js"
 import { list } from "../lib/response.js"
 import { players } from "../db/schema/players.js"
 import { teams } from "../db/schema/teams.js"
@@ -251,6 +252,80 @@ const searchRoutes: FastifyPluginAsync = async (fastify) => {
       }))
 
       return list(data, page, effectivePageSize, total)
+    }
+  )
+  // GET /community-players — any authenticated user, no plan gating, 20/page max
+  fastify.withTypeProvider<ZodTypeProvider>().get(
+    "/community-players",
+    { preHandler: [requireSession] },
+    async (request, reply) => {
+      const { position, region, level, page = "1" } = request.query as {
+        position?: string
+        region?: string
+        level?: string
+        page?: string
+      }
+
+      const pageNum = Math.max(1, parseInt(page, 10))
+      const pageSize = 20
+      const offset = (pageNum - 1) * pageSize
+
+      const userId = request.session!.user.id
+
+      const selfPlayer = await fastify.db.query.players.findFirst({
+        where: eq(players.userId, userId),
+        columns: { id: true },
+      })
+
+      const conditions: SQL[] = [eq(players.hidden, false)]
+
+      if (selfPlayer) {
+        conditions.push(ne(players.id, selfPlayer.id))
+      }
+      if (position) {
+        conditions.push(
+          sql`${players.positions} @> ARRAY[${position}]::text[]` as unknown as SQL
+        )
+      }
+      if (region) {
+        conditions.push(ilike(players.region, `%${region}%`))
+      }
+      if (level) {
+        conditions.push(eq(players.level, level))
+      }
+
+      const [rows, [countRow]] = await Promise.all([
+        fastify.db
+          .select({
+            id: players.id,
+            name: players.name,
+            photoUrl: players.photoUrl,
+            positions: players.positions,
+            level: players.level,
+            region: players.region,
+            city: players.city,
+          })
+          .from(players)
+          .where(and(...conditions))
+          .orderBy(desc(players.createdAt))
+          .limit(pageSize)
+          .offset(offset),
+        fastify.db
+          .select({ total: count() })
+          .from(players)
+          .where(and(...conditions)),
+      ])
+
+      const total = Number(countRow?.total ?? 0)
+      return reply.send({
+        data: rows,
+        meta: {
+          page: pageNum,
+          pageSize,
+          total,
+          totalPages: Math.ceil(total / pageSize),
+        },
+      })
     }
   )
 }
