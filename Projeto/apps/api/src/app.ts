@@ -50,6 +50,7 @@ export async function buildApp() {
   await fastify.register(import("./routes/players.js"), { prefix: "/api/players" })
   await fastify.register(import("./routes/teams.js"), { prefix: "/api/teams" })
   await fastify.register(import("./routes/search.js"), { prefix: "/api/search" })
+  await fastify.register(import("./routes/public.js"), { prefix: "/api/public" })
   await fastify.register(import("./routes/subscription.js"), { prefix: "/api/subscription" })
   await fastify.register(import("./routes/conversations.js"), { prefix: "/api" })
   await fastify.register(import("./routes/reports.js"), { prefix: "/api" })

@@ -63,11 +63,10 @@ const teamsRoutes: FastifyPluginAsync = async (fastify) => {
     }
   )
 
-  // GET /:id — any authenticated user
+  // GET /:id — public (no auth required)
   fastify.withTypeProvider<ZodTypeProvider>().get(
     "/:id",
     {
-      preHandler: [requireSession],
       schema: { params: z.object({ id: z.string() }) },
     },
     async (request, reply) => {

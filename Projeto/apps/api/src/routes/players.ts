@@ -125,16 +125,16 @@ const playersRoutes: FastifyPluginAsync = async (fastify) => {
     }
   )
 
-  // GET /:id — any authenticated user (career/stats gated by plan)
+  // GET /:id — public (no auth required); career/stats gated by plan when authenticated
   fastify.withTypeProvider<ZodTypeProvider>().get(
     "/:id",
     {
-      preHandler: [requireSession],
       schema: { params: z.object({ id: z.string() }) },
     },
     async (request, reply) => {
-      const viewerUserId = request.session!.user.id
-      const viewerRole = request.session!.user.role as "player" | "team" | "admin"
+      const session = request.session
+      const viewerUserId = session?.user.id
+      const viewerRole = session?.user.role as "player" | "team" | "admin" | undefined
 
       const profile = await fastify.db.query.players.findFirst({
         where: eq(players.id, request.params.id),
@@ -146,9 +146,20 @@ const playersRoutes: FastifyPluginAsync = async (fastify) => {
       }
 
       // Own profile: always full data
-      if (profile.userId === viewerUserId) {
+      if (viewerUserId && profile.userId === viewerUserId) {
         return ok({
           ...profile,
+          createdAt: profile.createdAt.toISOString(),
+          updatedAt: profile.updatedAt.toISOString(),
+        })
+      }
+
+      // Unauthenticated: return basic profile only (no career/stats)
+      if (!viewerUserId) {
+        return ok({
+          ...profile,
+          careerHistory: [],
+          detailedStats: null,
           createdAt: profile.createdAt.toISOString(),
           updatedAt: profile.updatedAt.toISOString(),
         })
