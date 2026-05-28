@@ -215,20 +215,27 @@ export default function TimePerfilEditar() {
       <div className="pointer-events-none absolute -left-20 top-0 h-64 w-64 rounded-full bg-primary/20 blur-[100px]" />
 
       <div className="mb-10 flex flex-col items-center text-center sm:flex-row sm:items-end sm:text-left sm:gap-6 border-b-4 border-foreground pb-8 relative z-10">
-        <ImageUpload
-          currentUrl={profile?.logoUrl}
-          onUpload={async (file) => {
-            const result = await uploadApi.logo(file);
-            await queryClient.invalidateQueries({ queryKey: ["team", "me"] });
-            return result;
-          }}
-          onRemove={async () => {
-            await uploadApi.deleteLogo();
-            await queryClient.invalidateQueries({ queryKey: ["team", "me"] });
-            toast.success("Logo removido.");
-          }}
-          label="Arraste ou clique"
-        />
+        <div className="flex flex-col items-center gap-2">
+          <ImageUpload
+            currentUrl={profile?.logoUrl}
+            onUpload={async (file) => {
+              const result = await uploadApi.logo(file);
+              await queryClient.invalidateQueries({ queryKey: ["team", "me"] });
+              return result;
+            }}
+            onRemove={async () => {
+              await uploadApi.deleteLogo();
+              await queryClient.invalidateQueries({ queryKey: ["team", "me"] });
+              toast.success("Logo removido.");
+            }}
+            label="Arraste ou clique"
+          />
+          {!profile?.logoUrl && (
+            <p className="text-xs text-muted-foreground text-center max-w-[180px] leading-tight">
+              ADICIONE O ESCUDO DO TIME — times com escudo transmitem mais credibilidade
+            </p>
+          )}
+        </div>
         <div>
           <h1 className="font-display text-5xl tracking-wide text-foreground uppercase">
             REFORMA NO CLUBE

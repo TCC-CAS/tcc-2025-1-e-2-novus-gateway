@@ -18,8 +18,8 @@ import {
 import { POSITIONS, PLAYER_LEVELS } from "~shared/contracts";
 import { TEAM_LEVELS } from "~shared/contracts";
 import type { Position, PlayerLevel, TeamLevel } from "~shared/contracts";
-import { playersApi, teamsApi } from "~/lib/api-client";
-import { Check, ChevronLeft, ChevronRight, Trophy } from "lucide-react";
+import { playersApi, teamsApi, uploadApi } from "~/lib/api-client";
+import { Check, ChevronLeft, ChevronRight, Trophy, User, Shield } from "lucide-react";
 
 export function meta() {
   return [{ title: "Configurar perfil - VárzeaPro" }];
@@ -27,12 +27,14 @@ export function meta() {
 
 const PLAYER_STEPS = [
   "BEM-VINDO",
+  "FOTO DE PERFIL",
   "POSIÇÃO E HABILIDADES",
   "DADOS FÍSICOS",
   "TUDO PRONTO",
 ] as const;
 const TEAM_STEPS = [
   "BEM-VINDO",
+  "FOTO DE PERFIL",
   "DADOS DO TIME",
   "POSIÇÕES ABERTAS",
   "TUDO PRONTO",
@@ -72,6 +74,9 @@ export default function Onboarding() {
   const [teamDescription, setTeamDescription] = useState("");
   const [teamOpenPositions, setTeamOpenPositions] = useState<string[]>([]);
   const [teamMatchDays, setTeamMatchDays] = useState<string[]>([]);
+
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user || !role) {
@@ -113,6 +118,19 @@ export default function Onboarding() {
     } catch {
       toast.error("Não foi possível salvar o perfil. Edite depois no seu vestiário.");
     }
+
+    if (photoFile) {
+      try {
+        if (isPlayer) {
+          await uploadApi.avatar(photoFile);
+        } else {
+          await uploadApi.logo(photoFile);
+        }
+      } catch {
+        // Photo upload is optional — don't block completion
+      }
+    }
+
     toast.success("Perfil configurado! Verifique seu email para ativar todas as funcionalidades.");
     navigate(getHomeForRole(role!), { replace: true });
   }
@@ -208,6 +226,42 @@ export default function Onboarding() {
             )}
 
             {isPlayer && step === 1 && (
+              <div className="flex flex-col items-center gap-6 pt-4">
+                <h2 className="font-display text-4xl tracking-wide text-foreground uppercase">FOTO DE PERFIL</h2>
+                <p className="text-sm text-muted-foreground text-center max-w-xs">
+                  Jogadores com foto recebem 3× mais contato de times
+                </p>
+                <div className="size-28 rounded-full border-2 border-dashed border-foreground flex items-center justify-center overflow-hidden">
+                  {photoPreview ? (
+                    <img src={photoPreview} alt="Preview" className="size-full object-cover rounded-full" />
+                  ) : (
+                    <User className="size-10 text-muted-foreground" />
+                  )}
+                </div>
+                <label className="cursor-pointer">
+                  <span className="border-2 border-foreground px-4 py-2 font-bold uppercase text-sm hover:bg-accent transition-colors">
+                    {photoPreview ? "TROCAR FOTO" : "ESCOLHER FOTO"}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setPhotoFile(file);
+                        setPhotoPreview(URL.createObjectURL(file));
+                      }
+                    }}
+                  />
+                </label>
+                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground" onClick={() => setStep((s) => s + 1)}>
+                  Pular por enquanto
+                </Button>
+              </div>
+            )}
+
+            {isPlayer && step === 2 && (
               <div className="space-y-8 animation-fade-in">
                 <div>
                   <h2 className="font-display text-4xl tracking-wide text-foreground">
@@ -345,7 +399,7 @@ export default function Onboarding() {
               </div>
             )}
 
-            {isPlayer && step === 2 && (
+            {isPlayer && step === 3 && (
               <div className="space-y-8 animation-fade-in">
                 <div>
                   <h2 className="font-display text-4xl tracking-wide text-foreground">
@@ -442,7 +496,7 @@ export default function Onboarding() {
               </div>
             )}
 
-            {isPlayer && step === 3 && (
+            {isPlayer && step === 4 && (
               <div className="space-y-8 flex flex-col items-center justify-center text-center h-full pt-10">
                 <div className="flex size-24 items-center justify-center border-4 border-primary bg-primary shadow-[4px_4px_0px_0px_var(--color-foreground)] dark:shadow-[4px_4px_0px_0px_var(--color-foreground)]">
                   <Check className="size-12 text-primary-foreground" />
@@ -490,6 +544,42 @@ export default function Onboarding() {
             )}
 
             {!isPlayer && step === 1 && (
+              <div className="flex flex-col items-center gap-6 pt-4">
+                <h2 className="font-display text-4xl tracking-wide text-foreground uppercase">FOTO DE PERFIL</h2>
+                <p className="text-sm text-muted-foreground text-center max-w-xs">
+                  Times com escudo transmitem mais credibilidade para os jogadores
+                </p>
+                <div className="size-28 border-2 border-dashed border-foreground flex items-center justify-center overflow-hidden">
+                  {photoPreview ? (
+                    <img src={photoPreview} alt="Preview" className="size-full object-cover" />
+                  ) : (
+                    <Shield className="size-10 text-muted-foreground" />
+                  )}
+                </div>
+                <label className="cursor-pointer">
+                  <span className="border-2 border-foreground px-4 py-2 font-bold uppercase text-sm hover:bg-accent transition-colors">
+                    {photoPreview ? "TROCAR ESCUDO" : "ESCOLHER ESCUDO"}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setPhotoFile(file);
+                        setPhotoPreview(URL.createObjectURL(file));
+                      }
+                    }}
+                  />
+                </label>
+                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground" onClick={() => setStep((s) => s + 1)}>
+                  Pular por enquanto
+                </Button>
+              </div>
+            )}
+
+            {!isPlayer && step === 2 && (
               <div className="space-y-8 animation-fade-in">
                 <div>
                   <h2 className="font-display text-4xl tracking-wide text-foreground">
@@ -590,7 +680,7 @@ export default function Onboarding() {
               </div>
             )}
 
-            {!isPlayer && step === 2 && (
+            {!isPlayer && step === 3 && (
               <div className="space-y-8 animation-fade-in">
                 <div>
                   <h2 className="font-display text-4xl tracking-wide text-foreground">
@@ -660,7 +750,7 @@ export default function Onboarding() {
               </div>
             )}
 
-            {!isPlayer && step === 3 && (
+            {!isPlayer && step === 4 && (
               <div className="space-y-8 flex flex-col items-center justify-center text-center h-full pt-10">
                 <div className="flex size-24 items-center justify-center border-4 border-primary bg-primary shadow-[4px_4px_0px_0px_var(--color-foreground)] dark:shadow-[4px_4px_0px_0px_var(--color-foreground)]">
                   <Check className="size-12 text-primary-foreground" />

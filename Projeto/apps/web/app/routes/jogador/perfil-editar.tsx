@@ -164,20 +164,27 @@ export default function JogadorPerfilEditar() {
       <div className="pointer-events-none absolute -left-20 top-0 h-64 w-64 rounded-full bg-primary/20 blur-[100px]" />
 
       <div className="mb-10 flex flex-col items-center text-center sm:flex-row sm:items-end sm:text-left sm:gap-6 border-b-4 border-foreground pb-8 relative z-10">
-        <ImageUpload
-          currentUrl={profile?.photoUrl}
-          onUpload={async (file) => {
-            const result = await uploadApi.avatar(file);
-            await queryClient.invalidateQueries({ queryKey: ["player", "me"] });
-            return result;
-          }}
-          onRemove={async () => {
-            await uploadApi.deleteAvatar();
-            await queryClient.invalidateQueries({ queryKey: ["player", "me"] });
-            toast.success("Foto removida.");
-          }}
-          label="Arraste ou clique"
-        />
+        <div className="flex flex-col items-center gap-2">
+          <ImageUpload
+            currentUrl={profile?.photoUrl}
+            onUpload={async (file) => {
+              const result = await uploadApi.avatar(file);
+              await queryClient.invalidateQueries({ queryKey: ["player", "me"] });
+              return result;
+            }}
+            onRemove={async () => {
+              await uploadApi.deleteAvatar();
+              await queryClient.invalidateQueries({ queryKey: ["player", "me"] });
+              toast.success("Foto removida.");
+            }}
+            label="Arraste ou clique"
+          />
+          {!profile?.photoUrl && (
+            <p className="text-xs text-muted-foreground text-center max-w-[180px] leading-tight">
+              ADICIONE SUA FOTO — jogadores com foto recebem 3× mais contato
+            </p>
+          )}
+        </div>
         <div>
           <h1 className="font-display text-5xl tracking-wide text-foreground uppercase">
             EDITAR PERFIL
