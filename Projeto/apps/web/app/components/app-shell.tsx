@@ -17,7 +17,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <GlobalHeader />
 
       <main className="flex-1 pb-20 md:pb-0 relative z-10">
-        {children}
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6">
+          {children}
+        </div>
       </main>
     </div>
   )
