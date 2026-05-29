@@ -40,7 +40,7 @@ export const SignUpRequestSchema = z
     confirmPassword: z.string(),
     role: RoleSchema,
     cpf: z.string().regex(/^\d{11}$/, "CPF deve ter 11 dígitos sem pontuação"),
-    teamName: z.string().min(2, "Nome do time deve ter pelo menos 2 caracteres").optional(),
+    teamName: z.string().min(2, "Nome do time deve ter pelo menos 2 caracteres").or(z.literal("")).optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "As senhas não coincidem",
