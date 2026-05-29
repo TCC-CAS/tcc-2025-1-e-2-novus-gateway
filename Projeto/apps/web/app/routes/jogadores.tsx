@@ -1,72 +1,56 @@
-import { useState } from "react"
-import { Link, useLocation } from "react-router"
+// app/routes/jogadores.tsx
+import { useState, useMemo } from "react"
+import { Link } from "react-router"
 import { useQuery } from "@tanstack/react-query"
-import { publicApi, type ShowcasePlayer } from "~/lib/api-client"
+import { publicApi, searchApi, type ShowcasePlayer } from "~/lib/api-client"
+import { useAuth } from "~/lib/auth/auth-context"
+import { usePlan } from "~/lib/plan"
+import { UpsellCard } from "~/lib/plan/plan-gate"
+import { isUnlimited } from "~shared/contracts"
+import { POSITIONS, PLAYER_LEVELS } from "~shared/contracts"
+import type { PlayerSummary } from "~shared/contracts"
 import { Button } from "~/components/ui/button"
 import { Input } from "~/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select"
 import { OptimizedImage } from "~/components/optimized-image"
-import { MapPin, Users, ArrowRight, Search as SearchIcon, Home, LogIn, Shield, ChevronLeft, ChevronRight } from "lucide-react"
-import { cn } from "~/lib/utils"
+import { GlobalHeader } from "~/components/global-header"
+import {
+  MapPin,
+  Users,
+  ArrowRight,
+  Search as SearchIcon,
+  Filter,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react"
 
 export function meta() {
   return [{ title: "Jogadores - VárzeaPro" }]
 }
 
-const PUBLIC_NAV = [
-  { label: "Início", href: "/", icon: Home },
-  { label: "Times", href: "/times", icon: Shield },
-  { label: "Jogadores", href: "/jogadores", icon: Users },
-  { label: "Entrar", href: "/login", icon: LogIn },
-]
-
-function PublicNav() {
-  const location = useLocation()
-  return (
-    <nav className="fixed bottom-0 left-0 right-0 z-30 border-t-4 border-foreground bg-background md:hidden">
-      <div className="flex h-16 items-stretch">
-        {PUBLIC_NAV.map((item) => {
-          const active = location.pathname === item.href
-          return (
-            <Link
-              key={item.href}
-              to={item.href}
-              className={cn(
-                "relative flex flex-1 flex-col items-center justify-center gap-1 text-[10px] font-bold tracking-widest uppercase transition-colors border-r-2 border-foreground/20 last:border-r-0",
-                active
-                  ? "bg-foreground text-background"
-                  : "text-muted-foreground hover:bg-muted",
-              )}
-            >
-              {active && (
-                <div className="absolute top-0 left-0 w-full h-1 bg-primary" />
-              )}
-              <item.icon
-                className={cn("size-6", active ? "text-primary" : "text-foreground")}
-              />
-              <span className="sr-only sm:not-sr-only sm:mt-1">{item.label}</span>
-            </Link>
-          )
-        })}
-      </div>
-      <div className="h-[env(safe-area-inset-bottom)] bg-background" />
-    </nav>
-  )
+// Union of ShowcasePlayer + PlayerSummary — city is optional in both
+type CardPlayer = {
+  id: string
+  name: string
+  photoUrl?: string | null
+  positions: string[]
+  level?: string | null
+  region?: string | null
+  city?: string | null
 }
 
 function PlayerCardSkeleton() {
   return (
     <div className="border-2 border-foreground bg-muted animate-pulse">
       <div className="aspect-[2/3] bg-foreground/10 relative overflow-hidden">
-        {/* Shimmer sweep */}
-        <div
-          className="absolute inset-0 -translate-x-full animate-[shimmer_1.8s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-foreground/8 to-transparent"
-          style={{ animation: "shimmer 1.8s ease-in-out infinite" }}
-        />
-        {/* Position badge placeholder */}
         <div className="absolute top-2 left-2 h-4 w-12 bg-primary/20" />
-        {/* Level badge placeholder */}
         <div className="absolute top-2 right-2 h-4 w-10 bg-foreground/20" />
-        {/* Name placeholder */}
         <div className="absolute bottom-4 left-3 right-3 space-y-1.5">
           <div className="h-5 bg-background/30 w-4/5" />
           <div className="h-3 bg-background/20 w-3/5" />
@@ -80,13 +64,12 @@ function PlayerCardSkeleton() {
   )
 }
 
-function PlayerCard({ player }: { player: ShowcasePlayer }) {
+function PlayerCard({ player }: { player: CardPlayer }) {
   return (
     <Link
       to={`/jogadores/${player.id}`}
       className="group block border-2 border-foreground bg-background cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_var(--color-primary)]"
     >
-      {/* Photo — tall trading-card aspect ratio */}
       <div className="aspect-[2/3] relative overflow-hidden bg-muted">
         {player.photoUrl ? (
           <OptimizedImage
@@ -100,38 +83,22 @@ function PlayerCard({ player }: { player: ShowcasePlayer }) {
             <span className="font-display text-[9px] tracking-[0.25em] uppercase text-foreground/25">Sem foto</span>
           </div>
         )}
-
-        {/* Bottom gradient for text legibility */}
         <div className="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-foreground/95 via-foreground/50 to-transparent" />
-
-        {/* Position badges — top left */}
         {player.positions.length > 0 && (
           <div className="absolute top-2 left-2 flex flex-wrap gap-1 max-w-[calc(100%-4.5rem)]">
             {player.positions.slice(0, 2).map((pos) => (
-              <span
-                key={pos}
-                className="bg-primary text-primary-foreground font-display text-[8px] tracking-widest uppercase px-1.5 py-0.5 font-black leading-none"
-              >
+              <span key={pos} className="bg-primary text-primary-foreground font-display text-[8px] tracking-widest uppercase px-1.5 py-0.5 font-black leading-none">
                 {pos}
               </span>
             ))}
-            {player.positions.length > 2 && (
-              <span className="bg-primary/80 text-primary-foreground font-display text-[8px] tracking-widest uppercase px-1.5 py-0.5 font-black leading-none">
-                +{player.positions.length - 2}
-              </span>
-            )}
           </div>
         )}
-
-        {/* Level badge — top right */}
         {player.level && (
           <span className="absolute top-2 right-2 bg-background border-2 border-foreground font-display text-[8px] tracking-widest uppercase px-1.5 py-0.5 font-black text-foreground leading-none">
             {player.level}
           </span>
         )}
-
-        {/* Name + location overlay at photo bottom */}
-        <div className="absolute inset-x-0 bottom-0 p-3 pb-3">
+        <div className="absolute inset-x-0 bottom-0 p-3">
           <p className="font-display text-base leading-tight tracking-wide text-background font-black uppercase truncate drop-shadow-sm">
             {player.name}
           </p>
@@ -143,8 +110,6 @@ function PlayerCard({ player }: { player: ShowcasePlayer }) {
           )}
         </div>
       </div>
-
-      {/* Bottom strip */}
       <div className="px-3 py-2 flex items-center justify-between border-t-2 border-foreground/10 group-hover:border-primary transition-colors duration-200">
         <span className="font-display text-[9px] tracking-[0.2em] uppercase text-muted-foreground">Ver perfil</span>
         <ArrowRight className="size-3 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all duration-200" />
@@ -154,194 +119,244 @@ function PlayerCard({ player }: { player: ShowcasePlayer }) {
 }
 
 export default function JogadoresPublicos() {
+  const { user, role } = useAuth()
+  const isLoggedIn = !!user && !!role
+
+  // Shared filters
   const [region, setRegion] = useState("")
-  const [regionFilter, setRegionFilter] = useState("")
   const [page, setPage] = useState(1)
 
-  const { data, isLoading } = useQuery({
+  // Logged-in filters
+  const [position, setPosition] = useState<string | undefined>(undefined)
+  const [skills, setSkills] = useState("")
+  const [level, setLevel] = useState<string | undefined>(undefined)
+
+  // Public filter state (applied on form submit)
+  const [regionFilter, setRegionFilter] = useState("")
+
+  // Plan gating (only relevant when logged in)
+  const { getSearchResultsLimit } = usePlan()
+  const searchLimit = getSearchResultsLimit()
+  const isLimited = !isUnlimited(searchLimit)
+
+  // ---------------------------------------------------------------- //
+  // Public query                                                       //
+  // ---------------------------------------------------------------- //
+  const { data: publicData, isLoading: publicLoading } = useQuery({
     queryKey: ["public", "players", { page, region: regionFilter }],
     queryFn: () => publicApi.players({ page, pageSize: 12, region: regionFilter || undefined }),
+    enabled: !isLoggedIn,
     staleTime: 1000 * 60 * 5,
     retry: false,
   })
 
-  function handleSearch(e: React.FormEvent) {
+  // ---------------------------------------------------------------- //
+  // Authenticated query                                                //
+  // ---------------------------------------------------------------- //
+  const { data: searchData, isLoading: searchLoading } = useQuery({
+    queryKey: ["search", "players", { position, skills, region, level, page }],
+    queryFn: () =>
+      searchApi.players({
+        page,
+        pageSize: 12,
+        order: "asc",
+        position: position as import("~shared/contracts").Position | undefined,
+        skills: skills || undefined,
+        region: region || undefined,
+        level: level as import("~shared/contracts").PlayerLevel | undefined,
+      }),
+    enabled: isLoggedIn,
+    staleTime: 1000 * 60 * 2,
+    retry: false,
+  })
+
+  const isLoading = isLoggedIn ? searchLoading : publicLoading
+  const rawData = isLoggedIn ? searchData : publicData
+
+  const visiblePlayers = useMemo<CardPlayer[]>(() => {
+    if (!rawData) return []
+    const players = rawData.data as CardPlayer[]
+    if (isLoggedIn && isLimited) return players.slice(0, searchLimit)
+    return players
+  }, [rawData, isLoggedIn, isLimited, searchLimit])
+
+  const hiddenCount = (rawData?.data.length ?? 0) - visiblePlayers.length
+
+  function handlePublicSearch(e: React.FormEvent) {
     e.preventDefault()
     setRegionFilter(region)
     setPage(1)
   }
 
+  function resetFilters() {
+    setRegion("")
+    setRegionFilter("")
+    setPosition(undefined)
+    setSkills("")
+    setLevel(undefined)
+    setPage(1)
+  }
+
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
-      {/* HEADER — mesma navbar da home */}
-      <header className="sticky top-0 z-20 border-b-4 border-foreground bg-background">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <Link
-            to="/"
-            className="font-display text-2xl tracking-wider text-foreground transition-transform hover:scale-105"
-          >
-            VÁRZEA<span className="text-primary">PRO</span>
-          </Link>
-          <nav className="flex items-center gap-6">
-            <Link
-              to="/times"
-              className="hidden font-display text-xl tracking-wide text-foreground transition-colors hover:text-primary md:block"
-            >
-              TIMES
-            </Link>
-            <Link
-              to="/jogadores"
-              className="hidden font-display text-xl tracking-wide text-primary border-b-2 border-primary md:block"
-            >
-              JOGADORES
-            </Link>
-            <Link
-              to="/planos"
-              className="hidden font-display text-xl tracking-wide text-foreground transition-colors hover:text-primary md:block"
-            >
-              PLANOS
-            </Link>
-            <Link
-              to="/login"
-              className="hidden font-display text-xl tracking-wide text-foreground transition-colors hover:text-primary sm:block"
-            >
-              ENTRAR
-            </Link>
-            <Button
-              asChild
-              className="rounded-none border-2 border-primary bg-primary px-6 font-display text-xl tracking-wider text-primary-foreground transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_var(--color-primary)] hover:bg-primary"
-            >
-              <Link to="/cadastro">JOGAR AGORA</Link>
-            </Button>
-          </nav>
-        </div>
-      </header>
+      <GlobalHeader />
 
       <main>
-        {/* HERO — editorial brutalist */}
+        {/* HERO */}
         <section className="border-b-[8px] border-primary bg-foreground px-6 py-14 sm:py-20">
           <div className="mx-auto max-w-7xl flex flex-col md:flex-row md:items-end md:justify-between gap-8">
             <div>
-              <p className="font-display text-sm tracking-[0.35em] text-primary uppercase mb-3">
-                Descubra talentos
-              </p>
+              <p className="font-display text-sm tracking-[0.35em] text-primary uppercase mb-3">Descubra talentos</p>
               <h1 className="font-display leading-[0.85] tracking-tight text-background text-[14vw] md:text-[9vw] lg:text-[7vw]">
                 DESCUBRA
                 <br />
-                <span className="text-transparent [-webkit-text-stroke:2px_var(--color-primary)]">
-                  JOGADORES
-                </span>
+                <span className="text-transparent [-webkit-text-stroke:2px_var(--color-primary)]">JOGADORES</span>
               </h1>
             </div>
             <p className="max-w-sm border-l-4 border-primary pl-5 text-lg font-medium leading-relaxed text-background/65 md:text-right md:border-l-0 md:border-r-4 md:pr-5 md:pl-0">
-              Encontre o talento certo para o seu time. Filtre por região e descubra quem está disponível perto de você.
+              Encontre o talento certo para o seu time. Filtre por posição, região e nível.
             </p>
           </div>
         </section>
 
-        {/* SEARCH BAR */}
+        {/* FILTERS */}
         <section className="border-b-4 border-foreground bg-background px-6 py-4">
           <div className="mx-auto max-w-7xl">
-            <form onSubmit={handleSearch} className="flex flex-wrap gap-2">
-              <Input
-                placeholder="Filtrar por região..."
-                value={region}
-                onChange={(e) => setRegion(e.target.value)}
-                className="max-w-sm rounded-none border-2 border-foreground font-display tracking-wide focus-visible:ring-0 focus-visible:border-primary transition-colors"
-              />
-              <Button
-                type="submit"
-                className="rounded-none border-2 border-foreground bg-foreground px-5 font-display tracking-widest text-background transition-all hover:bg-primary hover:border-primary hover:-translate-y-0.5"
-              >
-                <SearchIcon className="size-4 mr-2" />
-                BUSCAR
-              </Button>
-              {regionFilter && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="rounded-none border-2 border-foreground font-display text-sm tracking-widest hover:bg-muted"
-                  onClick={() => { setRegion(""); setRegionFilter(""); setPage(1) }}
-                >
-                  LIMPAR
+            {isLoggedIn ? (
+              /* Authenticated: full filters (no submit button — reactive) */
+              <div className="flex flex-wrap items-center gap-3 bg-background border-4 border-foreground p-2 shadow-[4px_4px_0px_0px_var(--color-primary)]">
+                <div className="flex items-center gap-2 pl-2">
+                  <Filter className="size-5 text-foreground" />
+                  <span className="font-display text-sm tracking-widest text-foreground uppercase hidden sm:inline">FILTROS:</span>
+                </div>
+                <Select value={position ?? "all"} onValueChange={(v) => { setPosition(v === "all" ? undefined : v); setPage(1) }}>
+                  <SelectTrigger className="w-[140px] h-10 rounded-none border-2 border-foreground bg-muted/50 font-bold tracking-widest text-xs uppercase focus:ring-0 focus:border-primary">
+                    <SelectValue placeholder="POSIÇÃO" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-none border-4 border-foreground">
+                    <SelectItem value="all" className="font-bold tracking-widest uppercase text-xs">TODAS</SelectItem>
+                    {POSITIONS.map((p) => (
+                      <SelectItem key={p} value={p} className="font-bold tracking-widest uppercase text-xs">{p}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  placeholder="HABILIDADES"
+                  value={skills}
+                  onChange={(e) => { setSkills(e.target.value); setPage(1) }}
+                  className="w-[160px] h-10 rounded-none border-2 border-foreground bg-muted/50 font-bold tracking-widest text-xs uppercase focus:ring-0 focus-visible:ring-0 focus:border-primary placeholder:normal-case"
+                />
+                <Input
+                  placeholder="REGIÃO"
+                  value={region}
+                  onChange={(e) => { setRegion(e.target.value); setPage(1) }}
+                  className="w-[130px] h-10 rounded-none border-2 border-foreground bg-muted/50 font-bold tracking-widest text-xs uppercase focus:ring-0 focus-visible:ring-0 focus:border-primary placeholder:normal-case"
+                />
+                <Select value={level ?? "all"} onValueChange={(v) => { setLevel(v === "all" ? undefined : v); setPage(1) }}>
+                  <SelectTrigger className="w-[130px] h-10 rounded-none border-2 border-foreground bg-muted/50 font-bold tracking-widest text-xs uppercase focus:ring-0 focus:border-primary">
+                    <SelectValue placeholder="NÍVEL" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-none border-4 border-foreground">
+                    <SelectItem value="all" className="font-bold tracking-widest uppercase text-xs">TODOS</SelectItem>
+                    {PLAYER_LEVELS.map((l) => (
+                      <SelectItem key={l} value={l} className="font-bold tracking-widest uppercase text-xs">{l}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {(position || skills || region || level) && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="rounded-none border-2 border-foreground font-display text-xs tracking-widest uppercase h-10 hover:bg-muted"
+                    onClick={resetFilters}
+                  >
+                    LIMPAR
+                  </Button>
+                )}
+              </div>
+            ) : (
+              /* Public: region only, submit-based */
+              <form onSubmit={handlePublicSearch} className="flex flex-wrap gap-2">
+                <Input
+                  placeholder="Filtrar por região..."
+                  value={region}
+                  onChange={(e) => setRegion(e.target.value)}
+                  className="max-w-sm rounded-none border-2 border-foreground font-display tracking-wide focus-visible:ring-0 focus-visible:border-primary transition-colors"
+                />
+                <Button type="submit" className="rounded-none border-2 border-foreground bg-foreground px-5 font-display tracking-widest text-background transition-all hover:bg-primary hover:border-primary hover:-translate-y-0.5">
+                  <SearchIcon className="size-4 mr-2" />
+                  BUSCAR
                 </Button>
-              )}
-            </form>
-            {regionFilter && (
-              <p className="mt-2 font-display text-xs tracking-widest text-muted-foreground uppercase">
-                Região: <span className="text-primary font-black">{regionFilter}</span>
-              </p>
+                {regionFilter && (
+                  <Button type="button" variant="outline" className="rounded-none border-2 border-foreground font-display text-sm tracking-widest hover:bg-muted" onClick={resetFilters}>
+                    LIMPAR
+                  </Button>
+                )}
+              </form>
             )}
           </div>
         </section>
 
-        {/* PLAYER GRID */}
+        {/* GRID */}
         <section className="px-6 py-10">
           <div className="mx-auto max-w-7xl">
             {isLoading && (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                {Array.from({ length: 18 }).map((_, i) => (
-                  <PlayerCardSkeleton key={i} />
-                ))}
+                {Array.from({ length: 12 }).map((_, i) => <PlayerCardSkeleton key={i} />)}
               </div>
             )}
 
-            {data && data.data.length === 0 && (
+            {!isLoading && visiblePlayers.length === 0 && (
               <div className="border-4 border-foreground p-16 text-center">
                 <Users className="size-16 text-foreground/15 mx-auto mb-4" />
-                <p className="font-display text-2xl tracking-widest text-foreground uppercase">
-                  Nenhum jogador encontrado
-                </p>
-                <p className="text-muted-foreground mt-2">Tente uma região diferente</p>
-                <Button
-                  variant="outline"
-                  className="mt-6 rounded-none border-2 border-foreground font-display tracking-widest hover:bg-muted"
-                  onClick={() => { setRegion(""); setRegionFilter(""); setPage(1) }}
-                >
+                <p className="font-display text-2xl tracking-widest text-foreground uppercase">Nenhum jogador encontrado</p>
+                <p className="text-muted-foreground mt-2">Tente ajustar os filtros</p>
+                <Button variant="outline" className="mt-6 rounded-none border-2 border-foreground font-display tracking-widest hover:bg-muted" onClick={resetFilters}>
                   VER TODOS
                 </Button>
               </div>
             )}
 
-            {data && data.data.length > 0 && (
+            {visiblePlayers.length > 0 && (
               <>
                 <div className="flex items-center justify-between mb-6">
                   <p className="font-display text-xs tracking-[0.25em] text-muted-foreground uppercase">
-                    <span className="text-foreground font-black text-sm">{data.meta.total}</span>{" "}
-                    jogadores encontrados
+                    <span className="text-foreground font-black text-sm">{rawData?.meta.total ?? visiblePlayers.length}</span>{" "}jogadores encontrados
                   </p>
-                  <p className="font-display text-xs tracking-widest text-muted-foreground uppercase">
-                    Pg. {page}/{data.meta.totalPages}
-                  </p>
+                  {rawData && rawData.meta.totalPages > 1 && (
+                    <p className="font-display text-xs tracking-widest text-muted-foreground uppercase">
+                      Pg. {page}/{rawData.meta.totalPages}
+                    </p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                  {data.data.map((player: ShowcasePlayer) => (
-                    <PlayerCard key={player.id} player={player} />
-                  ))}
+                  {visiblePlayers.map((player) => <PlayerCard key={player.id} player={player} />)}
                 </div>
 
+                {/* Upsell when plan limits results */}
+                {hiddenCount > 0 && (
+                  <div className="mt-8">
+                    <UpsellCard
+                      title={`+${hiddenCount} JOGADORES DISPONÍVEIS`}
+                      description={`Seu plano mostra apenas ${searchLimit} resultados por busca. Desbloqueie todos os jogadores com o plano TITULAR.`}
+                      planName="TITULAR"
+                    />
+                  </div>
+                )}
+
                 {/* Pagination */}
-                {data.meta.totalPages > 1 && (
+                {rawData && rawData.meta.totalPages > 1 && (
                   <div className="mt-10 flex items-center justify-center gap-2">
-                    <Button
-                      variant="outline"
-                      className="rounded-none border-2 border-foreground font-display tracking-widest text-sm hover:bg-muted disabled:opacity-40"
-                      disabled={page === 1}
-                      onClick={() => setPage((p) => p - 1)}
-                    >
+                    <Button variant="outline" className="rounded-none border-2 border-foreground font-display tracking-widest text-sm hover:bg-muted disabled:opacity-40" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
                       <ChevronLeft className="size-4 mr-1" />
                       ANTERIOR
                     </Button>
                     <div className="border-2 border-foreground px-5 py-2 font-display text-sm tracking-widest bg-foreground text-background">
-                      {page} / {data.meta.totalPages}
+                      {page} / {rawData.meta.totalPages}
                     </div>
-                    <Button
-                      variant="outline"
-                      className="rounded-none border-2 border-foreground font-display tracking-widest text-sm hover:bg-muted disabled:opacity-40"
-                      disabled={page === data.meta.totalPages}
-                      onClick={() => setPage((p) => p + 1)}
-                    >
+                    <Button variant="outline" className="rounded-none border-2 border-foreground font-display tracking-widest text-sm hover:bg-muted disabled:opacity-40" disabled={page === rawData.meta.totalPages} onClick={() => setPage((p) => p + 1)}>
                       PRÓXIMO
                       <ChevronRight className="size-4 ml-1" />
                     </Button>
@@ -352,31 +367,22 @@ export default function JogadoresPublicos() {
           </div>
         </section>
 
-        {/* CTA SECTION */}
-        <section className="border-t-4 border-foreground bg-foreground px-6 py-16">
-          <div className="mx-auto max-w-7xl flex flex-col md:flex-row items-center justify-between gap-8">
-            <div>
-              <p className="font-display text-sm tracking-[0.3em] text-primary uppercase mb-2">Pronto para jogar?</p>
-              <h2 className="font-display text-[8vw] md:text-[4vw] leading-[0.9] text-background font-black uppercase">
-                CRIE SEU PERFIL
-              </h2>
-              <p className="mt-4 text-background/60 font-medium">
-                Conecte-se a times e jogadores da sua região — grátis.
-              </p>
+        {/* CTA (non-logged only) */}
+        {!isLoggedIn && (
+          <section className="border-t-4 border-foreground bg-foreground px-6 py-16">
+            <div className="mx-auto max-w-7xl flex flex-col md:flex-row items-center justify-between gap-8">
+              <div>
+                <p className="font-display text-sm tracking-[0.3em] text-primary uppercase mb-2">Pronto para jogar?</p>
+                <h2 className="font-display text-[8vw] md:text-[4vw] leading-[0.9] text-background font-black uppercase">CRIE SEU PERFIL</h2>
+                <p className="mt-4 text-background/60 font-medium">Conecte-se a times e jogadores da sua região — grátis.</p>
+              </div>
+              <Button asChild size="lg" className="h-auto rounded-none bg-primary border-2 border-primary px-10 py-5 font-display text-2xl tracking-widest text-primary-foreground transition-all hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_var(--color-background)]">
+                <Link to="/cadastro">CRIAR CONTA GRÁTIS</Link>
+              </Button>
             </div>
-            <Button
-              asChild
-              size="lg"
-              className="h-auto rounded-none bg-primary border-2 border-primary px-10 py-5 font-display text-2xl tracking-widest text-primary-foreground transition-all hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_var(--color-background)]"
-            >
-              <Link to="/cadastro">CRIAR CONTA GRÁTIS</Link>
-            </Button>
-          </div>
-        </section>
+          </section>
+        )}
       </main>
-
-      {/* Mobile bottom nav */}
-      <PublicNav />
     </div>
   )
 }
