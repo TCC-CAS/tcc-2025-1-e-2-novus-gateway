@@ -29,6 +29,7 @@ import {
 import { Avatar, AvatarFallback } from "~/components/ui/avatar"
 import { cn } from "~/lib/utils"
 import type { NavItem } from "~/lib/auth/permissions"
+import type { Role } from "~shared/contracts"
 
 // ------------------------------------------------------------------ //
 // Icon map for role-based NavItem[] (uses icon string keys)           //
@@ -40,6 +41,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   "message-circle": MessageCircle,
   "layout-dashboard": LayoutDashboard,
   "shield-alert": ShieldAlert,
+  "log-in": LogIn,
 }
 
 function NavIcon({ icon, className }: { icon: string; className?: string }) {
@@ -48,13 +50,13 @@ function NavIcon({ icon, className }: { icon: string; className?: string }) {
 }
 
 // ------------------------------------------------------------------ //
-// Public nav items (non-logged)                                        //
+// Public nav items (non-logged) — uses NavItem shape (icon string)    //
 // ------------------------------------------------------------------ //
-const PUBLIC_BOTTOM_NAV = [
-  { label: "Início", href: "/", Icon: Home },
-  { label: "Times", href: "/times", Icon: Shield },
-  { label: "Jogadores", href: "/jogadores", Icon: Users },
-  { label: "Entrar", href: "/login", Icon: LogIn },
+const PUBLIC_BOTTOM_NAV: NavItem[] = [
+  { label: "Início", href: "/", icon: "home" },
+  { label: "Times", href: "/times", icon: "shield" },
+  { label: "Jogadores", href: "/jogadores", icon: "users" },
+  { label: "Entrar", href: "/login", icon: "log-in" },
 ]
 
 // ------------------------------------------------------------------ //
@@ -76,52 +78,23 @@ function profileHref(role: string | null): string {
   return "/admin"
 }
 
-export function GlobalHeader() {
-  const { user, role, logout } = useAuth()
-  const { isPaid } = usePlan()
-  const location = useLocation()
-
-  const initials =
-    user?.name
-      ?.split(" ")
-      .map((n) => n[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase() ?? "?"
-
-  // ---------------------------------------------------------------- //
-  // Resolve nav items for current role                                 //
-  // ---------------------------------------------------------------- //
-  const authNavItems: NavItem[] = (() => {
-    if (!role) return []
-    if (role === "player") return [
-      { label: "Início", href: "/", icon: "home" },
-      { label: "Times", href: "/times", icon: "shield" },
-      { label: "Jogadores", href: "/jogadores", icon: "users" },
-      { label: "Mensagens", href: "/jogador/mensagens", icon: "message-circle" },
-    ]
-    if (role === "team") return [
-      { label: "Início", href: "/", icon: "home" },
-      { label: "Times", href: "/times", icon: "shield" },
-      { label: "Jogadores", href: "/jogadores", icon: "users" },
-      { label: "Mensagens", href: "/time/mensagens", icon: "message-circle" },
-    ]
-    // admin
-    return [
-      { label: "Painel", href: "/admin", icon: "layout-dashboard" },
-      { label: "Usuários", href: "/admin/usuarios", icon: "users" },
-      { label: "Moderação", href: "/admin/moderation", icon: "shield-alert" },
-    ]
-  })()
-
-  const mobileNavItems = user && role
-    ? authNavItems
-    : PUBLIC_BOTTOM_NAV.map((i) => ({ label: i.label, href: i.href, icon: "", _Icon: i.Icon }))
-
-  // ---------------------------------------------------------------- //
-  // Avatar dropdown                                                    //
-  // ---------------------------------------------------------------- //
-  const AvatarDropdown = () => (
+// ------------------------------------------------------------------ //
+// Avatar dropdown — defined outside GlobalHeader to avoid recreation  //
+// ------------------------------------------------------------------ //
+function AvatarDropdown({
+  userName,
+  initials,
+  role,
+  isPaid,
+  logout,
+}: {
+  userName: string | undefined
+  initials: string
+  role: Role | null
+  isPaid: () => boolean
+  logout: () => void
+}) {
+  return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
@@ -143,7 +116,7 @@ export function GlobalHeader() {
         <div className="border-b-4 border-foreground bg-muted/50 px-4 py-3">
           <div className="flex items-center justify-between">
             <p className="font-display text-xl tracking-wide uppercase text-foreground truncate max-w-[130px]">
-              {user?.name}
+              {userName}
             </p>
             <span
               className={cn(
@@ -197,6 +170,48 @@ export function GlobalHeader() {
       </DropdownMenuContent>
     </DropdownMenu>
   )
+}
+
+export function GlobalHeader() {
+  const { user, role, logout } = useAuth()
+  const { isPaid } = usePlan()
+  const location = useLocation()
+
+  const initials =
+    user?.name
+      ?.split(" ")
+      .map((n) => n[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() ?? "?"
+
+  // ---------------------------------------------------------------- //
+  // Resolve nav items for current role                                 //
+  // ---------------------------------------------------------------- //
+  const authNavItems: NavItem[] = (() => {
+    if (!role) return []
+    if (role === "player") return [
+      { label: "Início", href: "/", icon: "home" },
+      { label: "Times", href: "/times", icon: "shield" },
+      { label: "Jogadores", href: "/jogadores", icon: "users" },
+      { label: "Mensagens", href: "/jogador/mensagens", icon: "message-circle" },
+    ]
+    if (role === "team") return [
+      { label: "Início", href: "/", icon: "home" },
+      { label: "Times", href: "/times", icon: "shield" },
+      { label: "Jogadores", href: "/jogadores", icon: "users" },
+      { label: "Mensagens", href: "/time/mensagens", icon: "message-circle" },
+    ]
+    // admin
+    return [
+      { label: "Painel", href: "/admin", icon: "layout-dashboard" },
+      { label: "Usuários", href: "/admin/usuarios", icon: "users" },
+      { label: "Moderação", href: "/admin/moderation", icon: "shield-alert" },
+    ]
+  })()
+
+  // Both authenticated and public paths use NavItem[] shape
+  const mobileNavItems: NavItem[] = user && role ? authNavItems : PUBLIC_BOTTOM_NAV
 
   return (
     <>
@@ -264,7 +279,15 @@ export function GlobalHeader() {
           </nav>
 
           {/* Avatar dropdown (authenticated only) */}
-          {user && role && <AvatarDropdown />}
+          {user && role && (
+            <AvatarDropdown
+              userName={user?.name}
+              initials={initials}
+              role={role}
+              isPaid={isPaid}
+              logout={logout}
+            />
+          )}
         </div>
       </header>
 
@@ -273,41 +296,23 @@ export function GlobalHeader() {
       {/* ---------------------------------------------------------- */}
       <nav className="fixed bottom-0 left-0 right-0 z-30 border-t-4 border-foreground bg-background md:hidden">
         <div className="flex h-16 items-stretch">
-          {user && role
-            ? authNavItems.map((item) => {
-                const active = isActive(location.pathname, item.href)
-                return (
-                  <Link
-                    key={item.href}
-                    to={item.href}
-                    className={cn(
-                      "relative flex flex-1 flex-col items-center justify-center gap-1 text-[10px] font-bold tracking-widest uppercase transition-colors border-r-2 border-foreground/20 last:border-r-0",
-                      active ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted",
-                    )}
-                  >
-                    {active && <div className="absolute top-0 left-0 w-full h-1 bg-primary" />}
-                    <NavIcon icon={item.icon} className={cn("size-6", active ? "text-primary" : "text-foreground")} />
-                    <span className="sr-only sm:not-sr-only sm:mt-1">{item.label}</span>
-                  </Link>
-                )
-              })
-            : PUBLIC_BOTTOM_NAV.map((item) => {
-                const active = location.pathname === item.href
-                return (
-                  <Link
-                    key={item.href}
-                    to={item.href}
-                    className={cn(
-                      "relative flex flex-1 flex-col items-center justify-center gap-1 text-[10px] font-bold tracking-widest uppercase transition-colors border-r-2 border-foreground/20 last:border-r-0",
-                      active ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted",
-                    )}
-                  >
-                    {active && <div className="absolute top-0 left-0 w-full h-1 bg-primary" />}
-                    <item.Icon className={cn("size-6", active ? "text-primary" : "text-foreground")} />
-                    <span className="sr-only sm:not-sr-only sm:mt-1">{item.label}</span>
-                  </Link>
-                )
-              })}
+          {mobileNavItems.map((item) => {
+            const active = isActive(location.pathname, item.href)
+            return (
+              <Link
+                key={item.href}
+                to={item.href}
+                className={cn(
+                  "relative flex flex-1 flex-col items-center justify-center gap-1 text-[10px] font-bold tracking-widest uppercase transition-colors border-r-2 border-foreground/20 last:border-r-0",
+                  active ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted",
+                )}
+              >
+                {active && <div className="absolute top-0 left-0 w-full h-1 bg-primary" />}
+                <NavIcon icon={item.icon} className={cn("size-6", active ? "text-primary" : "text-foreground")} />
+                <span className="sr-only sm:not-sr-only sm:mt-1">{item.label}</span>
+              </Link>
+            )
+          })}
         </div>
         <div className="h-[env(safe-area-inset-bottom)] bg-background" />
       </nav>
