@@ -1,12 +1,10 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router";
+import { useState } from "react";
+import { Link } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { publicApi, type ShowcaseTeam, type ShowcasePlayer } from "~/lib/api-client";
 import { OptimizedImage } from "~/components/optimized-image";
-import { Home, Zap, LogIn, UserPlus, Shield, User, Users } from "lucide-react";
-import { cn } from "~/lib/utils";
-import { useAuth } from "~/lib/auth/auth-context";
-import { getHomeForRole } from "~/lib/auth/permissions";
+import { Shield, User } from "lucide-react";
+import { GlobalHeader } from "~/components/global-header";
 import { Button } from "~/components/ui/button";
 
 export function meta() {
@@ -19,79 +17,15 @@ export function meta() {
   ];
 }
 
-const PUBLIC_NAV = [
-  { label: "Início", href: "/", icon: Home },
-  { label: "Times", href: "/times", icon: Shield },
-  { label: "Jogadores", href: "/jogadores", icon: Users },
-  { label: "Entrar", href: "/login", icon: LogIn },
-]
-
-function PublicNav() {
-  const location = useLocation()
-  return (
-    <nav className="fixed bottom-0 left-0 right-0 z-30 border-t-4 border-foreground bg-background md:hidden">
-      <div className="flex h-16 items-stretch">
-        {PUBLIC_NAV.map((item) => {
-          const active = location.pathname === item.href
-          return (
-            <Link
-              key={item.href}
-              to={item.href}
-              className={cn(
-                "relative flex flex-1 flex-col items-center justify-center gap-1 text-[10px] font-bold tracking-widest uppercase transition-colors border-r-2 border-foreground/20 last:border-r-0",
-                active
-                  ? "bg-foreground text-background"
-                  : "text-muted-foreground hover:bg-muted",
-              )}
-            >
-              {active && (
-                <div className="absolute top-0 left-0 w-full h-1 bg-primary" />
-              )}
-              <item.icon
-                className={cn(
-                  "size-6",
-                  active ? "text-primary" : "text-foreground",
-                )}
-              />
-              <span className="sr-only sm:not-sr-only sm:mt-1">
-                {item.label}
-              </span>
-            </Link>
-          )
-        })}
-      </div>
-      <div className="h-[env(safe-area-inset-bottom)] bg-background" />
-    </nav>
-  )
-}
-
 export default function Index() {
-  const { user, role } = useAuth();
-  const navigate = useNavigate();
-
   const { data: showcase } = useQuery({
     queryKey: ["public", "showcase"],
     queryFn: () => publicApi.showcase(),
   });
 
-  useEffect(() => {
-    if (user && role) {
-      navigate(getHomeForRole(role), { replace: true });
-    }
-  }, [user, role, navigate]);
-
-  if (user && role) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <p className="animate-pulse font-display text-2xl tracking-widest text-primary">
-          ENTRANDO EM CAMPO...
-        </p>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex min-h-screen flex-col bg-background selection:bg-primary selection:text-primary-foreground pb-16 md:pb-0">
+    <div className="flex min-h-screen flex-col bg-background selection:bg-primary selection:text-primary-foreground pb-20 md:pb-0">
+      <GlobalHeader />
       {/* Decorative Global Noise */}
       <div
         className="pointer-events-none fixed inset-0 z-50 opacity-[0.015] mix-blend-overlay"
@@ -100,50 +34,6 @@ export default function Index() {
             'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.8%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")',
         }}
       ></div>
-
-      {/* Header */}
-      <header className="fixed inset-x-0 top-0 z-40 border-b-2 border-border/10 bg-background/80 px-6 py-4 backdrop-blur-md sm:px-12">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
-          <Link
-            to="/"
-            className="font-display text-4xl tracking-wider text-foreground transition-transform hover:scale-105"
-          >
-            VÁRZEA<span className="text-primary">PRO</span>
-          </Link>
-          <nav className="flex items-center gap-6">
-            <Link
-              to="/times"
-              className="hidden font-display text-xl tracking-wide text-foreground transition-colors hover:text-primary md:block"
-            >
-              TIMES
-            </Link>
-            <Link
-              to="/jogadores"
-              className="hidden font-display text-xl tracking-wide text-foreground transition-colors hover:text-primary md:block"
-            >
-              JOGADORES
-            </Link>
-            <Link
-              to="/planos"
-              className="hidden font-display text-xl tracking-wide text-foreground transition-colors hover:text-primary md:block"
-            >
-              PLANOS
-            </Link>
-            <Link
-              to="/login"
-              className="hidden font-display text-xl tracking-wide text-foreground transition-colors hover:text-primary sm:block"
-            >
-              ENTRAR
-            </Link>
-            <Button
-              asChild
-              className="rounded-none border-2 border-primary bg-primary px-6 font-display text-xl tracking-wider text-primary-foreground transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_var(--color-primary)] hover:bg-primary"
-            >
-              <Link to="/cadastro">JOGAR AGORA</Link>
-            </Button>
-          </nav>
-        </div>
-      </header>
 
       <main className="flex-1">
         {/* HERO SECTION */}
@@ -443,7 +333,6 @@ export default function Index() {
           </p>
         </div>
       </footer>
-      <PublicNav />
     </div>
   );
 }
