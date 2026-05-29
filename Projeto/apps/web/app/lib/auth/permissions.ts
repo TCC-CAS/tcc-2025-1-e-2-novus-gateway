@@ -13,16 +13,16 @@ const ROLE_HOMES: Record<Role, string> = {
 };
 
 const PLAYER_NAV: NavItem[] = [
-  { label: "Início", href: "/jogador", icon: "home" },
-  { label: "Meu perfil", href: "/jogador/perfil", icon: "user" },
-  { label: "Buscar times", href: "/jogador/buscar-times", icon: "search" },
+  { label: "Início", href: "/", icon: "home" },
+  { label: "Times", href: "/times", icon: "shield" },
+  { label: "Jogadores", href: "/jogadores", icon: "users" },
   { label: "Mensagens", href: "/jogador/mensagens", icon: "message-circle" },
 ];
 
 const TEAM_NAV: NavItem[] = [
-  { label: "Início", href: "/time", icon: "home" },
-  { label: "Meu time", href: "/time/perfil", icon: "shield" },
-  { label: "Buscar jogadores", href: "/time/buscar-jogadores", icon: "search" },
+  { label: "Início", href: "/", icon: "home" },
+  { label: "Times", href: "/times", icon: "shield" },
+  { label: "Jogadores", href: "/jogadores", icon: "users" },
   { label: "Mensagens", href: "/time/mensagens", icon: "message-circle" },
 ];
 
@@ -41,28 +41,42 @@ export function getHomeForRole(role: Role): string {
   return ROLE_HOMES[role];
 }
 
-/** Returns whether the role can access this path (prefix match). */
 export function canAccessRoute(role: Role | null, pathname: string): boolean {
   if (pathname.startsWith("/planos")) return true;
   if (!role) {
-    return pathname === "/" || pathname.startsWith("/login") || pathname.startsWith("/cadastro") || pathname.startsWith("/recuperar-senha");
+    return (
+      pathname === "/" ||
+      pathname.startsWith("/login") ||
+      pathname.startsWith("/cadastro") ||
+      pathname.startsWith("/recuperar-senha") ||
+      pathname === "/times" ||
+      pathname.startsWith("/times/") ||
+      pathname === "/jogadores" ||
+      pathname.startsWith("/jogadores/")
+    );
   }
   const normalized = pathname.replace(/\/$/, "") || "/";
   if (role === "player") {
     return (
+      normalized === "/" ||
+      normalized === "/times" ||
+      normalized.startsWith("/times/") ||
+      normalized === "/jogadores" ||
+      normalized.startsWith("/jogadores/") ||
       normalized === "/jogador" ||
       normalized.startsWith("/jogador/") ||
-      normalized.startsWith("/times/") ||
-      normalized.startsWith("/jogadores/") ||
       normalized === "/configuracoes"
     );
   }
   if (role === "team") {
     return (
+      normalized === "/" ||
+      normalized === "/times" ||
+      normalized.startsWith("/times/") ||
+      normalized === "/jogadores" ||
+      normalized.startsWith("/jogadores/") ||
       normalized === "/time" ||
       normalized.startsWith("/time/") ||
-      normalized.startsWith("/times/") ||
-      normalized.startsWith("/jogadores/") ||
       normalized === "/configuracoes"
     );
   }
@@ -80,11 +94,11 @@ export function getVisibleNavItems(role: Role | null): NavItem[] {
   return [];
 }
 
-export function canViewPlayerProfile(role: Role | null, _context?: { isOwn?: boolean }): boolean {
+export function canViewPlayerProfile(role: Role | null): boolean {
   return role === "player" || role === "team" || role === "admin";
 }
 
-export function canViewTeamProfile(role: Role | null, _context?: { isOwn?: boolean }): boolean {
+export function canViewTeamProfile(role: Role | null): boolean {
   return role === "player" || role === "team" || role === "admin";
 }
 
@@ -96,12 +110,12 @@ export function canModerate(role: Role | null): boolean {
   return role === "admin";
 }
 
-export function canSearchTeams(role: Role | null): boolean {
-  return role === "player";
+export function canSearchPlayers(role: Role | null): boolean {
+  return role === "team" || role === "admin";
 }
 
-export function canSearchPlayers(role: Role | null): boolean {
-  return role === "team";
+export function canSearchTeams(role: Role | null): boolean {
+  return role === "player" || role === "admin";
 }
 
 export function canAccessMessages(role: Role | null): boolean {
