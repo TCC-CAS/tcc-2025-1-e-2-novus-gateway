@@ -6,9 +6,8 @@ import { publicApi, searchApi, type ShowcasePlayer } from "~/lib/api-client"
 import { useAuth } from "~/lib/auth/auth-context"
 import { usePlan } from "~/lib/plan"
 import { UpsellCard } from "~/lib/plan/plan-gate"
-import { isUnlimited } from "~shared/contracts"
-import { POSITIONS, PLAYER_LEVELS } from "~shared/contracts"
-import type { PlayerSummary } from "~shared/contracts"
+import { isUnlimited, POSITIONS, PLAYER_LEVELS } from "~shared/contracts"
+import type { Position, PlayerLevel } from "~shared/contracts"
 import { Button } from "~/components/ui/button"
 import { Input } from "~/components/ui/input"
 import {
@@ -34,7 +33,7 @@ export function meta() {
   return [{ title: "Jogadores - VárzeaPro" }]
 }
 
-// Union of ShowcasePlayer + PlayerSummary — city is optional in both
+// Union of ShowcasePlayer shape — city is optional
 type CardPlayer = {
   id: string
   name: string
@@ -160,10 +159,10 @@ export default function JogadoresPublicos() {
         page,
         pageSize: 12,
         order: "asc",
-        position: position as import("~shared/contracts").Position | undefined,
+        position: position as Position | undefined,
         skills: skills || undefined,
         region: region || undefined,
-        level: level as import("~shared/contracts").PlayerLevel | undefined,
+        level: level as PlayerLevel | undefined,
       }),
     enabled: isLoggedIn,
     staleTime: 1000 * 60 * 2,
