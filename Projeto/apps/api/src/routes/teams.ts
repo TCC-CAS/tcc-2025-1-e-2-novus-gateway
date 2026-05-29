@@ -5,7 +5,7 @@ import { eq, and } from "drizzle-orm"
 import { nanoid } from "nanoid"
 import { requireSession, requireRole } from "../hooks/require-auth.js"
 import { ok } from "../lib/response.js"
-import { teams, players, teamMembers } from "../db/schema/index.js"
+import { teams, players, teamMembers, users } from "../db/schema/index.js"
 import { UpsertTeamProfileRequestSchema } from "../../../../shared/contracts/teams.js"
 
 const teamsRoutes: FastifyPluginAsync = async (fastify) => {
@@ -23,8 +23,19 @@ const teamsRoutes: FastifyPluginAsync = async (fastify) => {
           error: { code: "NOT_FOUND", message: "Profile not found" },
         })
       }
+
+      const user = await fastify.db.query.users.findFirst({
+        where: eq(users.id, userId),
+        columns: { planId: true },
+      })
+
+      const cardTier = (user?.planId === "craque" ? "gold"
+        : user?.planId === "fenomeno" ? "legendary"
+        : "none") as "none" | "gold" | "legendary"
+
       return ok({
         ...profile,
+        cardTier,
         createdAt: profile.createdAt.toISOString(),
         updatedAt: profile.updatedAt.toISOString(),
       })
@@ -78,8 +89,19 @@ const teamsRoutes: FastifyPluginAsync = async (fastify) => {
           error: { code: "NOT_FOUND", message: "Profile not found" },
         })
       }
+
+      const user = await fastify.db.query.users.findFirst({
+        where: eq(users.id, profile.userId),
+        columns: { planId: true },
+      })
+
+      const cardTier = (user?.planId === "craque" ? "gold"
+        : user?.planId === "fenomeno" ? "legendary"
+        : "none") as "none" | "gold" | "legendary"
+
       return ok({
         ...profile,
+        cardTier,
         createdAt: profile.createdAt.toISOString(),
         updatedAt: profile.updatedAt.toISOString(),
       })

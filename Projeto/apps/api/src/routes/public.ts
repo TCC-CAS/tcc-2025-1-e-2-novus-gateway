@@ -2,7 +2,7 @@ import type { FastifyPluginAsync } from "fastify"
 import { ZodTypeProvider } from "fastify-type-provider-zod"
 import { desc, eq, and, count, ilike } from "drizzle-orm"
 import { ok } from "../lib/response.js"
-import { teams, players } from "../db/schema/index.js"
+import { teams, players, users } from "../db/schema/index.js"
 
 const publicRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /showcase — 6 recent teams + 6 recent players for landing page vitrine
@@ -33,14 +33,22 @@ const publicRoutes: FastifyPluginAsync = async (fastify) => {
             level: players.level,
             region: players.region,
             city: players.city,
+            planId: users.planId,
           })
           .from(players)
+          .innerJoin(users, eq(players.userId, users.id))
           .where(eq(players.hidden, false))
           .orderBy(desc(players.createdAt))
           .limit(6),
       ])
 
-      return ok({ teams: recentTeams, players: recentPlayers })
+      return ok({
+        teams: recentTeams,
+        players: recentPlayers.map(({ planId, ...p }) => ({
+          ...p,
+          cardTier: (planId === "craque" ? "gold" : planId === "fenomeno" ? "legendary" : "none") as "none" | "gold" | "legendary",
+        })),
+      })
     }
   )
 
@@ -72,21 +80,29 @@ const publicRoutes: FastifyPluginAsync = async (fastify) => {
             region: teams.region,
             city: teams.city,
             openPositions: teams.openPositions,
+            planId: users.planId,
           })
           .from(teams)
+          .innerJoin(users, eq(teams.userId, users.id))
           .where(and(...conditions))
-          .orderBy(desc(teams.createdAt))
+          .orderBy(desc(users.planId), desc(teams.createdAt))
           .limit(size)
           .offset(offset),
         fastify.db
           .select({ total: count() })
           .from(teams)
+          .innerJoin(users, eq(teams.userId, users.id))
           .where(and(...conditions)),
       ])
 
       const total = Number(countRow?.total ?? 0)
       return reply.send({
-        data: rows,
+        data: rows.map(({ planId, ...team }) => ({
+          ...team,
+          cardTier: (planId === "craque" || planId === "profissional" ? "gold"
+            : planId === "fenomeno" ? "legendary"
+            : "none") as "none" | "gold" | "legendary",
+        })),
         meta: {
           page: pageNum,
           pageSize: size,
@@ -124,21 +140,29 @@ const publicRoutes: FastifyPluginAsync = async (fastify) => {
             level: players.level,
             region: players.region,
             city: players.city,
+            planId: users.planId,
           })
           .from(players)
+          .innerJoin(users, eq(players.userId, users.id))
           .where(and(...conditions))
-          .orderBy(desc(players.createdAt))
+          .orderBy(desc(users.planId), desc(players.createdAt))
           .limit(size)
           .offset(offset),
         fastify.db
           .select({ total: count() })
           .from(players)
+          .innerJoin(users, eq(players.userId, users.id))
           .where(and(...conditions)),
       ])
 
       const total = Number(countRow?.total ?? 0)
       return reply.send({
-        data: rows,
+        data: rows.map(({ planId, ...p }) => ({
+          ...p,
+          cardTier: (planId === "craque" || planId === "profissional" ? "gold"
+            : planId === "fenomeno" ? "legendary"
+            : "none") as "none" | "gold" | "legendary",
+        })),
         meta: {
           page: pageNum,
           pageSize: size,

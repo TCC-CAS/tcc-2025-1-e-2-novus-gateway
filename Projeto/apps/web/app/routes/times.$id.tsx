@@ -6,7 +6,7 @@ import { teamsApi, messagingApi, favoritesApi, matchesApi, type RosterMember } f
 import { canSearchTeams } from "~/lib/auth"
 import { OptimizedImage } from "~/components/optimized-image"
 import { Button } from "~/components/ui/button"
-import { MessageCircle, Shield, MapPin, Trophy, Search, Calendar, Heart, User, Home, LogIn, Users, ArrowLeft } from "lucide-react"
+import { MessageCircle, Shield, MapPin, Trophy, Search, Calendar, Heart, User, Home, LogIn, Users, ArrowLeft, Star } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "~/lib/utils"
 
@@ -226,6 +226,16 @@ export default function TimePublicProfile() {
                     <p className="font-display text-xs tracking-[0.3em] uppercase text-primary mb-2">
                       Perfil do time
                     </p>
+                    {profile.cardTier && profile.cardTier !== "none" && (
+                      <div className={cn(
+                        "inline-flex items-center gap-1.5 px-3 py-1 font-display text-xs tracking-widest mb-2",
+                        profile.cardTier === "gold" && "bg-amber-500 text-white",
+                        profile.cardTier === "legendary" && "bg-yellow-400 text-yellow-900",
+                      )}>
+                        <Star className="size-3 fill-current" />
+                        <span>{profile.cardTier === "gold" ? "CRAQUE" : "FENÔMENO"}</span>
+                      </div>
+                    )}
                     <h1 className="font-display text-5xl sm:text-7xl leading-[0.85] tracking-tight text-background uppercase">
                       {profile.name}
                     </h1>

@@ -17,6 +17,7 @@ import {
 } from "~/components/ui/select"
 import { OptimizedImage } from "~/components/optimized-image"
 import { GlobalHeader } from "~/components/global-header"
+import { cn } from "~/lib/utils"
 import {
   MapPin,
   Shield,
@@ -25,6 +26,7 @@ import {
   Filter,
   ChevronLeft,
   ChevronRight,
+  Star,
 } from "lucide-react"
 
 export function meta() {
@@ -40,6 +42,7 @@ type CardTeam = {
   region?: string | null
   city?: string | null
   openPositions: string[]
+  cardTier?: "none" | "gold" | "legendary"
 }
 
 function TeamCardSkeleton() {
@@ -73,9 +76,21 @@ function TeamCard({ team }: { team: CardTeam }) {
         ) : (
           <Shield className="size-16 text-foreground/15 group-hover:text-foreground/30 transition-colors duration-200" />
         )}
-        <span className="absolute top-2 right-2 bg-foreground text-background font-display text-[8px] tracking-widest uppercase px-1.5 py-0.5 font-black leading-none">
-          {team.level}
-        </span>
+        <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
+          {team.cardTier && team.cardTier !== "none" && (
+            <div className={cn(
+              "inline-flex items-center gap-1 px-2 py-0.5 font-display text-[8px] tracking-widest font-black leading-none",
+              team.cardTier === "gold" && "bg-amber-500 text-white",
+              team.cardTier === "legendary" && "bg-yellow-400 text-yellow-900",
+            )}>
+              <Star className="size-2.5 fill-current" />
+              <span>{team.cardTier === "gold" ? "CRAQUE" : "FENÔMENO"}</span>
+            </div>
+          )}
+          <span className="bg-foreground text-background font-display text-[8px] tracking-widest uppercase px-1.5 py-0.5 font-black leading-none">
+            {team.level}
+          </span>
+        </div>
       </div>
       <div className="p-3">
         <p className="font-display font-black uppercase text-sm tracking-wide leading-tight truncate transition-colors duration-200 group-hover:text-primary">

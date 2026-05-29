@@ -22,6 +22,7 @@ export const TeamProfileSchema = z.object({
   description: z.string().optional(),
   openPositions: z.array(z.string()),
   matchDays: z.array(z.string()).optional(),
+  cardTier: z.enum(["none", "gold", "legendary"]).optional(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
@@ -35,6 +36,7 @@ export const TeamSummarySchema = z.object({
   level: TeamLevelSchema,
   region: z.string().optional(),
   openPositions: z.array(z.string()),
+  cardTier: z.enum(["none", "gold", "legendary"]).optional(),
 });
 export type TeamSummary = z.infer<typeof TeamSummarySchema>;
 

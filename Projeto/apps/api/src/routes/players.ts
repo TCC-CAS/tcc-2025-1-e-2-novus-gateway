@@ -1,11 +1,11 @@
 import type { FastifyPluginAsync } from "fastify"
 import { ZodTypeProvider } from "fastify-type-provider-zod"
 import { z } from "zod"
-import { eq, desc } from "drizzle-orm"
+import { eq, desc, or, and } from "drizzle-orm"
 import { nanoid } from "nanoid"
 import { requireSession, requireRole } from "../hooks/require-auth.js"
 import { ok } from "../lib/response.js"
-import { players, users, teams } from "../db/schema/index.js"
+import { players, users, teams, connections } from "../db/schema/index.js"
 import { subscriptions } from "../db/schema/subscriptions.js"
 import { profileViews } from "../db/schema/profile-views.js"
 import { getPlanLimits } from "../../../../shared/contracts/subscription.js"
@@ -154,12 +154,22 @@ const playersRoutes: FastifyPluginAsync = async (fastify) => {
         })
       }
 
-      // Unauthenticated: return basic profile only (no career/stats)
+      // Unauthenticated: return basic profile only (no career/stats/phone)
       if (!viewerUserId) {
+        const playerSub = await fastify.db.query.subscriptions.findFirst({
+          where: eq(subscriptions.userId, profile.userId),
+        })
+        const playerPlanId = (playerSub?.planId ?? "free") as PlanId
+        const cardTier = playerPlanId === "craque" ? "gold"
+          : playerPlanId === "fenomeno" ? "legendary"
+          : "none"
+
         return ok({
           ...profile,
+          phone: null,
           careerHistory: [],
           detailedStats: null,
+          cardTier,
           createdAt: profile.createdAt.toISOString(),
           updatedAt: profile.updatedAt.toISOString(),
         })
@@ -172,20 +182,9 @@ const playersRoutes: FastifyPluginAsync = async (fastify) => {
       const playerPlanId = (playerSub?.planId ?? "free") as PlanId
       const playerCanShowCareer = ["craque", "fenomeno"].includes(playerPlanId)
       const playerCanShowStats = playerPlanId === "fenomeno"
-
-      // Get viewer's subscription to know what they can see
-      // Default false: only teams with profissional plan can see career/stats
-      let viewerCanSeeCareer = false
-      let viewerCanSeeStats = false
-      if (viewerRole === "team") {
-        const viewerSub = await fastify.db.query.subscriptions.findFirst({
-          where: eq(subscriptions.userId, viewerUserId),
-        })
-        const viewerPlanId = (viewerSub?.planId ?? "free") as PlanId
-        const viewerLimits = getPlanLimits(viewerPlanId, "team")
-        viewerCanSeeCareer = viewerLimits.playerCareerAccess
-        viewerCanSeeStats = viewerLimits.playerStatsAccess
-      }
+      const cardTier = playerPlanId === "craque" ? "gold"
+        : playerPlanId === "fenomeno" ? "legendary"
+        : "none"
 
       // Record profile view (fire-and-forget — don't block response)
       // Only record when team views another player's profile
@@ -197,10 +196,29 @@ const playersRoutes: FastifyPluginAsync = async (fastify) => {
         }).catch(() => { /* non-critical */ })
       }
 
+      // Gate phone: only expose if viewer has an accepted connection with this player
+      const acceptedConn = await fastify.db.query.connections.findFirst({
+        where: or(
+          and(
+            eq(connections.requesterId, viewerUserId),
+            eq(connections.receiverId, profile.userId),
+            eq(connections.status, "accepted")
+          ),
+          and(
+            eq(connections.requesterId, profile.userId),
+            eq(connections.receiverId, viewerUserId),
+            eq(connections.status, "accepted")
+          )
+        ),
+      })
+      const exposedPhone: string | null = acceptedConn ? (profile.phone ?? null) : null
+
       return ok({
         ...profile,
-        careerHistory: playerCanShowCareer && viewerCanSeeCareer ? profile.careerHistory : [],
-        detailedStats: playerCanShowStats && viewerCanSeeStats ? profile.detailedStats : null,
+        phone: exposedPhone,
+        cardTier,
+        careerHistory: profile.careerHistory ?? [],
+        detailedStats: profile.detailedStats ?? null,
         createdAt: profile.createdAt.toISOString(),
         updatedAt: profile.updatedAt.toISOString(),
       })

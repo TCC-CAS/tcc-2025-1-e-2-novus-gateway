@@ -10,8 +10,10 @@ import {
   Calendar,
   MapPin,
   Search,
+  Star,
 } from "lucide-react";
 import { OptimizedImage } from "~/components/optimized-image";
+import { cn } from "~/lib/utils";
 
 export function meta() {
   return [{ title: "Meu time - VárzeaPro" }];
@@ -88,6 +90,19 @@ export default function TimePerfil() {
 
           <div className="flex-1 space-y-6">
             <div>
+              <p className="font-display text-xs tracking-[0.3em] uppercase text-primary mb-2">
+                Perfil do time
+              </p>
+              {profile.cardTier && profile.cardTier !== "none" && (
+                <div className={cn(
+                  "inline-flex items-center gap-1.5 px-3 py-1 font-display text-xs tracking-widest mb-2",
+                  profile.cardTier === "gold" && "bg-amber-500 text-white",
+                  profile.cardTier === "legendary" && "bg-yellow-400 text-yellow-900",
+                )}>
+                  <Star className="size-3 fill-current" />
+                  <span>{profile.cardTier === "gold" ? "CRAQUE" : "FENÔMENO"}</span>
+                </div>
+              )}
               <h2 className="font-display text-5xl tracking-wide sm:text-7xl uppercase leading-[0.9] text-foreground">
                 {profile.name}
               </h2>
