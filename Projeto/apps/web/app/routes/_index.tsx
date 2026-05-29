@@ -1,9 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router";
-import { useQuery } from "@tanstack/react-query";
-import { publicApi, type ShowcaseTeam, type ShowcasePlayer } from "~/lib/api-client";
-import { OptimizedImage } from "~/components/optimized-image";
-import { Shield, User } from "lucide-react";
+import { Search, MessageCircle, Shield, User } from "lucide-react";
 import { GlobalHeader } from "~/components/global-header";
 import { Button } from "~/components/ui/button";
 
@@ -18,11 +15,6 @@ export function meta() {
 }
 
 export default function Index() {
-  const { data: showcase } = useQuery({
-    queryKey: ["public", "showcase"],
-    queryFn: () => publicApi.showcase(),
-  });
-
   return (
     <div className="flex min-h-screen flex-col bg-background selection:bg-primary selection:text-primary-foreground pb-20 md:pb-0">
       <GlobalHeader />
@@ -133,11 +125,42 @@ export default function Index() {
                     no radar.
                   </p>
                 </div>
-                <div className="relative z-10 mt-12 aspect-[2/1] w-full border-4 border-foreground bg-muted p-4">
-                  <div className="h-full w-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
-                    <span className="font-display text-3xl text-muted-foreground/50">
-                      MOCKUP PERFIL
-                    </span>
+                {/* Static profile card mockup */}
+                <div className="relative z-10 mt-12 w-full border-4 border-foreground bg-background p-5">
+                  <div className="flex gap-5">
+                    {/* Avatar */}
+                    <div className="flex flex-col items-center gap-2 flex-shrink-0">
+                      <div className="size-16 border-4 border-foreground bg-primary flex items-center justify-center font-display text-2xl text-primary-foreground">
+                        RM
+                      </div>
+                      <span className="bg-primary px-2 py-0.5 font-display text-[9px] tracking-widest text-primary-foreground">
+                        CRAQUE
+                      </span>
+                    </div>
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="font-display text-xl text-foreground truncate">RODRIGO MELO</div>
+                      <div className="font-bold text-xs text-muted-foreground tracking-widest">ATACANTE · ZONA NORTE · SP</div>
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        <span className="border border-foreground px-2 py-0.5 text-[10px] font-bold uppercase">DIREITO</span>
+                        <span className="border border-foreground px-2 py-0.5 text-[10px] font-bold uppercase">AMADOR+</span>
+                        <span className="border border-primary px-2 py-0.5 text-[10px] font-bold uppercase text-primary">LIVRE</span>
+                      </div>
+                      <div className="mt-3 grid grid-cols-3 gap-2 border-t-2 border-foreground pt-3">
+                        <div className="text-center">
+                          <div className="font-display text-2xl text-primary">47</div>
+                          <div className="text-[9px] font-bold uppercase text-muted-foreground">Partidas</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="font-display text-2xl text-foreground">23</div>
+                          <div className="text-[9px] font-bold uppercase text-muted-foreground">Gols</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="font-display text-2xl text-foreground">3</div>
+                          <div className="text-[9px] font-bold uppercase text-muted-foreground">Times</div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -177,61 +200,76 @@ export default function Index() {
           </div>
         </section>
 
-        {/* Times em destaque */}
-        {showcase?.teams && showcase.teams.length > 0 && (
-          <section className="py-12 px-6 border-t-4 border-foreground sm:px-12">
-            <div className="max-w-5xl mx-auto">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-black uppercase">TIMES EM DESTAQUE</h2>
-                <Link to="/times" className="text-sm font-bold uppercase underline">
-                  VER TODOS →
+        {/* RECURSOS / O QUE VOCÊ PODE FAZER */}
+        <section className="border-t-4 border-foreground bg-background px-6 py-24 sm:px-12">
+          <div className="mx-auto max-w-7xl">
+            <div className="mb-16 text-center">
+              <h2 className="font-display text-[9vw] leading-[0.85] text-foreground md:text-[5vw]">
+                TUDO QUE VOCÊ <span className="text-primary">PRECISA</span>
+              </h2>
+              <p className="mx-auto mt-6 max-w-xl text-xl font-medium text-muted-foreground">
+                Uma plataforma completa para jogadores livres e times que querem crescer.
+              </p>
+            </div>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {/* Feature 1 */}
+              <div className="group border-4 border-foreground bg-background p-8 transition-transform hover:-translate-y-2 hover:shadow-[6px_6px_0px_0px_var(--color-primary)]">
+                <div className="mb-4 size-12 border-4 border-foreground bg-primary flex items-center justify-center">
+                  <User className="size-6 text-primary-foreground" />
+                </div>
+                <h3 className="font-display text-2xl tracking-wide text-foreground">PERFIL PÚBLICO</h3>
+                <p className="mt-3 text-sm font-medium leading-relaxed text-muted-foreground">
+                  Mostre sua posição, região, perna boa e histórico de clubes. Seja encontrado pelos times certos.
+                </p>
+                <Link to="/cadastro" className="mt-6 block font-display text-sm tracking-widest text-primary hover:underline">
+                  CRIAR PERFIL →
                 </Link>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                {showcase.teams.map((team: ShowcaseTeam) => (
-                  <Link key={team.id} to={`/times/${team.id}`} className="border-2 border-foreground p-3 flex flex-col items-center gap-2 hover:bg-accent transition-colors">
-                    <div className="size-12 border border-foreground bg-muted flex items-center justify-center overflow-hidden">
-                      {team.logoUrl ? (
-                        <OptimizedImage src={team.logoUrl} alt={team.name} className="size-full object-cover" />
-                      ) : (
-                        <Shield className="size-5 text-muted-foreground" />
-                      )}
-                    </div>
-                    <p className="text-xs font-black uppercase text-center leading-tight line-clamp-2">{team.name}</p>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
 
-        {/* Jogadores em destaque */}
-        {showcase?.players && showcase.players.length > 0 && (
-          <section className="py-12 px-6 border-t-4 border-foreground sm:px-12">
-            <div className="max-w-5xl mx-auto">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-black uppercase">JOGADORES EM DESTAQUE</h2>
-                <Link to="/jogadores" className="text-sm font-bold uppercase underline">
-                  VER TODOS →
+              {/* Feature 2 */}
+              <div className="group border-4 border-foreground bg-background p-8 transition-transform hover:-translate-y-2 hover:shadow-[6px_6px_0px_0px_var(--color-primary)]">
+                <div className="mb-4 size-12 border-4 border-foreground bg-foreground flex items-center justify-center">
+                  <Search className="size-6 text-background" />
+                </div>
+                <h3 className="font-display text-2xl tracking-wide text-foreground">BUSCA TÁTICA</h3>
+                <p className="mt-3 text-sm font-medium leading-relaxed text-muted-foreground">
+                  Filtre jogadores por posição, nível técnico e região. Times encontram a peça certa para o elenco.
+                </p>
+                <Link to="/jogadores" className="mt-6 block font-display text-sm tracking-widest text-primary hover:underline">
+                  BUSCAR JOGADORES →
                 </Link>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                {showcase.players.map((player: ShowcasePlayer) => (
-                  <Link key={player.id} to={`/jogadores/${player.id}`} className="border-2 border-foreground p-3 flex flex-col items-center gap-2 hover:bg-accent transition-colors">
-                    <div className="size-12 rounded-full border-2 border-foreground bg-muted flex items-center justify-center overflow-hidden">
-                      {player.photoUrl ? (
-                        <OptimizedImage src={player.photoUrl} alt={player.name} className="size-full object-cover rounded-full" />
-                      ) : (
-                        <User className="size-5 text-muted-foreground" />
-                      )}
-                    </div>
-                    <p className="text-xs font-black uppercase text-center leading-tight line-clamp-2">{player.name}</p>
-                  </Link>
-                ))}
+
+              {/* Feature 3 */}
+              <div className="group border-4 border-foreground bg-background p-8 transition-transform hover:-translate-y-2 hover:shadow-[6px_6px_0px_0px_var(--color-primary)]">
+                <div className="mb-4 size-12 border-4 border-foreground bg-accent flex items-center justify-center">
+                  <MessageCircle className="size-6 text-accent-foreground" />
+                </div>
+                <h3 className="font-display text-2xl tracking-wide text-foreground">MENSAGENS DIRETAS</h3>
+                <p className="mt-3 text-sm font-medium leading-relaxed text-muted-foreground">
+                  Converse diretamente com jogadores e times. Feche uma contratação ou marque um amistoso na hora.
+                </p>
+                <Link to="/cadastro" className="mt-6 block font-display text-sm tracking-widest text-primary hover:underline">
+                  COMEÇAR AGORA →
+                </Link>
+              </div>
+
+              {/* Feature 4 */}
+              <div className="group border-4 border-primary bg-background p-8 transition-transform hover:-translate-y-2 hover:shadow-[6px_6px_0px_0px_var(--color-foreground)]">
+                <div className="mb-4 size-12 border-4 border-primary bg-primary flex items-center justify-center">
+                  <Shield className="size-6 text-primary-foreground" />
+                </div>
+                <h3 className="font-display text-2xl tracking-wide text-foreground">GESTÃO DE ELENCO</h3>
+                <p className="mt-3 text-sm font-medium leading-relaxed text-muted-foreground">
+                  Times gerenciam vagas abertas, filtros avançados e comunicação em massa com candidatos.
+                </p>
+                <Link to="/times" className="mt-6 block font-display text-sm tracking-widest text-primary hover:underline">
+                  VER TIMES →
+                </Link>
               </div>
             </div>
-          </section>
-        )}
+          </div>
+        </section>
 
         {/* SOCIAL PROOF / TESTIMONIALS */}
         <section className="border-t-8 border-primary bg-background px-6 py-32 sm:px-12">

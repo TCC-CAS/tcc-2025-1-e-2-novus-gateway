@@ -112,13 +112,14 @@ function TeamCard({ team }: { team: CardTeam }) {
 
 export default function TimesPublicos() {
   const { user, role } = useAuth()
-  const isLoggedIn = !!user && !!role
+  // Only player role can call searchApi.teams (backend enforces requireRole("player"))
+  const canSearch = role === "player"
 
   // Shared
   const [region, setRegion] = useState("")
   const [page, setPage] = useState(1)
 
-  // Logged-in filters
+  // Player filters (only shown/used when canSearch)
   const [level, setLevel] = useState<string | undefined>(undefined)
   const [openPosition, setOpenPosition] = useState<string | undefined>(undefined)
 
@@ -129,7 +130,7 @@ export default function TimesPublicos() {
   const { data: myProfile } = useQuery({
     queryKey: ["myPlayerProfile"],
     queryFn: () => playersApi.getMe(),
-    enabled: isLoggedIn && role === "player",
+    enabled: canSearch,
     staleTime: 1000 * 60 * 10,
     retry: false,
   })
@@ -141,18 +142,18 @@ export default function TimesPublicos() {
   }, [myProfile, openPosition])
 
   // ---------------------------------------------------------------- //
-  // Public query                                                       //
+  // Public query (team, admin, unauthenticated)                        //
   // ---------------------------------------------------------------- //
   const { data: publicData, isLoading: publicLoading } = useQuery({
     queryKey: ["public", "teams", { page, region: regionFilter }],
     queryFn: () => publicApi.teams({ page, pageSize: 12, region: regionFilter || undefined }),
-    enabled: !isLoggedIn,
+    enabled: !canSearch,
     staleTime: 1000 * 60 * 5,
     retry: false,
   })
 
   // ---------------------------------------------------------------- //
-  // Authenticated query                                                //
+  // Player search query (full filters)                                 //
   // ---------------------------------------------------------------- //
   const { data: searchData, isLoading: searchLoading } = useQuery({
     queryKey: ["search", "teams", { level, region, openPosition, page }],
@@ -165,13 +166,13 @@ export default function TimesPublicos() {
         region: region || undefined,
         openPosition: openPosition || undefined,
       }),
-    enabled: isLoggedIn,
+    enabled: canSearch,
     staleTime: 1000 * 60 * 2,
     retry: false,
   })
 
-  const isLoading = isLoggedIn ? searchLoading : publicLoading
-  const rawData = isLoggedIn ? searchData : publicData
+  const isLoading = canSearch ? searchLoading : publicLoading
+  const rawData = canSearch ? searchData : publicData
   const teams: CardTeam[] = (rawData?.data ?? []) as CardTeam[]
 
   function handlePublicSearch(e: React.FormEvent) {
@@ -213,7 +214,7 @@ export default function TimesPublicos() {
         {/* FILTERS */}
         <section className="border-b-4 border-foreground bg-background px-6 py-4">
           <div className="mx-auto max-w-7xl">
-            {isLoggedIn ? (
+            {canSearch ? (
               <div className="flex flex-wrap items-center gap-3 bg-background border-4 border-foreground p-2 shadow-[4px_4px_0px_0px_var(--color-primary)]">
                 <div className="flex items-center gap-2 pl-2">
                   <Filter className="size-5 text-foreground" />
@@ -331,7 +332,7 @@ export default function TimesPublicos() {
         </section>
 
         {/* CTA (non-logged only) */}
-        {!isLoggedIn && (
+        {!user && (
           <section className="border-t-4 border-foreground bg-foreground px-6 py-16">
             <div className="mx-auto max-w-7xl flex flex-col md:flex-row items-center justify-between gap-8">
               <div>

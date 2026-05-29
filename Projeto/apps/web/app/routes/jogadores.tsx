@@ -119,13 +119,14 @@ function PlayerCard({ player }: { player: CardPlayer }) {
 
 export default function JogadoresPublicos() {
   const { user, role } = useAuth()
-  const isLoggedIn = !!user && !!role
+  // Only team role can call searchApi.players (backend enforces requireRole("team"))
+  const canSearch = role === "team"
 
   // Shared filters
   const [region, setRegion] = useState("")
   const [page, setPage] = useState(1)
 
-  // Logged-in filters
+  // Logged-in filters (only shown/used when canSearch)
   const [position, setPosition] = useState<string | undefined>(undefined)
   const [skills, setSkills] = useState("")
   const [level, setLevel] = useState<string | undefined>(undefined)
@@ -133,24 +134,24 @@ export default function JogadoresPublicos() {
   // Public filter state (applied on form submit)
   const [regionFilter, setRegionFilter] = useState("")
 
-  // Plan gating (only relevant when logged in)
+  // Plan gating (only relevant for team searchers)
   const { getSearchResultsLimit } = usePlan()
   const searchLimit = getSearchResultsLimit()
   const isLimited = !isUnlimited(searchLimit)
 
   // ---------------------------------------------------------------- //
-  // Public query                                                       //
+  // Public query (player, admin, unauthenticated)                      //
   // ---------------------------------------------------------------- //
   const { data: publicData, isLoading: publicLoading } = useQuery({
     queryKey: ["public", "players", { page, region: regionFilter }],
     queryFn: () => publicApi.players({ page, pageSize: 12, region: regionFilter || undefined }),
-    enabled: !isLoggedIn,
+    enabled: !canSearch,
     staleTime: 1000 * 60 * 5,
     retry: false,
   })
 
   // ---------------------------------------------------------------- //
-  // Authenticated query                                                //
+  // Team search query (full filters, plan gating)                      //
   // ---------------------------------------------------------------- //
   const { data: searchData, isLoading: searchLoading } = useQuery({
     queryKey: ["search", "players", { position, skills, region, level, page }],
@@ -164,22 +165,22 @@ export default function JogadoresPublicos() {
         region: region || undefined,
         level: level as PlayerLevel | undefined,
       }),
-    enabled: isLoggedIn,
+    enabled: canSearch,
     staleTime: 1000 * 60 * 2,
     retry: false,
   })
 
-  const isLoading = isLoggedIn ? searchLoading : publicLoading
-  const rawData = isLoggedIn ? searchData : publicData
+  const isLoading = canSearch ? searchLoading : publicLoading
+  const rawData = canSearch ? searchData : publicData
 
   const visiblePlayers = useMemo<CardPlayer[]>(() => {
     if (!rawData) return []
     const players = rawData.data as CardPlayer[]
-    if (isLoggedIn && isLimited) return players.slice(0, searchLimit)
+    if (canSearch && isLimited) return players.slice(0, searchLimit)
     return players
-  }, [rawData, isLoggedIn, isLimited, searchLimit])
+  }, [rawData, canSearch, isLimited, searchLimit])
 
-  const hiddenCount = (rawData?.data.length ?? 0) - visiblePlayers.length
+  const hiddenCount = canSearch ? (rawData?.data.length ?? 0) - visiblePlayers.length : 0
 
   function handlePublicSearch(e: React.FormEvent) {
     e.preventDefault()
@@ -221,8 +222,8 @@ export default function JogadoresPublicos() {
         {/* FILTERS */}
         <section className="border-b-4 border-foreground bg-background px-6 py-4">
           <div className="mx-auto max-w-7xl">
-            {isLoggedIn ? (
-              /* Authenticated: full filters (no submit button — reactive) */
+            {canSearch ? (
+              /* Team: full filters (no submit button — reactive) */
               <div className="flex flex-wrap items-center gap-3 bg-background border-4 border-foreground p-2 shadow-[4px_4px_0px_0px_var(--color-primary)]">
                 <div className="flex items-center gap-2 pl-2">
                   <Filter className="size-5 text-foreground" />
@@ -367,7 +368,7 @@ export default function JogadoresPublicos() {
         </section>
 
         {/* CTA (non-logged only) */}
-        {!isLoggedIn && (
+        {!user && (
           <section className="border-t-4 border-foreground bg-foreground px-6 py-16">
             <div className="mx-auto max-w-7xl flex flex-col md:flex-row items-center justify-between gap-8">
               <div>

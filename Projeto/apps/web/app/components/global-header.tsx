@@ -1,6 +1,7 @@
 // app/components/global-header.tsx
 "use client"
 
+import { useState } from "react"
 import { Link, useLocation } from "react-router"
 import {
   Home,
@@ -27,6 +28,13 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "~/components/ui/avatar"
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "~/components/ui/sheet"
 import { cn } from "~/lib/utils"
 import type { NavItem } from "~/lib/auth/permissions"
 import type { Role } from "~shared/contracts"
@@ -176,6 +184,7 @@ export function GlobalHeader() {
   const { user, role, logout } = useAuth()
   const { isPaid } = usePlan()
   const location = useLocation()
+  const [accountOpen, setAccountOpen] = useState(false)
 
   const initials =
     user?.name
@@ -191,13 +200,13 @@ export function GlobalHeader() {
   const authNavItems: NavItem[] = (() => {
     if (!role) return []
     if (role === "player") return [
-      { label: "Início", href: "/", icon: "home" },
+      { label: "Início", href: "/jogador", icon: "home" },
       { label: "Times", href: "/times", icon: "shield" },
       { label: "Jogadores", href: "/jogadores", icon: "users" },
       { label: "Mensagens", href: "/jogador/mensagens", icon: "message-circle" },
     ]
     if (role === "team") return [
-      { label: "Início", href: "/", icon: "home" },
+      { label: "Início", href: "/time", icon: "home" },
       { label: "Times", href: "/times", icon: "shield" },
       { label: "Jogadores", href: "/jogadores", icon: "users" },
       { label: "Mensagens", href: "/time/mensagens", icon: "message-circle" },
@@ -218,11 +227,11 @@ export function GlobalHeader() {
       {/* ---------------------------------------------------------- */}
       {/* DESKTOP HEADER                                               */}
       {/* ---------------------------------------------------------- */}
-      <header className="sticky top-0 z-30 hidden border-b-4 border-foreground bg-background md:block">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
+      <header className="sticky top-0 z-30 hidden border-b-4 border-gray-100 bg-background md:block">
+        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
           {/* Logo */}
           <Link
-            to={user && role ? (role === "admin" ? "/admin" : "/") : "/"}
+            to="/"
             className="font-display text-2xl tracking-wider text-foreground transition-transform hover:scale-105"
           >
             VÁRZEA<span className="text-primary">PRO</span>
@@ -303,7 +312,7 @@ export function GlobalHeader() {
                 key={item.href}
                 to={item.href}
                 className={cn(
-                  "relative flex flex-1 flex-col items-center justify-center gap-1 text-[10px] font-bold tracking-widest uppercase transition-colors border-r-2 border-foreground/20 last:border-r-0",
+                  "relative flex flex-1 flex-col items-center justify-center gap-1 text-[10px] font-bold tracking-widest uppercase transition-colors border-r-2 border-foreground/20",
                   active ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted",
                 )}
               >
@@ -313,6 +322,79 @@ export function GlobalHeader() {
               </Link>
             )
           })}
+
+          {/* Conta tab — authenticated only */}
+          {user && role && (
+            <Sheet open={accountOpen} onOpenChange={setAccountOpen}>
+              <SheetTrigger asChild>
+                <button
+                  className={cn(
+                    "relative flex flex-1 flex-col items-center justify-center gap-1 text-[10px] font-bold tracking-widest uppercase transition-colors border-l-2 border-foreground/20",
+                    accountOpen ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted",
+                  )}
+                >
+                  <div className={cn(
+                    "size-7 flex items-center justify-center font-display text-xs border-2",
+                    accountOpen
+                      ? "bg-primary border-primary text-primary-foreground"
+                      : "bg-primary border-primary text-primary-foreground",
+                  )}>
+                    {initials}
+                  </div>
+                  <span className="sr-only sm:not-sr-only sm:mt-1">Conta</span>
+                </button>
+              </SheetTrigger>
+              <SheetContent
+                side="bottom"
+                className="rounded-none border-t-4 border-foreground bg-background px-6 pb-8"
+              >
+                <SheetHeader className="border-b-4 border-foreground pb-4 mb-6">
+                  <SheetTitle className="font-display tracking-widest text-left flex items-center justify-between">
+                    <span className="text-xl uppercase truncate">{user?.name}</span>
+                    <span className={cn(
+                      "px-2 py-0.5 font-display text-[10px] tracking-widest",
+                      isPaid() ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground border border-foreground",
+                    )}>
+                      {isPaid() ? "PRO" : "FREE"}
+                    </span>
+                  </SheetTitle>
+                </SheetHeader>
+                <div className="flex flex-col gap-3">
+                  <Link
+                    to={profileHref(role)}
+                    onClick={() => setAccountOpen(false)}
+                    className="flex items-center gap-3 border-2 border-foreground px-4 py-3 font-display text-base tracking-widest uppercase hover:bg-muted transition-colors"
+                  >
+                    <User className="size-5" />
+                    {role === "team" ? "MEU TIME" : "MEU PERFIL"}
+                  </Link>
+                  <Link
+                    to="/planos"
+                    onClick={() => setAccountOpen(false)}
+                    className="flex items-center gap-3 border-2 border-foreground px-4 py-3 font-display text-base tracking-widest uppercase hover:bg-muted transition-colors"
+                  >
+                    {isPaid() ? <Crown className="size-5 text-primary" /> : <Zap className="size-5 text-primary" />}
+                    {isPaid() ? "MEU PLANO" : "FAZER UPGRADE"}
+                  </Link>
+                  <Link
+                    to="/configuracoes"
+                    onClick={() => setAccountOpen(false)}
+                    className="flex items-center gap-3 border-2 border-foreground px-4 py-3 font-display text-base tracking-widest uppercase hover:bg-muted transition-colors"
+                  >
+                    <Settings className="size-5" />
+                    CONFIGURAÇÕES
+                  </Link>
+                  <button
+                    onClick={() => { setAccountOpen(false); logout() }}
+                    className="flex items-center gap-3 border-2 border-destructive px-4 py-3 font-display text-base tracking-widest uppercase text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors w-full"
+                  >
+                    <LogOut className="size-5" />
+                    SAIR DA CONTA
+                  </button>
+                </div>
+              </SheetContent>
+            </Sheet>
+          )}
         </div>
         <div className="h-[env(safe-area-inset-bottom)] bg-background" />
       </nav>

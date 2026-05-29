@@ -13,14 +13,14 @@ const ROLE_HOMES: Record<Role, string> = {
 };
 
 const PLAYER_NAV: NavItem[] = [
-  { label: "Início", href: "/", icon: "home" },
+  { label: "Início", href: "/jogador", icon: "home" },
   { label: "Times", href: "/times", icon: "shield" },
   { label: "Jogadores", href: "/jogadores", icon: "users" },
   { label: "Mensagens", href: "/jogador/mensagens", icon: "message-circle" },
 ];
 
 const TEAM_NAV: NavItem[] = [
-  { label: "Início", href: "/", icon: "home" },
+  { label: "Início", href: "/time", icon: "home" },
   { label: "Times", href: "/times", icon: "shield" },
   { label: "Jogadores", href: "/jogadores", icon: "users" },
   { label: "Mensagens", href: "/time/mensagens", icon: "message-circle" },
