@@ -54,6 +54,7 @@ export const PlayerProfileSchema = z.object({
     assists: z.number().optional(),
     cleanSheets: z.number().optional(),
   }).optional(),
+  cardTier: z.enum(["none", "gold", "legendary"]).optional(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
@@ -69,6 +70,7 @@ export const PlayerSummarySchema = z.object({
   availability: z.string().optional(),
   region: z.string().optional(),
   level: PlayerLevelSchema.optional(),
+  cardTier: z.enum(["none", "gold", "legendary"]).optional(),
 });
 export type PlayerSummary = z.infer<typeof PlayerSummarySchema>;
 

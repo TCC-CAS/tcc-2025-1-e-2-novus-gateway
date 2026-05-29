@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router";
+import { useNavigate } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
@@ -14,7 +14,6 @@ import {
 } from "~shared/contracts";
 import type { PlayerLevel, Position } from "~shared/contracts";
 import { playersApi, uploadApi, ApiError } from "~/lib/api-client";
-import { usePlan } from "~/lib/plan";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
@@ -28,7 +27,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { cn } from "~/lib/utils";
-import { Check, Save, X, User, Plus, Trash2, Lock } from "lucide-react";
+import { Check, Save, X, Plus, Trash2 } from "lucide-react";
 
 const POSITION_LABELS: Record<string, string> = {
   goleiro: "GOLEIRO",
@@ -61,7 +60,6 @@ export function meta() {
 export default function JogadorPerfilEditar() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { hasCareerHistoryVisible, hasDetailedStatsVisible } = usePlan();
   const { data: profile, isLoading: isLoadingProfile } = useQuery({
     queryKey: ["player", "me"],
     queryFn: () => playersApi.getMe(),
@@ -204,8 +202,8 @@ export default function JogadorPerfilEditar() {
                 ...data,
                 skills: parseSkillsInput(skillsInput),
                 level: normalizePlayerLevel(playerLevel) ?? normalizePlayerLevel((profile as any)?.level),
-                careerHistory: hasCareerHistoryVisible() ? careerHistory : undefined,
-                detailedStats: hasDetailedStatsVisible() ? detailedStats : undefined,
+                careerHistory: careerHistory,
+                detailedStats: detailedStats,
               }),
             ),
           (errors) => {
@@ -523,160 +521,124 @@ export default function JogadorPerfilEditar() {
           </div>
         </section>
 
-        {/* Career History — gated: craque+ */}
+        {/* Career History */}
         <section className="space-y-6 border-4 border-foreground bg-background p-6 shadow-[8px_8px_0px_0px_var(--color-primary)] dark:shadow-[8px_8px_0px_0px_var(--color-primary)]">
-          <div className="border-b-4 border-foreground pb-4 flex items-center justify-between gap-4">
-            <div>
-              <h2 className="font-display text-3xl tracking-wide text-foreground uppercase">
-                HISTÓRICO DE CLUBES
-              </h2>
-              <p className="font-bold tracking-widest text-xs text-muted-foreground uppercase opacity-80 mt-1">
-                ONDE VOCÊ JÁ JOGOU
-              </p>
-            </div>
-            {!hasCareerHistoryVisible() && (
-              <Link
-                to="/planos"
-                className="flex items-center gap-2 border-2 border-primary bg-primary/10 px-4 py-2 font-display text-sm tracking-widest text-primary uppercase hover:bg-primary hover:text-primary-foreground transition-colors"
-              >
-                <Lock className="size-4" />
-                CRAQUE+
-              </Link>
-            )}
+          <div className="border-b-4 border-foreground pb-4">
+            <h2 className="font-display text-3xl tracking-wide text-foreground uppercase">
+              HISTÓRICO DE CLUBES
+            </h2>
+            <p className="font-bold tracking-widest text-xs text-muted-foreground uppercase opacity-80 mt-1">
+              ONDE VOCÊ JÁ JOGOU
+            </p>
           </div>
 
-          {hasCareerHistoryVisible() ? (
-            <div className="pt-2 space-y-4">
-              {careerHistory.map((entry, idx) => (
-                <div key={idx} className="border-2 border-foreground p-4 space-y-3">
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-1">
-                      <Label className="font-display text-sm tracking-wide uppercase">CLUBE</Label>
-                      <Input
-                        value={entry.clubName}
-                        onChange={(e) => {
-                          const updated = [...careerHistory];
-                          updated[idx] = { ...entry, clubName: e.target.value };
-                          setCareerHistory(updated);
-                        }}
-                        placeholder="Nome do clube"
-                        className="h-10 rounded-none border-2 border-foreground bg-muted/50 px-3 focus-visible:ring-0 focus-visible:border-primary"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="font-display text-sm tracking-wide uppercase">PERÍODO</Label>
-                      <Input
-                        value={entry.period}
-                        onChange={(e) => {
-                          const updated = [...careerHistory];
-                          updated[idx] = { ...entry, period: e.target.value };
-                          setCareerHistory(updated);
-                        }}
-                        placeholder="2022–2023"
-                        className="h-10 rounded-none border-2 border-foreground bg-muted/50 px-3 focus-visible:ring-0 focus-visible:border-primary"
-                      />
-                    </div>
-                  </div>
+          <div className="pt-2 space-y-4">
+            {careerHistory.map((entry, idx) => (
+              <div key={idx} className="border-2 border-foreground p-4 space-y-3">
+                <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-1">
-                    <Label className="font-display text-sm tracking-wide uppercase">CAMPEONATOS (OPCIONAL)</Label>
+                    <Label className="font-display text-sm tracking-wide uppercase">CLUBE</Label>
                     <Input
-                      value={entry.championships ?? ""}
+                      value={entry.clubName}
                       onChange={(e) => {
                         const updated = [...careerHistory];
-                        updated[idx] = { ...entry, championships: e.target.value };
+                        updated[idx] = { ...entry, clubName: e.target.value };
                         setCareerHistory(updated);
                       }}
-                      placeholder="Copa do Bairro 2022, Torneio Municipal 2023"
+                      placeholder="Nome do clube"
                       className="h-10 rounded-none border-2 border-foreground bg-muted/50 px-3 focus-visible:ring-0 focus-visible:border-primary"
                     />
                   </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCareerHistory(careerHistory.filter((_, i) => i !== idx))}
-                    className="gap-2 rounded-none border-2 border-foreground font-bold uppercase tracking-widest text-xs hover:bg-foreground hover:text-background"
-                  >
-                    <Trash2 className="size-3" />
-                    REMOVER
-                  </Button>
+                  <div className="space-y-1">
+                    <Label className="font-display text-sm tracking-wide uppercase">PERÍODO</Label>
+                    <Input
+                      value={entry.period}
+                      onChange={(e) => {
+                        const updated = [...careerHistory];
+                        updated[idx] = { ...entry, period: e.target.value };
+                        setCareerHistory(updated);
+                      }}
+                      placeholder="2022–2023"
+                      className="h-10 rounded-none border-2 border-foreground bg-muted/50 px-3 focus-visible:ring-0 focus-visible:border-primary"
+                    />
+                  </div>
                 </div>
-              ))}
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setCareerHistory([...careerHistory, { clubName: "", period: "" }])}
-                className="gap-2 rounded-none border-2 border-primary font-bold uppercase tracking-widest hover:bg-primary hover:text-primary-foreground"
-              >
-                <Plus className="size-4" />
-                ADICIONAR CLUBE
-              </Button>
-            </div>
-          ) : (
-            <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
-              Disponível nos planos CRAQUE e FENÔMENO.{" "}
-              <Link to="/planos" className="text-primary underline">Ver planos</Link>
-            </p>
-          )}
+                <div className="space-y-1">
+                  <Label className="font-display text-sm tracking-wide uppercase">CAMPEONATOS (OPCIONAL)</Label>
+                  <Input
+                    value={entry.championships ?? ""}
+                    onChange={(e) => {
+                      const updated = [...careerHistory];
+                      updated[idx] = { ...entry, championships: e.target.value };
+                      setCareerHistory(updated);
+                    }}
+                    placeholder="Copa do Bairro 2022, Torneio Municipal 2023"
+                    className="h-10 rounded-none border-2 border-foreground bg-muted/50 px-3 focus-visible:ring-0 focus-visible:border-primary"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCareerHistory(careerHistory.filter((_, i) => i !== idx))}
+                  className="gap-2 rounded-none border-2 border-foreground font-bold uppercase tracking-widest text-xs hover:bg-foreground hover:text-background"
+                >
+                  <Trash2 className="size-3" />
+                  REMOVER
+                </Button>
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setCareerHistory([...careerHistory, { clubName: "", period: "" }])}
+              className="gap-2 rounded-none border-2 border-primary font-bold uppercase tracking-widest hover:bg-primary hover:text-primary-foreground"
+            >
+              <Plus className="size-4" />
+              ADICIONAR CLUBE
+            </Button>
+          </div>
         </section>
 
-        {/* Detailed Stats — gated: fenomeno */}
+        {/* Detailed Stats */}
         <section className="space-y-6 border-4 border-foreground bg-background p-6 shadow-[8px_8px_0px_0px_var(--color-primary)] dark:shadow-[8px_8px_0px_0px_var(--color-primary)]">
-          <div className="border-b-4 border-foreground pb-4 flex items-center justify-between gap-4">
-            <div>
-              <h2 className="font-display text-3xl tracking-wide text-foreground uppercase">
-                ESTATÍSTICAS
-              </h2>
-              <p className="font-bold tracking-widest text-xs text-muted-foreground uppercase opacity-80 mt-1">
-                NÚMEROS DA SUA CARREIRA
-              </p>
-            </div>
-            {!hasDetailedStatsVisible() && (
-              <Link
-                to="/planos"
-                className="flex items-center gap-2 border-2 border-primary bg-primary/10 px-4 py-2 font-display text-sm tracking-widest text-primary uppercase hover:bg-primary hover:text-primary-foreground transition-colors"
-              >
-                <Lock className="size-4" />
-                FENÔMENO
-              </Link>
-            )}
+          <div className="border-b-4 border-foreground pb-4">
+            <h2 className="font-display text-3xl tracking-wide text-foreground uppercase">
+              ESTATÍSTICAS
+            </h2>
+            <p className="font-bold tracking-widest text-xs text-muted-foreground uppercase opacity-80 mt-1">
+              NÚMEROS DA SUA CARREIRA
+            </p>
           </div>
 
-          {hasDetailedStatsVisible() ? (
-            <div className="pt-2 grid gap-4 sm:grid-cols-2">
-              {(["gamesPlayed", "goals", "assists", "cleanSheets"] as const).map((field) => {
-                const labels: Record<string, string> = {
-                  gamesPlayed: "JOGOS",
-                  goals: "GOLS",
-                  assists: "ASSISTÊNCIAS",
-                  cleanSheets: "CLEAN SHEETS",
-                };
-                return (
-                  <div key={field} className="space-y-1">
-                    <Label className="font-display text-sm tracking-wide uppercase">{labels[field]}</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={detailedStats[field] ?? ""}
-                      onChange={(e) =>
-                        setDetailedStats((prev) => ({
-                          ...prev,
-                          [field]: e.target.value === "" ? undefined : Number(e.target.value),
-                        }))
-                      }
-                      placeholder="0"
-                      className="h-10 rounded-none border-2 border-foreground bg-muted/50 px-3 focus-visible:ring-0 focus-visible:border-primary"
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
-              Disponível no plano FENÔMENO.{" "}
-              <Link to="/planos" className="text-primary underline">Ver planos</Link>
-            </p>
-          )}
+          <div className="pt-2 grid gap-4 sm:grid-cols-2">
+            {(["gamesPlayed", "goals", "assists", "cleanSheets"] as const).map((field) => {
+              const labels: Record<string, string> = {
+                gamesPlayed: "JOGOS",
+                goals: "GOLS",
+                assists: "ASSISTÊNCIAS",
+                cleanSheets: "CLEAN SHEETS",
+              };
+              return (
+                <div key={field} className="space-y-1">
+                  <Label className="font-display text-sm tracking-wide uppercase">{labels[field]}</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={detailedStats[field] ?? ""}
+                    onChange={(e) =>
+                      setDetailedStats((prev) => ({
+                        ...prev,
+                        [field]: e.target.value === "" ? undefined : Number(e.target.value),
+                      }))
+                    }
+                    placeholder="0"
+                    className="h-10 rounded-none border-2 border-foreground bg-muted/50 px-3 focus-visible:ring-0 focus-visible:border-primary"
+                  />
+                </div>
+              );
+            })}
+          </div>
         </section>
 
         {/* Actions */}

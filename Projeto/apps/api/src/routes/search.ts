@@ -119,34 +119,26 @@ const searchRoutes: FastifyPluginAsync = async (fastify) => {
         .limit(effectivePageSize)
         .offset((page - 1) * effectivePageSize)
 
-      // Plan enforcement: determine what the requesting team can see
-      const teamLimits = getPlanLimits(planId as PlanId, "team")
-      const teamCanSeeCareer = teamLimits.playerCareerAccess
-      const teamCanSeeStats = teamLimits.playerStatsAccess
-
       // Bulk-fetch player subscriptions to avoid N+1
       let playerPlanMap: Record<string, PlanId> = {}
-      if (teamCanSeeCareer || teamCanSeeStats) {
-        const playerUserIds = rows.map((p) => p.userId)
-        if (playerUserIds.length > 0) {
-          const playerSubs = await fastify.db
-            .select({ userId: subscriptions.userId, planId: subscriptions.planId })
-            .from(subscriptions)
-            .where(inArray(subscriptions.userId, playerUserIds))
-          for (const s of playerSubs) {
-            playerPlanMap[s.userId] = s.planId as PlanId
-          }
+      const playerUserIds = rows.map((p) => p.userId)
+      if (playerUserIds.length > 0) {
+        const playerSubs = await fastify.db
+          .select({ userId: subscriptions.userId, planId: subscriptions.planId })
+          .from(subscriptions)
+          .where(inArray(subscriptions.userId, playerUserIds))
+        for (const s of playerSubs) {
+          playerPlanMap[s.userId] = s.planId as PlanId
         }
       }
 
       const data = rows.map((p) => {
         const playerPlanId = playerPlanMap[p.userId] ?? "free"
-        const playerCanShowCareer = ["craque", "fenomeno"].includes(playerPlanId)
-        const playerCanShowStats = playerPlanId === "fenomeno"
         return {
           ...p,
-          careerHistory: playerCanShowCareer && teamCanSeeCareer ? p.careerHistory : [],
-          detailedStats: playerCanShowStats && teamCanSeeStats ? p.detailedStats : null,
+          cardTier: (playerPlanId === "craque" ? "gold" : playerPlanId === "fenomeno" ? "legendary" : "none") as "none" | "gold" | "legendary",
+          careerHistory: p.careerHistory ?? [],
+          detailedStats: p.detailedStats ?? null,
           createdAt: p.createdAt.toISOString(),
           updatedAt: p.updatedAt.toISOString(),
         }

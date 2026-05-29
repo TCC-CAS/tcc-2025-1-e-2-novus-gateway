@@ -8,6 +8,7 @@ import { usePlan } from "~/lib/plan"
 import { UpsellCard } from "~/lib/plan/plan-gate"
 import { isUnlimited, POSITIONS, PLAYER_LEVELS } from "~shared/contracts"
 import type { Position, PlayerLevel } from "~shared/contracts"
+import { cn } from "~/lib/utils"
 import { Button } from "~/components/ui/button"
 import { Input } from "~/components/ui/input"
 import {
@@ -42,6 +43,7 @@ type CardPlayer = {
   level?: string | null
   region?: string | null
   city?: string | null
+  cardTier?: "none" | "gold" | "legendary"
 }
 
 function PlayerCardSkeleton() {
@@ -64,10 +66,16 @@ function PlayerCardSkeleton() {
 }
 
 function PlayerCard({ player }: { player: CardPlayer }) {
+  const tier = player.cardTier ?? "none"
   return (
     <Link
       to={`/jogadores/${player.id}`}
-      className="group block border-2 border-foreground bg-background cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_var(--color-primary)]"
+      className={cn(
+        "group block bg-background cursor-pointer transition-all duration-200 hover:-translate-y-1",
+        tier === "none" && "border-2 border-foreground hover:shadow-[4px_4px_0px_0px_var(--color-primary)]",
+        tier === "gold" && "border-[3px] border-amber-500 hover:shadow-[4px_4px_0px_0px_theme(colors.amber.500)]",
+        tier === "legendary" && "border-4 border-yellow-400 hover:shadow-[4px_4px_0px_0px_theme(colors.yellow.400)]",
+      )}
     >
       <div className="aspect-[2/3] relative overflow-hidden bg-muted">
         {player.photoUrl ? (
@@ -77,14 +85,27 @@ function PlayerCard({ player }: { player: CardPlayer }) {
             className="size-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
-          <div className="size-full flex flex-col items-center justify-center bg-foreground/5 gap-3">
+          <div className={cn(
+            "size-full flex flex-col items-center justify-center gap-3",
+            tier === "none" && "bg-foreground/5",
+            tier === "gold" && "bg-gradient-to-b from-amber-100 to-amber-200",
+            tier === "legendary" && "bg-gradient-to-b from-yellow-100 to-yellow-300",
+          )}>
             <Users className="size-14 text-foreground/15" />
-            <span className="font-display text-[9px] tracking-[0.25em] uppercase text-foreground/25">Sem foto</span>
           </div>
         )}
         <div className="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-foreground/95 via-foreground/50 to-transparent" />
+        {tier !== "none" && (
+          <div className={cn(
+            "absolute top-2 left-2 z-10 px-1.5 py-0.5 font-display text-[8px] tracking-widest font-black leading-none",
+            tier === "gold" && "bg-amber-500 text-white",
+            tier === "legendary" && "bg-yellow-400 text-yellow-900",
+          )}>
+            {tier === "gold" ? "CRAQUE" : "FENÔMENO"}
+          </div>
+        )}
         {player.positions.length > 0 && (
-          <div className="absolute top-2 left-2 flex flex-wrap gap-1 max-w-[calc(100%-4.5rem)]">
+          <div className={cn("absolute top-2 flex flex-wrap gap-1", tier !== "none" ? "right-2" : "left-2")}>
             {player.positions.slice(0, 2).map((pos) => (
               <span key={pos} className="bg-primary text-primary-foreground font-display text-[8px] tracking-widest uppercase px-1.5 py-0.5 font-black leading-none">
                 {pos}
@@ -92,13 +113,16 @@ function PlayerCard({ player }: { player: CardPlayer }) {
             ))}
           </div>
         )}
-        {player.level && (
+        {player.level && tier === "none" && (
           <span className="absolute top-2 right-2 bg-background border-2 border-foreground font-display text-[8px] tracking-widest uppercase px-1.5 py-0.5 font-black text-foreground leading-none">
             {player.level}
           </span>
         )}
         <div className="absolute inset-x-0 bottom-0 p-3">
-          <p className="font-display text-base leading-tight tracking-wide text-background font-black uppercase truncate drop-shadow-sm">
+          <p className={cn(
+            "font-display text-base leading-tight tracking-wide font-black uppercase truncate drop-shadow-sm",
+            tier === "legendary" ? "text-yellow-300" : "text-background",
+          )}>
             {player.name}
           </p>
           {(player.city || player.region) && (
@@ -109,9 +133,19 @@ function PlayerCard({ player }: { player: CardPlayer }) {
           )}
         </div>
       </div>
-      <div className="px-3 py-2 flex items-center justify-between border-t-2 border-foreground/10 group-hover:border-primary transition-colors duration-200">
+      <div className={cn(
+        "px-3 py-2 flex items-center justify-between border-t-2 transition-colors duration-200",
+        tier === "none" && "border-foreground/10 group-hover:border-primary",
+        tier === "gold" && "border-amber-500/30 group-hover:border-amber-500",
+        tier === "legendary" && "border-yellow-400/30 group-hover:border-yellow-400",
+      )}>
         <span className="font-display text-[9px] tracking-[0.2em] uppercase text-muted-foreground">Ver perfil</span>
-        <ArrowRight className="size-3 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all duration-200" />
+        <ArrowRight className={cn(
+          "size-3 transition-all duration-200 group-hover:translate-x-0.5",
+          tier === "none" && "text-muted-foreground group-hover:text-primary",
+          tier === "gold" && "text-amber-500",
+          tier === "legendary" && "text-yellow-500",
+        )} />
       </div>
     </Link>
   )

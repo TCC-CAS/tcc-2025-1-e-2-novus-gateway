@@ -53,6 +53,7 @@ export type PlanLimits = {
   openPositions: number;
   favorites: number;
   maxGalleryItems: number;
+  matchInvites: number;
   videoHighlights: boolean;
   expandedProfile: boolean;
   verifiedBadge: boolean;
@@ -62,13 +63,8 @@ export type PlanLimits = {
   analytics: boolean;
   bulkOutreach: boolean;
   smartRecommendations: boolean;
+  cardTier: "none" | "gold" | "legendary";
   prioritySupport: boolean;
-  // jogador: controla o que pode exibir no perfil
-  careerHistoryVisible: boolean;
-  detailedStatsVisible: boolean;
-  // time: controla o que pode ver nos perfis de jogadores
-  playerStatsAccess: boolean;
-  playerCareerAccess: boolean;
 };
 
 export type PlanConfig = {
@@ -81,8 +77,6 @@ export type PlanConfig = {
   popular?: boolean;
 };
 
-const UNLIMITED = 999_999;
-
 export const PLAN_CONFIGS: Record<PlanId, PlanConfig> = {
   free: {
     id: "free",
@@ -91,11 +85,12 @@ export const PLAN_CONFIGS: Record<PlanId, PlanConfig> = {
     price: 0,
     role: "player",
     limits: {
-      conversations: 10,
-      searchResults: UNLIMITED,
+      conversations: 5,
+      searchResults: 20,
       openPositions: 0,
       favorites: 5,
       maxGalleryItems: 3,
+      matchInvites: 0,
       videoHighlights: false,
       expandedProfile: false,
       verifiedBadge: false,
@@ -105,54 +100,24 @@ export const PLAN_CONFIGS: Record<PlanId, PlanConfig> = {
       analytics: false,
       bulkOutreach: false,
       smartRecommendations: false,
+      cardTier: "none" as const,
       prioritySupport: false,
-      careerHistoryVisible: false,
-      detailedStatsVisible: false,
-      playerStatsAccess: false,
-      playerCareerAccess: false,
     },
   },
   craque: {
     id: "craque",
     name: "CRAQUE",
-    description: "Histórico de clubes, vídeos e destaque nos resultados",
-    price: 9.9,
+    description: "Carta de ouro, destaque na busca e 30 mensagens/mês",
+    price: 29.9,
     role: "player",
     popular: true,
     limits: {
-      conversations: UNLIMITED,
-      searchResults: UNLIMITED,
+      conversations: 30,
+      searchResults: 50,
       openPositions: 0,
-      favorites: 50,
-      maxGalleryItems: 15,
-      videoHighlights: true,
-      expandedProfile: true,
-      verifiedBadge: true,
-      profileViews: true,
-      advancedFilters: false,
-      featuredListing: false,
-      analytics: false,
-      bulkOutreach: false,
-      smartRecommendations: false,
-      prioritySupport: false,
-      careerHistoryVisible: true,
-      detailedStatsVisible: false,
-      playerStatsAccess: false,
-      playerCareerAccess: false,
-    },
-  },
-  fenomeno: {
-    id: "fenomeno",
-    name: "FENÔMENO",
-    description: "Estatísticas completas + currículo visível a times premium",
-    price: 19.9,
-    role: "player",
-    limits: {
-      conversations: UNLIMITED,
-      searchResults: UNLIMITED,
-      openPositions: 0,
-      favorites: UNLIMITED,
-      maxGalleryItems: 30,
+      favorites: 25,
+      maxGalleryItems: 10,
+      matchInvites: 0,
       videoHighlights: true,
       expandedProfile: true,
       verifiedBadge: true,
@@ -162,27 +127,51 @@ export const PLAN_CONFIGS: Record<PlanId, PlanConfig> = {
       analytics: false,
       bulkOutreach: false,
       smartRecommendations: false,
+      cardTier: "gold" as const,
+      prioritySupport: false,
+    },
+  },
+  fenomeno: {
+    id: "fenomeno",
+    name: "FENÔMENO",
+    description: "Carta lendária + máximo destaque — máxima visibilidade",
+    price: 59.9,
+    role: "player",
+    limits: {
+      conversations: 100,
+      searchResults: 100,
+      openPositions: 0,
+      favorites: 100,
+      maxGalleryItems: 25,
+      matchInvites: 0,
+      videoHighlights: true,
+      expandedProfile: true,
+      verifiedBadge: true,
+      profileViews: true,
+      advancedFilters: false,
+      featuredListing: true,
+      analytics: true,
+      bulkOutreach: false,
+      smartRecommendations: false,
+      cardTier: "legendary" as const,
       prioritySupport: true,
-      careerHistoryVisible: true,
-      detailedStatsVisible: true,
-      playerStatsAccess: false,
-      playerCareerAccess: false,
     },
   },
 
   profissional: {
     id: "profissional",
     name: "PROFISSIONAL",
-    description: "Acesse carreira e estatísticas dos jogadores para recrutar com dados",
-    price: 49.9,
+    description: "Recrutamento sério para times que jogam pra valer",
+    price: 79.9,
     role: "team",
     popular: true,
     limits: {
-      conversations: UNLIMITED,
-      searchResults: UNLIMITED,
-      openPositions: UNLIMITED,
-      favorites: UNLIMITED,
+      conversations: 80,
+      searchResults: 40,
+      openPositions: 5,
+      favorites: 50,
       maxGalleryItems: 0,
+      matchInvites: 100,
       videoHighlights: false,
       expandedProfile: false,
       verifiedBadge: true,
@@ -190,13 +179,10 @@ export const PLAN_CONFIGS: Record<PlanId, PlanConfig> = {
       advancedFilters: true,
       featuredListing: false,
       analytics: true,
-      bulkOutreach: true,
+      bulkOutreach: false,
       smartRecommendations: true,
+      cardTier: "none" as const,
       prioritySupport: true,
-      careerHistoryVisible: false,
-      detailedStatsVisible: false,
-      playerStatsAccess: true,
-      playerCareerAccess: true,
     },
   },
 };
@@ -204,11 +190,12 @@ export const PLAN_CONFIGS: Record<PlanId, PlanConfig> = {
 export function getDefaultLimitsForRole(role: "player" | "team"): PlanLimits {
   if (role === "team") {
     return {
-      conversations: 5,
-      searchResults: 10,
+      conversations: 3,
+      searchResults: 8,
       openPositions: 1,
       favorites: 5,
       maxGalleryItems: 0,
+      matchInvites: 10,
       videoHighlights: false,
       expandedProfile: false,
       verifiedBadge: false,
@@ -218,11 +205,8 @@ export function getDefaultLimitsForRole(role: "player" | "team"): PlanLimits {
       analytics: false,
       bulkOutreach: false,
       smartRecommendations: false,
+      cardTier: "none" as const,
       prioritySupport: false,
-      careerHistoryVisible: false,
-      detailedStatsVisible: false,
-      playerStatsAccess: false,
-      playerCareerAccess: false,
     };
   }
   return PLAN_CONFIGS.free.limits;
@@ -251,6 +235,6 @@ export function getPlansForRole(role: "player" | "team"): PlanConfig[] {
   return [freePlan, PLAN_CONFIGS.profissional];
 }
 
-export function isUnlimited(value: number): boolean {
-  return value >= UNLIMITED;
+export function isUnlimited(_value: number): boolean {
+  return false;
 }

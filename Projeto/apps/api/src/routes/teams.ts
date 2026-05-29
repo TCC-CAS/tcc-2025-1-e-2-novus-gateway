@@ -29,8 +29,8 @@ const teamsRoutes: FastifyPluginAsync = async (fastify) => {
         columns: { planId: true },
       })
 
-      const cardTier = (user?.planId === "craque" ? "gold"
-        : user?.planId === "fenomeno" ? "legendary"
+      const cardTier = (user?.planId === "fenomeno" ? "legendary"
+        : user?.planId === "craque" || user?.planId === "profissional" ? "gold"
         : "none") as "none" | "gold" | "legendary"
 
       return ok({
@@ -95,8 +95,8 @@ const teamsRoutes: FastifyPluginAsync = async (fastify) => {
         columns: { planId: true },
       })
 
-      const cardTier = (user?.planId === "craque" ? "gold"
-        : user?.planId === "fenomeno" ? "legendary"
+      const cardTier = (user?.planId === "fenomeno" ? "legendary"
+        : user?.planId === "craque" || user?.planId === "profissional" ? "gold"
         : "none") as "none" | "gold" | "legendary"
 
       return ok({

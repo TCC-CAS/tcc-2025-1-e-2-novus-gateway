@@ -27,7 +27,6 @@ import {
   ChevronDown,
   XCircle,
   AlertTriangle,
-  ClipboardList,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -82,14 +81,14 @@ const PLAYER_FEATURES: FeatureRow[] = [
     getValue: (p) => p.limits.videoHighlights,
   },
   {
-    label: "HISTÓRICO DE CLUBES",
-    icon: <ClipboardList className="size-4" />,
-    getValue: (p) => p.limits.careerHistoryVisible,
+    label: "CARTA ESPECIAL NO PERFIL",
+    icon: <BarChart3 className="size-4" />,
+    getValue: (p) => p.limits.cardTier !== "none",
   },
   {
-    label: "ESTATÍSTICAS COMPLETAS",
-    icon: <BarChart3 className="size-4" />,
-    getValue: (p) => p.limits.detailedStatsVisible,
+    label: "DESTAQUE NA BUSCA",
+    icon: <Search className="size-4" />,
+    getValue: (p) => p.limits.featuredListing,
   },
   {
     label: "BADGE VERIFICADO",
@@ -107,30 +106,22 @@ const TEAM_FEATURES: FeatureRow[] = [
   {
     label: "BUSCAR JOGADORES",
     icon: <Search className="size-4" />,
-    getValue: (p) =>
-      isUnlimited(p.limits.searchResults) ? "Ilimitado" : `${p.limits.searchResults} / busca`,
+    getValue: (p) => `${p.limits.searchResults} / busca`,
   },
   {
     label: "MENSAGENS / MÊS",
     icon: <MessageCircle className="size-4" />,
-    getValue: (p) =>
-      isUnlimited(p.limits.conversations) ? "Ilimitado" : `${p.limits.conversations}`,
+    getValue: (p) => `${p.limits.conversations}`,
+  },
+  {
+    label: "CONVITES DE PARTIDA / MÊS",
+    icon: <Zap className="size-4" />,
+    getValue: (p) => (p.limits.matchInvites > 0 ? `${p.limits.matchInvites}` : false),
   },
   {
     label: "VAGAS ABERTAS",
     icon: <Users className="size-4" />,
-    getValue: (p) =>
-      isUnlimited(p.limits.openPositions) ? "Ilimitado" : `${p.limits.openPositions}`,
-  },
-  {
-    label: "VER HISTÓRICO DE CLUBES",
-    icon: <ClipboardList className="size-4" />,
-    getValue: (p) => p.limits.playerCareerAccess,
-  },
-  {
-    label: "VER ESTATÍSTICAS COMPLETAS",
-    icon: <BarChart3 className="size-4" />,
-    getValue: (p) => p.limits.playerStatsAccess,
+    getValue: (p) => `${p.limits.openPositions}`,
   },
   {
     label: "FILTROS AVANÇADOS",
@@ -156,11 +147,11 @@ const FAQ_ITEMS = [
   },
   {
     q: "Jogadores precisam pagar para aparecer na busca?",
-    a: "Não. A busca é 100% por relevância (posição, região, disponibilidade). Nenhum plano pago altera a ordem de aparição. O campo de jogo é nivelado.",
+    a: "Não. Todo jogador aparece nos resultados de busca. CRAQUE e FENÔMENO recebem destaque visual — borda especial e seção em evidência no topo da página. A relevância (posição, região, disponibilidade) ainda define quem aparece: o destaque é uma camada visual, não uma vantagem de alcance.",
   },
   {
     q: "Por que times precisam de um plano pago?",
-    a: "O plano gratuito permite buscar jogadores e conversar com limite. O plano Profissional desbloqueia o acesso ao histórico de clubes e às estatísticas completas dos jogadores — dados que os próprios jogadores registram nos planos Craque e Fenômeno. Quanto mais jogadores investem no próprio currículo, mais valioso é o acesso para os times recrutadores.",
+    a: "O plano gratuito PELADA permite buscar jogadores, enviar mensagens e convidar para partidas com limites modestos. O plano Profissional amplia todos esses limites — mais buscas, mais mensagens, mais convites por mês, filtros avançados e recomendações por perfil — para times que recrutam com frequência.",
   },
   {
     q: "Por que não fizeram um aplicativo?",
@@ -570,18 +561,17 @@ export default function Planos() {
           {view === "player" ? (
             <div className="mx-auto mt-12 max-w-3xl border-l-4 border-primary bg-primary/5 p-6">
               <p className="font-bold uppercase tracking-widest text-sm text-foreground">
-                Campo nivelado: A busca é 100% por relevância.
-                Nenhum plano altera sua posição nos resultados.
-                CRAQUE e FENÔMENO oferecem ferramentas de apresentação — currículo, estatísticas e histórico — não vantagem competitiva.
+                Todo jogador aparece na busca. CRAQUE e FENÔMENO recebem destaque visual —
+                borda especial e seção em evidência no topo. A relevância (posição, região,
+                disponibilidade) continua sendo o critério de exibição.
               </p>
             </div>
           ) : (
             <div className="mx-auto mt-12 max-w-3xl border-l-4 border-primary bg-primary/5 p-6">
               <p className="font-bold uppercase tracking-widest text-sm text-foreground">
-                O plano gratuito deixa buscar e contatar jogadores.
-                O plano Profissional desbloqueia histórico de clubes e estatísticas completas —
-                dados que os jogadores Craque e Fenômeno registram nos perfis.
-                Quanto mais jogadores sobem de plano, mais rico é o banco de dados para os times.
+                PELADA deixa buscar, contatar e convidar jogadores com limites modestos.
+                PROFISSIONAL amplia todos os limites — mais buscas, mensagens, convites e vagas —
+                e adiciona filtros avançados e recomendações por perfil para recrutamento sério.
               </p>
             </div>
           )}

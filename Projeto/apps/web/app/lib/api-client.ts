@@ -362,6 +362,67 @@ export const matchesApi = {
     }),
   deleteMatch: (matchId: string) =>
     request<void>(`/teams/me/matches/${matchId}`, { method: "DELETE" }),
+  getMyMatches: (params?: { page?: number; pageSize?: number; status?: string }) =>
+    request<{
+      data: import("~shared/contracts").Match[]
+      meta: { page: number; pageSize: number; total: number; totalPages: number }
+    }>(
+      "/teams/me/matches",
+      { params: params as Record<string, string | number | undefined> }
+    ),
+}
+
+// --- Match Invites ---
+export const matchInvitesApi = {
+  getMatchWithInvites: (matchId: string) =>
+    request<import("~shared/contracts").MatchWithInvites>(
+      `/teams/me/matches/${matchId}/invites`
+    ),
+  invitePlayer: (matchId: string, playerId: string) =>
+    request<import("~shared/contracts").MatchInvite>(
+      `/teams/me/matches/${matchId}/invites`,
+      { method: "POST", body: JSON.stringify({ playerId }) }
+    ),
+  removeInvite: (matchId: string, inviteId: string) =>
+    request<void>(
+      `/teams/me/matches/${matchId}/invites/${inviteId}`,
+      { method: "DELETE" }
+    ),
+  getMyInvites: () =>
+    request<import("~shared/contracts").PlayerMatchInvite[]>(
+      "/players/me/invites"
+    ),
+  respondToInvite: (inviteId: string, status: "accepted" | "declined") =>
+    request<{ data: import("~shared/contracts").PlayerMatchInvite }>(
+      `/players/me/invites/${inviteId}`,
+      { method: "PATCH", body: JSON.stringify({ status }) }
+    ),
+}
+
+// --- Connections ---
+export const connectionsApi = {
+  getMyConnections: () =>
+    request<import("~shared/contracts").Connection[]>("/connections"),
+
+  sendRequest: (receiverId: string) =>
+    request<{ data: { id: string; status: string; createdAt: string } }>(
+      "/connections",
+      { method: "POST", body: JSON.stringify({ receiverId }) }
+    ),
+
+  respondToRequest: (connectionId: string, status: "accepted" | "declined") =>
+    request<{ data: { id: string; status: string } }>(
+      `/connections/${connectionId}`,
+      { method: "PATCH", body: JSON.stringify({ status }) }
+    ),
+
+  removeConnection: (connectionId: string) =>
+    request<void>(`/connections/${connectionId}`, { method: "DELETE" }),
+
+  getStatus: (userId: string) =>
+    request<import("~shared/contracts").ConnectionStatusView>(
+      `/connections/status/${userId}`
+    ),
 }
 
 // --- Public (no auth) ---
@@ -373,6 +434,7 @@ export type ShowcasePlayer = {
   level: string | null
   region: string | null
   city: string | null
+  cardTier?: "none" | "gold" | "legendary"
 }
 export type ShowcaseTeam = {
   id: string

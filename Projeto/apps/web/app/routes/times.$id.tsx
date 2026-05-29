@@ -1,12 +1,14 @@
 import { ReportButton } from "~/components/report-button"
-import { useParams, useNavigate, useLocation, Link } from "react-router"
+import { GlobalHeader } from "~/components/global-header"
+import { useParams, useNavigate, Link } from "react-router"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useAuth } from "~/lib/auth/auth-context"
-import { teamsApi, messagingApi, favoritesApi, matchesApi, type RosterMember } from "~/lib/api-client"
+import { teamsApi, messagingApi, favoritesApi, matchesApi, connectionsApi, type RosterMember } from "~/lib/api-client"
+import { ConnectionButton } from "~/components/connection-button"
 import { canSearchTeams } from "~/lib/auth"
 import { OptimizedImage } from "~/components/optimized-image"
 import { Button } from "~/components/ui/button"
-import { MessageCircle, Shield, MapPin, Trophy, Search, Calendar, Heart, User, Home, LogIn, Users, ArrowLeft, Star } from "lucide-react"
+import { MessageCircle, Shield, MapPin, Trophy, Search, Calendar, Heart, User, Users, ArrowLeft, Star } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "~/lib/utils"
 
@@ -14,40 +16,6 @@ export function meta() {
   return [{ title: "Perfil do time - VárzeaPro" }]
 }
 
-const PUBLIC_NAV = [
-  { label: "Início", href: "/", icon: Home },
-  { label: "Times", href: "/times", icon: Shield },
-  { label: "Jogadores", href: "/jogadores", icon: Users },
-  { label: "Entrar", href: "/login", icon: LogIn },
-]
-
-function PublicNav() {
-  const location = useLocation()
-  return (
-    <nav className="fixed bottom-0 left-0 right-0 z-30 border-t-4 border-foreground bg-background md:hidden">
-      <div className="flex h-16 items-stretch">
-        {PUBLIC_NAV.map((item) => {
-          const active = location.pathname === item.href
-          return (
-            <Link
-              key={item.href}
-              to={item.href}
-              className={cn(
-                "relative flex flex-1 flex-col items-center justify-center gap-1 text-[10px] font-bold tracking-widest uppercase transition-colors border-r-2 border-foreground/20 last:border-r-0",
-                active ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted",
-              )}
-            >
-              {active && <div className="absolute top-0 left-0 w-full h-1 bg-primary" />}
-              <item.icon className={cn("size-6", active ? "text-primary" : "text-foreground")} />
-              <span className="sr-only sm:not-sr-only sm:mt-1">{item.label}</span>
-            </Link>
-          )
-        })}
-      </div>
-      <div className="h-[env(safe-area-inset-bottom)] bg-background" />
-    </nav>
-  )
-}
 
 export default function TimePublicProfile() {
   const { id } = useParams()
@@ -106,6 +74,13 @@ export default function TimePublicProfile() {
   const isFavorited = !!favorites?.data?.some((f) => f.targetUser.id === profile?.userId)
   const isOwnProfile = !!user && !!profile && user.id === profile.userId
 
+  const { data: connectionStatus } = useQuery({
+    queryKey: ["connection-status", profile?.userId],
+    queryFn: () => connectionsApi.getStatus(profile!.userId),
+    enabled: !!user && !!profile && !isOwnProfile,
+  })
+  const isConnected = connectionStatus?.status === "accepted"
+
   const favoriteMutation = useMutation({
     mutationFn: () =>
       isFavorited ? favoritesApi.remove(profile!.userId) : favoritesApi.add(profile!.userId),
@@ -148,37 +123,7 @@ export default function TimePublicProfile() {
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
-      {/* HEADER */}
-      <header className="sticky top-0 z-20 border-b-4 border-foreground bg-background">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <Link
-            to="/"
-            className="font-display text-2xl tracking-wider text-foreground transition-transform hover:scale-105"
-          >
-            VÁRZEA<span className="text-primary">PRO</span>
-          </Link>
-          <nav className="flex items-center gap-6">
-            <Link to="/times" className="hidden font-display text-xl tracking-wide text-primary border-b-2 border-primary md:block">
-              TIMES
-            </Link>
-            <Link to="/jogadores" className="hidden font-display text-xl tracking-wide text-foreground transition-colors hover:text-primary md:block">
-              JOGADORES
-            </Link>
-            <Link to="/planos" className="hidden font-display text-xl tracking-wide text-foreground transition-colors hover:text-primary md:block">
-              PLANOS
-            </Link>
-            <Link to="/login" className="hidden font-display text-xl tracking-wide text-foreground transition-colors hover:text-primary sm:block">
-              ENTRAR
-            </Link>
-            <Button
-              asChild
-              className="rounded-none border-2 border-primary bg-primary px-6 font-display text-xl tracking-wider text-primary-foreground transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_var(--color-primary)] hover:bg-primary"
-            >
-              <Link to="/cadastro">JOGAR AGORA</Link>
-            </Button>
-          </nav>
-        </div>
-      </header>
+      <GlobalHeader />
 
       {/* Loading */}
       {isLoading && (
@@ -189,6 +134,17 @@ export default function TimePublicProfile() {
               <div key={i} className="h-40 border-2 border-foreground/20 bg-muted animate-pulse" />
             ))}
           </div>
+        </div>
+      )}
+
+      {!isLoading && !profile && (
+        <div className="mx-auto max-w-7xl px-6 py-20 text-center">
+          <p className="font-display text-xs tracking-[0.35em] uppercase text-primary mb-4">Erro 404</p>
+          <h1 className="font-display text-5xl uppercase font-black text-foreground mb-4">TIME NÃO ENCONTRADO</h1>
+          <p className="text-muted-foreground mb-8">Esse perfil não existe ou foi removido.</p>
+          <Link to="/times" className="font-display text-sm tracking-widest uppercase border-2 border-foreground px-6 py-3 hover:bg-foreground hover:text-background transition-colors">
+            VER TODOS OS TIMES
+          </Link>
         </div>
       )}
 
@@ -264,12 +220,16 @@ export default function TimePublicProfile() {
                     <Button
                       type="button"
                       onClick={() => contactMutation.mutate()}
-                      disabled={contactMutation.isPending}
+                      disabled={contactMutation.isPending || !isConnected}
+                      title={!isConnected ? "Conecte-se ao time antes de entrar em contato" : undefined}
                       className="rounded-none border-2 border-background bg-background px-8 py-4 h-auto font-display text-lg tracking-widest text-foreground transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_var(--color-primary)] hover:border-primary disabled:opacity-50 flex items-center gap-2"
                     >
                       <MessageCircle className="size-5" />
                       ENTRAR EM CONTATO
                     </Button>
+                  )}
+                  {user && !isOwnProfile && (
+                    <ConnectionButton targetUserId={profile.userId} />
                   )}
                   <div className="flex gap-2">
                     {user && !isOwnProfile && (
@@ -485,11 +445,15 @@ export default function TimePublicProfile() {
           {/* MOBILE ACTIONS */}
           {(canContact || (user && !isOwnProfile)) && (
             <div className="sm:hidden border-t-4 border-foreground bg-background px-4 py-4 space-y-3">
+              {user && !isOwnProfile && (
+                <ConnectionButton targetUserId={profile.userId} className="w-full justify-center" />
+              )}
               {canContact && (
                 <Button
                   type="button"
                   onClick={() => contactMutation.mutate()}
-                  disabled={contactMutation.isPending}
+                  disabled={contactMutation.isPending || !isConnected}
+                  title={!isConnected ? "Conecte-se ao time antes de entrar em contato" : undefined}
                   className="w-full h-14 rounded-none border-2 border-foreground bg-foreground font-display text-xl tracking-widest text-background hover:bg-primary hover:border-primary transition-all uppercase gap-2 disabled:opacity-50"
                 >
                   <MessageCircle className="size-5" />
@@ -517,7 +481,6 @@ export default function TimePublicProfile() {
         </main>
       )}
 
-      <PublicNav />
     </div>
   )
 }

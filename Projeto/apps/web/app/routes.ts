@@ -26,6 +26,8 @@ export default [
       route("buscar-times", "routes/jogador/buscar-times.tsx"),
       route("buscar-jogadores", "routes/jogador/buscar-jogadores.tsx"),
       route("mensagens", "routes/jogador/mensagens.tsx"),
+      route("convites", "routes/jogador/convites.tsx"),
+      route("conexoes", "routes/jogador/conexoes.tsx"),
     ]),
     route("time", "routes/time/_team-layout.tsx", [
       index("routes/time/index.tsx"),
@@ -33,6 +35,8 @@ export default [
       route("perfil/editar", "routes/time/perfil-editar.tsx"),
       route("buscar-jogadores", "routes/time/buscar-jogadores.tsx"),
       route("mensagens", "routes/time/mensagens.tsx"),
+      route("jogos", "routes/time/jogos.tsx"),
+      route("conexoes", "routes/time/conexoes.tsx"),
     ]),
     route("admin", "routes/admin/_admin-layout.tsx", [
       index("routes/admin/index.tsx"),

@@ -16,6 +16,8 @@ import {
   Crown,
   Zap,
   User,
+  CalendarDays,
+  Link2,
 } from "lucide-react"
 import { useAuth } from "~/lib/auth/auth-context"
 import { usePlan } from "~/lib/plan"
@@ -50,6 +52,8 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   "layout-dashboard": LayoutDashboard,
   "shield-alert": ShieldAlert,
   "log-in": LogIn,
+  "calendar-days": CalendarDays,
+  "link-2": Link2,
 }
 
 function NavIcon({ icon, className }: { icon: string; className?: string }) {
@@ -200,16 +204,18 @@ export function GlobalHeader() {
   const authNavItems: NavItem[] = (() => {
     if (!role) return []
     if (role === "player") return [
-      { label: "Início", href: "/jogador", icon: "home" },
-      { label: "Times", href: "/times", icon: "shield" },
-      { label: "Jogadores", href: "/jogadores", icon: "users" },
-      { label: "Mensagens", href: "/jogador/mensagens", icon: "message-circle" },
+      { label: "Início",    href: "/jogador",           icon: "home" },
+      { label: "Jogadores", href: "/jogadores",          icon: "users" },
+      { label: "Mensagens", href: "/jogador/mensagens",  icon: "message-circle" },
+      { label: "Convites",  href: "/jogador/convites",   icon: "calendar-days" },
+      { label: "Conexões",  href: "/jogador/conexoes",   icon: "link-2" },
     ]
     if (role === "team") return [
-      { label: "Início", href: "/time", icon: "home" },
-      { label: "Times", href: "/times", icon: "shield" },
-      { label: "Jogadores", href: "/jogadores", icon: "users" },
-      { label: "Mensagens", href: "/time/mensagens", icon: "message-circle" },
+      { label: "Início",    href: "/time",              icon: "home" },
+      { label: "Jogadores", href: "/jogadores",          icon: "users" },
+      { label: "Mensagens", href: "/time/mensagens",     icon: "message-circle" },
+      { label: "Jogos",     href: "/time/jogos",         icon: "calendar-days" },
+      { label: "Conexões",  href: "/time/conexoes",      icon: "link-2" },
     ]
     // admin
     return [
