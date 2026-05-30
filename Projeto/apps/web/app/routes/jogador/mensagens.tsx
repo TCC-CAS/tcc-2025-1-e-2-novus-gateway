@@ -145,14 +145,22 @@ export default function JogadorMensagens() {
                 >
                   <div
                     className={cn(
-                      "flex size-11 shrink-0 items-center justify-center border-2 border-foreground bg-background group-hover:bg-primary transition-colors relative",
-                      selectedId === c.id && "bg-primary text-primary-foreground",
+                      "flex size-11 shrink-0 items-center justify-center border-2 border-foreground bg-background group-hover:bg-primary transition-colors relative overflow-hidden",
+                      selectedId === c.id && "bg-primary",
                     )}
                   >
-                    <User className="size-5" />
+                    {c.otherParticipant.avatarUrl ? (
+                      <img
+                        src={c.otherParticipant.avatarUrl}
+                        alt={c.otherParticipant.name}
+                        className="size-full object-cover object-top"
+                      />
+                    ) : (
+                      <User className={cn("size-5", selectedId === c.id ? "text-primary-foreground" : "text-foreground group-hover:text-primary-foreground")} />
+                    )}
                     <span
                       className={cn(
-                        "absolute -bottom-1 -right-1 size-3 border-2 border-background",
+                        "absolute -bottom-1 -right-1 size-3 border-2 border-background z-10",
                         isUserOnline(c.otherParticipant.id) ? "bg-green-500" : "bg-muted"
                       )}
                     />
@@ -222,11 +230,19 @@ export default function JogadorMensagens() {
               >
                 <ArrowLeft className="size-5" />
               </button>
-              <div className="flex size-12 items-center justify-center border-2 border-foreground bg-primary shadow-[2px_2px_0px_0px_var(--color-foreground)] dark:shadow-[2px_2px_0px_0px_var(--color-foreground)] relative">
-                <User className="size-6 text-primary-foreground" />
+              <div className="flex size-12 shrink-0 items-center justify-center border-2 border-foreground bg-primary shadow-[2px_2px_0px_0px_var(--color-foreground)] dark:shadow-[2px_2px_0px_0px_var(--color-foreground)] relative overflow-hidden">
+                {current?.otherParticipant.avatarUrl ? (
+                  <img
+                    src={current.otherParticipant.avatarUrl}
+                    alt={current.otherParticipant.name}
+                    className="size-full object-cover object-top"
+                  />
+                ) : (
+                  <User className="size-6 text-primary-foreground" />
+                )}
                 <span
                   className={cn(
-                    "absolute -bottom-1 -right-1 size-3 border-2 border-background",
+                    "absolute -bottom-1 -right-1 size-3 border-2 border-background z-10",
                     current && isUserOnline(current.otherParticipant.id)
                       ? "bg-green-500"
                       : "bg-muted"

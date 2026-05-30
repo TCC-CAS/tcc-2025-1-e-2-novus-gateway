@@ -3,12 +3,16 @@
  * Cria 50 jogadores (free/craque/fenomeno), 20 times (free/profissional) + 1 admin
  * Uso: npx tsx src/db/seed.ts
  */
-import { createWriteStream } from "fs"
+import { createWriteStream, readFileSync, readdirSync, existsSync } from "fs"
+import { join, extname } from "path"
 
 const API_URL = process.env.API_URL || "http://localhost:3000"
 const ORIGIN = process.env.CORS_ORIGIN || "http://localhost:5173"
 const PASSWORD = "VarzeaPro@2026"
 const CSV_PATH = "./seed-credentials.csv"
+const PAINEIS_DIR  = process.env.PAINEIS_DIR  || "/home/diogo/Projects/test/paineis"
+const AVATARES_DIR = process.env.AVATARES_DIR || "/home/diogo/Projects/test/avatares"
+const LOGOS_DIR    = process.env.LOGOS_DIR    || "/home/diogo/Projects/test/logos"
 
 // ─── Dados base ────────────────────────────────────────────────────────────────
 
@@ -753,6 +757,156 @@ function slug(name: string): string {
 
 function sleep(ms: number) { return new Promise(r => setTimeout(r, ms)) }
 
+// ─── Fotos de seed ─────────────────────────────────────────────────────────────
+
+type PhotoPool = Record<string, string[]>
+const photoCounters: Record<string, number> = {}
+
+function buildPhotoPool(dir: string): PhotoPool {
+  const pool: PhotoPool = {}
+  if (!existsSync(dir)) {
+    console.warn(`  [fotos] pasta não encontrada: ${dir} — pulando uploads`)
+    return pool
+  }
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue
+    const folderPath = join(dir, entry.name)
+    const files = readdirSync(folderPath)
+      .filter(f => [".png", ".jpg", ".jpeg", ".webp"].includes(extname(f).toLowerCase()))
+      .map(f => join(folderPath, f))
+    if (files.length > 0) pool[entry.name] = files
+  }
+  return pool
+}
+
+function pickPhoto(pool: PhotoPool, key: string): string | null {
+  const photos = pool[key]
+  if (!photos || photos.length === 0) return null
+  const idx = (photoCounters[key] ?? 0) % photos.length
+  photoCounters[key] = idx + 1
+  return photos[idx]
+}
+
+function pickPhotoForPos(pool: PhotoPool, positions: string[], allowExtras = true): string | null {
+  for (const pos of positions) {
+    const p = pickPhoto(pool, pos)
+    if (p) return p
+  }
+  if (!allowExtras) return null
+  for (const ex of ["descanso", "capitao", "comemoracao"]) {
+    const p = pickPhoto(pool, ex)
+    if (p) return p
+  }
+  return null
+}
+
+function slugFile(name: string): string {
+  return name.toLowerCase()
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/[^\w]+/g, "_").replace(/^_|_$/g, "")
+}
+
+function logoPath(teamName: string): string | null {
+  const p = join(LOGOS_DIR, `${slugFile(teamName)}.png`)
+  return existsSync(p) ? p : null
+}
+
+async function uploadLogo(cookie: string, filePath: string): Promise<void> {
+  const buffer = readFileSync(filePath)
+  const blob = new Blob([buffer], { type: "image/png" })
+  const form = new FormData()
+  form.append("file", blob, "logo.png")
+  const res = await fetch(`${API_URL}/api/upload/logo`, {
+    method: "POST",
+    headers: { "Origin": ORIGIN, "Cookie": cookie },
+    body: form,
+  })
+  if (!res.ok) {
+    const txt = await res.text()
+    throw new Error(`upload/logo → ${res.status}: ${txt.slice(0, 120)}`)
+  }
+}
+
+async function uploadAvatar(cookie: string, filePath: string): Promise<void> {
+  const buffer = readFileSync(filePath)
+  const blob = new Blob([buffer], { type: "image/png" })
+  const form = new FormData()
+  form.append("file", blob, "avatar.png")
+  const res = await fetch(`${API_URL}/api/upload/avatar`, {
+    method: "POST",
+    headers: { "Origin": ORIGIN, "Cookie": cookie },
+    body: form,
+  })
+  if (!res.ok) {
+    const txt = await res.text()
+    throw new Error(`upload/avatar → ${res.status}: ${txt.slice(0, 120)}`)
+  }
+}
+
+async function uploadGalleryPhoto(cookie: string, filePath: string, caption: string): Promise<void> {
+  const buffer = readFileSync(filePath)
+  const fileName = filePath.split("/").pop() ?? "photo.png"
+  const presign = await api("POST", "/api/gallery/presign", cookie, {
+    fileName, mediaType: "image", contentType: "image/png", sizeBytes: buffer.length,
+  }) as { data: { uploadUrl: string; assetId: string } }
+  const { uploadUrl, assetId } = presign.data
+  const s3res = await fetch(uploadUrl, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "image/png",
+      "Content-Length": String(buffer.length),
+    },
+    body: new Uint8Array(buffer),
+    // @ts-ignore — undici duplex required for streaming body
+    duplex: "half",
+  })
+  if (!s3res.ok) {
+    const txt = await s3res.text()
+    throw new Error(`S3 gallery upload → ${s3res.status}: ${txt.slice(0, 200)}`)
+  }
+  await api("POST", "/api/gallery/confirm", cookie, {
+    assetId, mediaType: "image", contentType: "image/png", caption, isHighlight: true,
+  })
+}
+
+async function seedPhotos(
+  cookie: string,
+  positions: string[],
+  plan: string,
+  avatarPool: PhotoPool,
+  galleryPool: PhotoPool,
+): Promise<void> {
+  // Avatar: usa avatares/, sem fallback pra extras (goleiro = foto de goleiro)
+  if (Object.keys(avatarPool).length > 0) {
+    const avatarPath = pickPhotoForPos(avatarPool, positions, false)
+    if (avatarPath) {
+      await uploadAvatar(cookie, avatarPath)
+      await sleep(200)
+    }
+  }
+
+  // Galeria — apenas craque/fenomeno
+  if (plan === "free" || Object.keys(galleryPool).length === 0) return
+
+  const galleryPhotos: string[] = []
+
+  // 1ª foto: ação da posição
+  const p1 = pickPhotoForPos(galleryPool, positions, true)
+  if (p1) galleryPhotos.push(p1)
+
+  // 2ª foto: comemoracao/descanso/capitao
+  for (const ex of ["comemoracao", "descanso", "capitao"]) {
+    const p2 = pickPhoto(galleryPool, ex)
+    if (p2 && !galleryPhotos.includes(p2)) { galleryPhotos.push(p2); break }
+  }
+
+  for (const photoPath of galleryPhotos) {
+    const posLabel = positions[0] ?? "jogador"
+    await uploadGalleryPhoto(cookie, photoPath, `Foto de ${posLabel}`)
+    await sleep(300)
+  }
+}
+
 // ─── Main ──────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -761,6 +915,11 @@ async function main() {
   csv.write("tipo,nome,email,senha,plano\n")
 
   const errors: string[] = []
+  const galleryPool = buildPhotoPool(PAINEIS_DIR)
+  const avatarPool  = buildPhotoPool(AVATARES_DIR)
+  const totalGallery = Object.values(galleryPool).reduce((s, a) => s + a.length, 0)
+  const totalAvatars = Object.values(avatarPool).reduce((s, a) => s + a.length, 0)
+  console.log(`[fotos] avatares: ${totalAvatars} | galeria: ${totalGallery}\n`)
 
   // ── Admin ────────────────────────────────────────────────────────────────────
   console.log("[ ADMIN ]")
@@ -824,6 +983,9 @@ async function main() {
         await sleep(150)
       }
 
+      await seedPhotos(cookie, p.pos, p.plan, avatarPool, galleryPool).catch((e) => console.warn(`  ⚠ foto ${p.name}: ${(e as Error).message}`))
+      await sleep(100)
+
       csv.write(`jogador,${p.name},${email},${PASSWORD},${p.plan}\n`)
       console.log(`  ✓ [${p.plan.padEnd(8)}] ${p.name}`)
     } catch (e) {
@@ -854,6 +1016,9 @@ async function main() {
             await api("POST", "/api/subscription/checkout", cookie, { planId: p.plan })
             await sleep(150)
           }
+
+          await seedPhotos(cookie, p.pos, p.plan, avatarPool, galleryPool).catch((e) => console.warn(`  ⚠ foto ${p.name}: ${(e as Error).message}`))
+          await sleep(100)
 
           csv.write(`jogador,${p.name},${email},${PASSWORD},${p.plan}\n`)
           console.log(`  ~ [${p.plan.padEnd(8)}] ${p.name} (atualizado)`)
@@ -904,6 +1069,9 @@ async function main() {
         await sleep(150)
       }
 
+      const lp = logoPath(t.name)
+      if (lp) await uploadLogo(cookie, lp).catch((e) => console.warn(`  ⚠ logo ${t.name}: ${(e as Error).message}`))
+
       csv.write(`time,${t.name},${email},${PASSWORD},${t.plan}\n`)
       console.log(`  ✓ [${t.plan.padEnd(12)}] ${t.name}`)
     } catch (e) {
@@ -933,6 +1101,9 @@ async function main() {
             await api("POST", "/api/subscription/checkout", cookie, { planId: "profissional" })
             await sleep(150)
           }
+
+          const lp2 = logoPath(t.name)
+          if (lp2) await uploadLogo(cookie, lp2).catch((e) => console.warn(`  ⚠ logo ${t.name}: ${(e as Error).message}`))
 
           csv.write(`time,${t.name},${email},${PASSWORD},${t.plan}\n`)
           console.log(`  ~ [${t.plan.padEnd(12)}] ${t.name} (atualizado)`)

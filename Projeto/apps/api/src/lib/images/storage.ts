@@ -201,6 +201,29 @@ export class ImageStorage {
   }
 
   /**
+   * Resolve a stored value (S3 key or legacy presigned URL) to a fresh presigned URL.
+   * Handles three cases:
+   *   - Plain S3 key (e.g. "avatars/uid/file-medium.webp") → sign it
+   *   - Legacy presigned URL (contains X-Amz-Signature) → extract key, re-sign
+   *   - Public/CDN URL (no X-Amz params) → return as-is
+   */
+  async resolveUrl(stored: string | null | undefined): Promise<string | null> {
+    if (!stored) return null
+    if (stored.startsWith("http://") || stored.startsWith("https://")) {
+      if (stored.includes("X-Amz-Signature=")) {
+        try {
+          const key = decodeURIComponent(new URL(stored).pathname.slice(1))
+          return this.getSignedUrl(key)
+        } catch {
+          return stored
+        }
+      }
+      return stored
+    }
+    return this.getSignedUrl(stored)
+  }
+
+  /**
    * Check if an object exists.
    */
   async exists(key: string): Promise<boolean> {

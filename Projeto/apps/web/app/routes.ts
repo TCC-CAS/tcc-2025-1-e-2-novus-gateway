@@ -36,6 +36,7 @@ export default [
       route("buscar-jogadores", "routes/time/buscar-jogadores.tsx"),
       route("mensagens", "routes/time/mensagens.tsx"),
       route("jogos", "routes/time/jogos.tsx"),
+      route("elenco", "routes/time/elenco.tsx"),
       route("conexoes", "routes/time/conexoes.tsx"),
     ]),
     route("admin", "routes/admin/_admin-layout.tsx", [

@@ -17,9 +17,7 @@ function InviteCard({ invite }: { invite: PlayerMatchInvite }) {
     mutationFn: (status: "accepted" | "declined") => matchInvitesApi.respondToInvite(invite.id, status),
     onSuccess: (_, status) => {
       toast.success(status === "accepted" ? "Convite aceito!" : "Convite recusado")
-      queryClient.setQueryData<PlayerMatchInvite[]>(["my-invites"], (old) =>
-        old?.map((inv) => inv.id === invite.id ? { ...inv, status } : inv)
-      )
+      queryClient.invalidateQueries({ queryKey: ["my-invites"] })
     },
     onError: () => toast.error("Erro ao responder convite"),
   })

@@ -13,28 +13,11 @@ import { mediaAssets } from "../db/schema/media-assets.js"
 const uploadRoutes: FastifyPluginAsync = async (fastify) => {
   const imageService = new ImageService(fastify.db)
 
-  const uploadRateLimit = {
-    config: {
-      rateLimit: {
-        max: parseInt(process.env.UPLOAD_RATE_LIMIT_MAX ?? "10", 10),
-        timeWindow: `${parseInt(process.env.UPLOAD_RATE_LIMIT_WINDOW_MINUTES ?? "60", 10)} minutes`,
-        keyGenerator: (request: import("fastify").FastifyRequest) => {
-          const session = (request as unknown as Record<string, unknown>).session as
-            | { user: { id: string } }
-            | undefined
-          return `upload:${session?.user.id ?? request.ip}`
-        },
-      },
-    },
-  }
 
   // POST /upload/avatar — upload or replace player profile photo
   fastify.withTypeProvider<ZodTypeProvider>().post(
     "/upload/avatar",
-    {
-      preHandler: [requireSession],
-      ...uploadRateLimit,
-    },
+    { preHandler: [requireSession] },
     async (request, reply) => {
       const userId = request.session!.user.id
       const role = request.session!.user.role as "player" | "team"
@@ -80,10 +63,7 @@ const uploadRoutes: FastifyPluginAsync = async (fastify) => {
   // POST /upload/logo — upload or replace team logo
   fastify.withTypeProvider<ZodTypeProvider>().post(
     "/upload/logo",
-    {
-      preHandler: [requireSession],
-      ...uploadRateLimit,
-    },
+    { preHandler: [requireSession] },
     async (request, reply) => {
       const userId = request.session!.user.id
       const role = request.session!.user.role as "player" | "team"
