@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, Link } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
@@ -10,7 +10,7 @@ import {
   TEAM_LEVELS,
   POSITIONS,
 } from "~shared/contracts";
-import { teamsApi, searchApi, uploadApi, ApiError, type RosterMember } from "~/lib/api-client";
+import { teamsApi, uploadApi, ApiError } from "~/lib/api-client";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
@@ -49,43 +49,7 @@ export default function TimePerfilEditar() {
     queryFn: () => teamsApi.getMe(),
   });
 
-  const [matchDays, setMatchDays] = useState<string[]>([]);
-  const [playerSearch, setPlayerSearch] = useState("")
-  const [playerSearchDebounced, setPlayerSearchDebounced] = useState("")
-
-  const { data: roster, refetch: refetchRoster } = useQuery({
-    queryKey: ["team", "me", "roster"],
-    queryFn: async () => {
-      const me = await teamsApi.getMe()
-      return teamsApi.getRoster(me.id)
-    },
-  })
-
-  const { data: searchResults, isLoading: isSearching } = useQuery({
-    queryKey: ["search", "community-players", { region: playerSearchDebounced }],
-    queryFn: () => searchApi.communityPlayers({ region: playerSearchDebounced || undefined }),
-    enabled: playerSearchDebounced.length >= 2,
-  })
-
-  const addMutation = useMutation({
-    mutationFn: (playerId: string) => teamsApi.addToRoster(playerId),
-    onSuccess: () => {
-      refetchRoster()
-      toast.success("Jogador adicionado ao elenco")
-    },
-    onError: (err) => {
-      const msg = err instanceof ApiError ? err.message : "Erro ao adicionar jogador"
-      toast.error(msg)
-    },
-  })
-
-  const removeMutation = useMutation({
-    mutationFn: (playerId: string) => teamsApi.removeFromRoster(playerId),
-    onSuccess: () => {
-      refetchRoster()
-      toast.success("Jogador removido do elenco")
-    },
-  })
+  const [matchDays, setMatchDays] = useState<string[]>([])
 
   const form = useForm<UpsertTeamProfileRequest>({
     resolver: zodResolver(UpsertTeamProfileRequestSchema),
@@ -122,11 +86,6 @@ export default function TimePerfilEditar() {
   useEffect(() => {
     form.setValue("matchDays", matchDays);
   }, [matchDays, form]);
-
-  useEffect(() => {
-    const t = setTimeout(() => setPlayerSearchDebounced(playerSearch), 400)
-    return () => clearTimeout(t)
-  }, [playerSearch])
 
   const mutation = useMutation({
     mutationFn: (data: UpsertTeamProfileRequest) => teamsApi.upsert(data),
@@ -440,75 +399,19 @@ export default function TimePerfilEditar() {
           </div>
         </section>
 
-        {/* Gerenciar Elenco */}
-        <section className="border-4 border-foreground bg-background p-6 shadow-[8px_8px_0px_0px_var(--color-primary)] dark:shadow-[8px_8px_0px_0px_var(--color-primary)]">
-          <div className="border-b-4 border-foreground pb-4 mb-4">
-            <h2 className="font-display text-3xl tracking-wide text-foreground uppercase">GERENCIAR ELENCO</h2>
-          </div>
-
-          {roster && roster.members.length > 0 && (
-            <div className="mb-4">
-              <p className="text-xs font-bold uppercase text-muted-foreground mb-2">
-                ELENCO ATUAL ({roster.members.length})
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {roster.members.map((member: RosterMember) => (
-                  <div key={member.id} className="flex items-center gap-1 border border-foreground px-2 py-1 text-xs">
-                    <span className="font-bold">{member.name}</span>
-                    <button
-                      type="button"
-                      className="ml-1 text-muted-foreground hover:text-destructive"
-                      onClick={() => removeMutation.mutate(member.id)}
-                      aria-label={`Remover ${member.name}`}
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {roster && roster.members.length === 0 && (
-            <p className="text-sm text-muted-foreground mb-4">Nenhum jogador no elenco ainda.</p>
-          )}
-
+        {/* Elenco link */}
+        <div className="border-2 border-foreground/30 p-4 flex items-center justify-between">
           <div>
-            <p className="text-xs font-bold uppercase text-muted-foreground mb-2">ADICIONAR JOGADOR</p>
-            <Input
-              placeholder="Buscar por nome ou região..."
-              value={playerSearch}
-              onChange={(e) => setPlayerSearch(e.target.value)}
-              className="mb-2"
-            />
-            {isSearching && <p className="text-xs text-muted-foreground">Buscando...</p>}
-            {searchResults && searchResults.data.length > 0 && (
-              <div className="border border-foreground max-h-48 overflow-y-auto">
-                {searchResults.data.map((player) => {
-                  const alreadyInRoster = roster?.members.some((m: RosterMember) => m.id === player.id)
-                  return (
-                    <div key={player.id} className="flex items-center justify-between px-3 py-2 text-sm border-b last:border-0 border-foreground/20">
-                      <span className="font-bold">{player.name}</span>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        className="h-6 text-xs"
-                        disabled={alreadyInRoster || addMutation.isPending}
-                        onClick={() => addMutation.mutate(player.id)}
-                      >
-                        {alreadyInRoster ? "JÁ NO ELENCO" : "ADICIONAR"}
-                      </Button>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-            {playerSearchDebounced.length >= 2 && !isSearching && searchResults?.data.length === 0 && (
-              <p className="text-xs text-muted-foreground">Nenhum jogador encontrado</p>
-            )}
+            <p className="font-display text-sm tracking-widest uppercase text-foreground">GERENCIAR ELENCO</p>
+            <p className="text-xs text-muted-foreground font-bold mt-0.5">Adicione e remova jogadores na página dedicada</p>
           </div>
-        </section>
+          <Link
+            to="/time/elenco"
+            className="border-2 border-foreground font-display text-xs tracking-widest uppercase px-4 py-2 hover:bg-foreground hover:text-background transition-colors"
+          >
+            ABRIR ELENCO →
+          </Link>
+        </div>
 
         {/* Actions */}
         <div className="sticky bottom-4 z-40 flex flex-col-reverse sm:flex-row items-center gap-4 border-4 border-foreground bg-background p-4 shadow-[8px_8px_0px_0px_var(--color-foreground)] dark:shadow-[8px_8px_0px_0px_var(--color-foreground)] mt-12">

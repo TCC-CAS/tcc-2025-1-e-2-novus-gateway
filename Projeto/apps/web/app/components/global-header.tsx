@@ -3,6 +3,7 @@
 
 import { useState } from "react"
 import { Link, useLocation } from "react-router"
+import { useQuery } from "@tanstack/react-query"
 import {
   Home,
   Shield,
@@ -22,6 +23,7 @@ import {
 } from "lucide-react"
 import { useAuth } from "~/lib/auth/auth-context"
 import { usePlan } from "~/lib/plan"
+import { teamsApi, playersApi } from "~/lib/api-client"
 import { Button } from "~/components/ui/button"
 import {
   DropdownMenu,
@@ -30,7 +32,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback } from "~/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar"
 import {
   Sheet,
   SheetContent,
@@ -101,12 +103,14 @@ function AvatarDropdown({
   role,
   isPaid,
   logout,
+  photoUrl,
 }: {
   userName: string | undefined
   initials: string
   role: Role | null
   isPaid: () => boolean
   logout: () => void
+  photoUrl?: string
 }) {
   return (
     <DropdownMenu>
@@ -116,6 +120,7 @@ function AvatarDropdown({
           className="size-12 rounded-none border-2 border-foreground bg-background p-0 shadow-[4px_4px_0px_0px_var(--color-foreground)] dark:shadow-[4px_4px_0px_0px_var(--color-foreground)] transition-transform hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_var(--color-foreground)]"
         >
           <Avatar className="size-full rounded-none">
+            {photoUrl && <AvatarImage src={photoUrl} alt={userName} className="object-cover object-top" />}
             <AvatarFallback className="rounded-none bg-primary text-lg font-display text-primary-foreground">
               {initials}
             </AvatarFallback>
@@ -200,6 +205,27 @@ export function GlobalHeader() {
       .slice(0, 2)
       .toUpperCase() ?? "?"
 
+  const { data: teamProfile } = useQuery({
+    queryKey: ["team", "me", "header"],
+    queryFn: () => teamsApi.getMe(),
+    enabled: role === "team" && !!user,
+    staleTime: 1000 * 60 * 10,
+    retry: false,
+  })
+
+  const { data: playerProfile } = useQuery({
+    queryKey: ["player", "me", "header"],
+    queryFn: () => playersApi.getMe(),
+    enabled: role === "player" && !!user,
+    staleTime: 1000 * 60 * 10,
+    retry: false,
+  })
+
+  const profilePhotoUrl =
+    role === "team" ? teamProfile?.logoUrl :
+    role === "player" ? playerProfile?.photoUrl :
+    undefined
+
   // ---------------------------------------------------------------- //
   // Resolve nav items for current role                                 //
   // ---------------------------------------------------------------- //
@@ -214,10 +240,10 @@ export function GlobalHeader() {
     ]
     if (role === "team") return [
       { label: "Início",    href: "/time",              icon: "home" },
-      { label: "Buscar",    href: "/buscar",             icon: "search" },
-      { label: "Mensagens", href: "/time/mensagens",     icon: "message-circle" },
-      { label: "Jogos",     href: "/time/jogos",         icon: "calendar-days" },
-      { label: "Conexões",  href: "/time/conexoes",      icon: "link-2" },
+      { label: "Buscar",    href: "/buscar",            icon: "search" },
+      { label: "Mensagens", href: "/time/mensagens",    icon: "message-circle" },
+      { label: "Jogos",     href: "/time/jogos",        icon: "calendar-days" },
+      { label: "Elenco",    href: "/time/elenco",       icon: "users" },
     ]
     // admin
     return [
@@ -303,6 +329,7 @@ export function GlobalHeader() {
               role={role}
               isPaid={isPaid}
               logout={logout}
+              photoUrl={profilePhotoUrl}
             />
           )}
         </div>
@@ -341,13 +368,12 @@ export function GlobalHeader() {
                     accountOpen ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted",
                   )}
                 >
-                  <div className={cn(
-                    "size-7 flex items-center justify-center font-display text-xs border-2",
-                    accountOpen
-                      ? "bg-primary border-primary text-primary-foreground"
-                      : "bg-primary border-primary text-primary-foreground",
-                  )}>
-                    {initials}
+                  <div className="size-7 border-2 border-primary overflow-hidden flex items-center justify-center bg-primary">
+                    {profilePhotoUrl ? (
+                      <img src={profilePhotoUrl} alt={user?.name} className="size-full object-cover object-top" />
+                    ) : (
+                      <span className="font-display text-xs text-primary-foreground">{initials}</span>
+                    )}
                   </div>
                   <span className="sr-only sm:not-sr-only sm:mt-1">Conta</span>
                 </button>
