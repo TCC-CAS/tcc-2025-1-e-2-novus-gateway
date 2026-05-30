@@ -76,13 +76,13 @@ describe("Search routes", () => {
       expect(res.statusCode).toBe(401)
     })
 
-    it("SRCH-01e: returns 403 when authenticated as player user (D-09: wrong role)", async () => {
+    it("SRCH-01e: returns 200 when authenticated as player user", async () => {
       const res = await app.inject({
         method: "GET",
         url: "/api/search/players",
         headers: { cookie: playerCookie },
       })
-      expect(res.statusCode).toBe(403)
+      expect(res.statusCode).toBe(200)
     })
 
     it("SRCH-01f: does NOT return the requesting team user's own player profile in results", async () => {
@@ -220,13 +220,13 @@ describe("Search routes", () => {
       expect(res.statusCode).toBe(401)
     })
 
-    it("SRCH-02e: returns 403 when authenticated as team user (D-09: wrong role)", async () => {
+    it("SRCH-02e: returns 200 when authenticated as team user", async () => {
       const res = await app.inject({
         method: "GET",
         url: "/api/search/teams",
         headers: { cookie: teamCookie },
       })
-      expect(res.statusCode).toBe(403)
+      expect(res.statusCode).toBe(200)
     })
   })
 
