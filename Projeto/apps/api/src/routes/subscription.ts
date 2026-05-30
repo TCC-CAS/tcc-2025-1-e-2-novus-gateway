@@ -252,7 +252,7 @@ const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
         })
       }
 
-      const frontendUrl = process.env.CORS_ORIGIN || "http://localhost:5173"
+      const frontendUrl = (process.env.FRONTEND_URL || process.env.CORS_ORIGIN || "http://localhost:5173").replace(/\/$/, "")
       const paymentMode = process.env.PAYMENT_MODE || "mock"
 
       // Mock mode: activate plan directly, redirect to success page
@@ -300,6 +300,7 @@ const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
 
       // MercadoPago mode
       const planConfig = PLAN_CONFIGS[planId as keyof typeof PLAN_CONFIGS]
+      const unitPrice = process.env.MERCADOPAGO_TEST_PRICE === "true" ? 1.00 : planConfig.price
       const client = new MercadoPagoConfig({
         accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN || "",
       })
@@ -317,7 +318,7 @@ const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
                 id: planId,
                 title: `VarzeaPro ${planConfig.name}`,
                 quantity: 1,
-                unit_price: planConfig.price,
+                unit_price: unitPrice,
                 currency_id: "BRL",
               },
             ],
@@ -327,13 +328,18 @@ const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
               failure: failureUrl,
               pending: pendingUrl,
             },
-            auto_return: "approved",
+            // auto_return only works with HTTPS back_urls (MP rejects localhost)
+            ...(successUrl.startsWith("https://") ? { auto_return: "approved" as const } : {}),
             external_reference: JSON.stringify({ userId, planId }),
+            notification_url: process.env.MERCADOPAGO_WEBHOOK_URL || "",
           },
         })
 
+        const isTestToken = (process.env.MERCADOPAGO_ACCESS_TOKEN || "").startsWith("TEST-")
         return ok({
-          initPoint: result.sandbox_init_point ?? result.init_point,
+          initPoint: isTestToken
+            ? (result.sandbox_init_point ?? result.init_point)
+            : (result.init_point ?? result.sandbox_init_point),
           preferenceId: result.id,
         })
       } catch (error) {
