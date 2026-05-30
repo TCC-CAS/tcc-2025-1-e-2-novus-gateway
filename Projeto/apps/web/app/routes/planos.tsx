@@ -178,6 +178,7 @@ export default function Planos() {
   );
   const [upgrading, setUpgrading] = useState<string | null>(null);
   const [canceling, setCanceling] = useState(false);
+  const [reactivating, setReactivating] = useState(false);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
 
   const plans = getPlansForRole(view);
@@ -201,6 +202,20 @@ export default function Planos() {
         err instanceof ApiError ? err.message : "Erro ao iniciar checkout. Tente novamente."
       );
       setUpgrading(null);
+    }
+  };
+
+  const handleReactivate = async () => {
+    if (!user) return;
+    setReactivating(true);
+    try {
+      await subscriptionApi.reactivate();
+      await refreshUsage();
+      toast.success("Assinatura reativada!");
+    } catch {
+      toast.error("Erro ao reativar. Tente novamente.");
+    } finally {
+      setReactivating(false);
     }
   };
 
@@ -302,16 +317,28 @@ export default function Planos() {
                       </div>
                     )}
                   </div>
-                  {isPaid && !isCanceled && (
-                    <Button
-                      variant="outline"
-                      className="gap-2 rounded-none border-2 border-foreground font-bold uppercase tracking-widest hover:bg-foreground hover:text-background"
-                      onClick={handleCancel}
-                      disabled={canceling}
-                    >
-                      <XCircle className="size-4" />
-                      {canceling ? "CANCELANDO..." : "CANCELAR ASSINATURA"}
-                    </Button>
+                  {isPaid && (
+                    isCanceled ? (
+                      <Button
+                        variant="outline"
+                        className="gap-2 rounded-none border-2 border-primary font-bold uppercase tracking-widest hover:bg-primary hover:text-primary-foreground"
+                        onClick={handleReactivate}
+                        disabled={reactivating}
+                      >
+                        <Zap className="size-4" />
+                        {reactivating ? "REATIVANDO..." : "REATIVAR ASSINATURA"}
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        className="gap-2 rounded-none border-2 border-foreground font-bold uppercase tracking-widest hover:bg-foreground hover:text-background"
+                        onClick={handleCancel}
+                        disabled={canceling}
+                      >
+                        <XCircle className="size-4" />
+                        {canceling ? "CANCELANDO..." : "CANCELAR ASSINATURA"}
+                      </Button>
+                    )
                   )}
                 </div>
               </div>

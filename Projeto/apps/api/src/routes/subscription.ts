@@ -218,6 +218,41 @@ const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
     }
   )
 
+  // POST /reactivate — undo cancel before period end
+  fastify.withTypeProvider<ZodTypeProvider>().post(
+    "/reactivate",
+    { preHandler: [requireSession] },
+    async (request, reply) => {
+      const userId = request.session!.user.id
+
+      const [sub] = await fastify.db
+        .select({ planId: subscriptions.planId, cancelAtPeriodEnd: subscriptions.cancelAtPeriodEnd })
+        .from(subscriptions)
+        .where(eq(subscriptions.userId, userId))
+        .limit(1)
+
+      if (!sub) {
+        return reply.status(404).send({
+          error: { code: "NO_SUBSCRIPTION", message: "Nenhuma assinatura encontrada" },
+        })
+      }
+
+      if (!sub.cancelAtPeriodEnd) {
+        return reply.status(400).send({
+          error: { code: "NOT_CANCELED", message: "Assinatura não está cancelada" },
+        })
+      }
+
+      const now = new Date()
+      await fastify.db
+        .update(subscriptions)
+        .set({ cancelAtPeriodEnd: false, updatedAt: now })
+        .where(eq(subscriptions.userId, userId))
+
+      return ok({ success: true, message: "Assinatura reativada", planId: sub.planId })
+    }
+  )
+
   // POST /checkout — create MercadoPago preference and return checkout URL
   fastify.withTypeProvider<ZodTypeProvider>().post(
     "/checkout",

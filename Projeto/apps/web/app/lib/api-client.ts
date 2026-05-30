@@ -237,6 +237,11 @@ export const subscriptionApi = {
       "/subscription/cancel",
       { method: "POST" }
     ),
+  reactivate: () =>
+    request<{ success: boolean; message: string; planId: string }>(
+      "/subscription/reactivate",
+      { method: "POST" }
+    ),
   checkout: (body: { planId: string }) =>
     request<import("~shared/contracts").CheckoutResponse>(
       "/subscription/checkout",
