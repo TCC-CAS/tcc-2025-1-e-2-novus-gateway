@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { SignUpRequestSchema, type SignUpRequest } from "~shared/contracts";
+import { PLAYER_SEXES, SignUpRequestSchema, type PlayerSex, type SignUpRequest } from "~shared/contracts";
 import { authApi } from "~/lib/api-client";
 import { useAuth } from "~/lib/auth/auth-context";
 import { ApiError } from "~/lib/api-client";
@@ -11,6 +11,13 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Field, FieldGroup, FieldSet } from "~/components/ui/field";
 import { Label } from "~/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { cn } from "~/lib/utils";
 import { Users, User } from "lucide-react";
 
@@ -42,6 +49,12 @@ const ROLES: {
   },
 ];
 
+const PLAYER_SEX_LABELS: Record<PlayerSex, string> = {
+  male: "MASCULINO",
+  female: "FEMININO",
+  rather_not_say: "PREFIRO NÃO DIZER",
+};
+
 export default function Cadastro() {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -55,6 +68,7 @@ export default function Cadastro() {
       password: "",
       confirmPassword: "",
       role: "player",
+      sex: undefined,
       cpf: "",
       teamName: "",
     },
@@ -70,6 +84,7 @@ export default function Cadastro() {
         email: data.email,
         password: data.password,
         role: data.role,
+        sex: data.role === "player" ? data.sex : undefined,
         cpf: data.cpf,
         teamName: data.teamName,
       });
@@ -219,49 +234,55 @@ export default function Cadastro() {
                   </Field>
 
                   {role !== "team" ? (
-                    <Field className="space-y-2 md:col-span-2">
-                      <Label
-                        htmlFor="name"
-                        className="font-display text-xl tracking-wide"
-                      >
-                        NOME COMPLETO
-                      </Label>
-                      <Input
-                        id="name"
-                        autoComplete="name"
-                        disabled={isSubmitting}
-                        placeholder="Seu nome completo"
-                        className="h-14 rounded-none border-2 border-foreground bg-muted/50 px-4 text-lg focus-visible:ring-0 focus-visible:border-primary transition-colors uppercase"
-                        {...form.register("name")}
-                      />
-                      {form.formState.errors.name && (
-                        <p className="font-bold tracking-wide text-destructive text-sm mt-1">
-                          {form.formState.errors.name.message}
-                        </p>
-                      )}
-                    </Field>
-                  ) : (
                     <>
                       <Field className="space-y-2 md:col-span-2">
                         <Label
-                          htmlFor="teamName"
+                          htmlFor="name"
                           className="font-display text-xl tracking-wide"
                         >
-                          NOME DO TIME
+                          NOME COMPLETO
                         </Label>
                         <Input
-                          id="teamName"
+                          id="name"
+                          autoComplete="name"
                           disabled={isSubmitting}
-                          placeholder="Nome do seu time"
+                          placeholder="Seu nome completo"
                           className="h-14 rounded-none border-2 border-foreground bg-muted/50 px-4 text-lg focus-visible:ring-0 focus-visible:border-primary transition-colors uppercase"
-                          {...form.register("teamName")}
+                          {...form.register("name")}
                         />
-                        {form.formState.errors.teamName && (
+                        {form.formState.errors.name && (
                           <p className="font-bold tracking-wide text-destructive text-sm mt-1">
-                            {form.formState.errors.teamName.message}
+                            {form.formState.errors.name.message}
                           </p>
                         )}
                       </Field>
+
+                      <Field className="space-y-2 md:col-span-2">
+                        <Label className="font-display text-xl tracking-wide">
+                          SEXO
+                        </Label>
+                        <Select
+                          value={form.watch("sex") ?? ""}
+                          onValueChange={(value) =>
+                            form.setValue("sex", value as PlayerSex, { shouldValidate: true })
+                          }
+                          disabled={isSubmitting}
+                        >
+                          <SelectTrigger className="h-14 rounded-none border-2 border-foreground bg-muted/50 px-4 text-lg uppercase font-bold tracking-widest focus:ring-0 focus:border-primary transition-colors">
+                            <SelectValue placeholder="SELECIONE" />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-none border-2 border-foreground">
+                            {PLAYER_SEXES.map((sex) => (
+                              <SelectItem key={sex} value={sex} className="font-bold tracking-widest uppercase text-xs">
+                                {PLAYER_SEX_LABELS[sex]}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </Field>
+                    </>
+                  ) : (
+                    <>
                       <Field className="space-y-2 md:col-span-2">
                         <Label
                           htmlFor="name"
@@ -280,6 +301,26 @@ export default function Cadastro() {
                         {form.formState.errors.name && (
                           <p className="font-bold tracking-wide text-destructive text-sm mt-1">
                             {form.formState.errors.name.message}
+                          </p>
+                        )}
+                      </Field>
+                      <Field className="space-y-2 md:col-span-2">
+                        <Label
+                          htmlFor="teamName"
+                          className="font-display text-xl tracking-wide"
+                        >
+                          NOME DO TIME
+                        </Label>
+                        <Input
+                          id="teamName"
+                          disabled={isSubmitting}
+                          placeholder="Nome do seu time"
+                          className="h-14 rounded-none border-2 border-foreground bg-muted/50 px-4 text-lg focus-visible:ring-0 focus-visible:border-primary transition-colors uppercase"
+                          {...form.register("teamName")}
+                        />
+                        {form.formState.errors.teamName && (
+                          <p className="font-bold tracking-wide text-destructive text-sm mt-1">
+                            {form.formState.errors.teamName.message}
                           </p>
                         )}
                       </Field>
@@ -363,7 +404,7 @@ export default function Cadastro() {
               disabled={isSubmitting}
               className="mt-8 h-auto w-full rounded-none border-2 border-primary bg-primary py-5 font-display text-2xl tracking-widest text-primary-foreground transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_var(--color-foreground)] dark:hover:shadow-[4px_4px_0px_0px_var(--color-foreground)]"
             >
-              {isSubmitting ? "CADASTRANDO..." : "CADASTRAR PASSE"}
+              {isSubmitting ? "CADASTRANDO..." : "CADASTRAR"}
             </Button>
           </form>
 

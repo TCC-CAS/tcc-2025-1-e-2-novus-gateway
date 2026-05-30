@@ -167,6 +167,42 @@ describe("Search routes", () => {
         expect(player.level).toBe("amador")
       }
     })
+
+    it("SRCH-01j: filters male player results including trans male and excluding female groups", async () => {
+      const male = await signUpAndGetCookie(app, "player")
+      await upsertPlayerProfile(app, male.sessionCookie, {
+        name: "Male Player Filter Test",
+        sex: "male",
+      })
+
+      const ratherNotSay = await signUpAndGetCookie(app, "player")
+      await upsertPlayerProfile(app, ratherNotSay.sessionCookie, {
+        name: "Rather Not Say Player Filter Test",
+        sex: "rather_not_say",
+      })
+
+      const female = await signUpAndGetCookie(app, "player")
+      await upsertPlayerProfile(app, female.sessionCookie, {
+        name: "Female Player Filter Test",
+        sex: "female",
+      })
+
+      const res = await app.inject({
+        method: "GET",
+        url: "/api/search/players",
+        headers: { cookie: teamCookie },
+        query: { sex: "male" },
+      })
+      expect(res.statusCode).toBe(200)
+      const body = res.json()
+      const names = body.data.map((player: { name: string }) => player.name)
+      expect(names).toContain("Male Player Filter Test")
+      expect(names).toContain("Rather Not Say Player Filter Test")
+      expect(names).not.toContain("Female Player Filter Test")
+      for (const player of body.data) {
+        expect(["male", "rather_not_say"]).toContain(player.sex)
+      }
+    })
   })
 
   // SRCH-02: GET /api/search/teams — players search for teams
@@ -227,6 +263,35 @@ describe("Search routes", () => {
         headers: { cookie: teamCookie },
       })
       expect(res.statusCode).toBe(200)
+    })
+
+    it("SRCH-02f: filters teams by lineupSex", async () => {
+      const maleTeam = await signUpAndGetCookie(app, "team")
+      await upsertTeamProfile(app, maleTeam.sessionCookie, {
+        name: "Male Lineup Team Filter Test",
+        lineupSex: "male",
+      })
+
+      const femaleTeam = await signUpAndGetCookie(app, "team")
+      await upsertTeamProfile(app, femaleTeam.sessionCookie, {
+        name: "Female Lineup Team Filter Test",
+        lineupSex: "female",
+      })
+
+      const res = await app.inject({
+        method: "GET",
+        url: "/api/search/teams",
+        headers: { cookie: playerCookie },
+        query: { lineupSex: "female" },
+      })
+      expect(res.statusCode).toBe(200)
+      const body = res.json()
+      const names = body.data.map((team: { name: string }) => team.name)
+      expect(names).toContain("Female Lineup Team Filter Test")
+      expect(names).not.toContain("Male Lineup Team Filter Test")
+      for (const team of body.data) {
+        expect(team.lineupSex).toBe("female")
+      }
     })
   })
 

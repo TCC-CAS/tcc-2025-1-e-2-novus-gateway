@@ -4,8 +4,8 @@ import { Link } from "react-router"
 import { useQuery } from "@tanstack/react-query"
 import { publicApi, searchApi, playersApi, type PublicTeam } from "~/lib/api-client"
 import { useAuth } from "~/lib/auth/auth-context"
-import { TEAM_LEVELS, POSITIONS } from "~shared/contracts"
-import type { TeamSummary } from "~shared/contracts"
+import { TEAM_LEVELS, POSITIONS, TEAM_LINEUP_SEXES } from "~shared/contracts"
+import type { TeamLineupSex, TeamSummary } from "~shared/contracts"
 import { Button } from "~/components/ui/button"
 import { Input } from "~/components/ui/input"
 import {
@@ -37,6 +37,7 @@ export function meta() {
 type CardTeam = {
   id: string
   name: string
+  lineupSex?: string
   logoUrl?: string | null
   level: string
   region?: string | null
@@ -132,6 +133,7 @@ export default function TimesPublicos() {
 
   // Shared
   const [region, setRegion] = useState("")
+  const [lineupSex, setLineupSex] = useState<TeamLineupSex | undefined>(undefined)
   const [page, setPage] = useState(1)
 
   // Player filters (only shown/used when canSearch)
@@ -140,6 +142,7 @@ export default function TimesPublicos() {
 
   // Public filter (submit-based)
   const [regionFilter, setRegionFilter] = useState("")
+  const [lineupSexFilter, setLineupSexFilter] = useState<TeamLineupSex | undefined>(undefined)
 
   // Auto-fill position from player profile when role === "player"
   const { data: myProfile } = useQuery({
@@ -160,8 +163,8 @@ export default function TimesPublicos() {
   // Public query (team, admin, unauthenticated)                        //
   // ---------------------------------------------------------------- //
   const { data: publicData, isLoading: publicLoading } = useQuery({
-    queryKey: ["public", "teams", { page, region: regionFilter }],
-    queryFn: () => publicApi.teams({ page, pageSize: 12, region: regionFilter || undefined }),
+    queryKey: ["public", "teams", { page, region: regionFilter, lineupSex: lineupSexFilter }],
+    queryFn: () => publicApi.teams({ page, pageSize: 12, region: regionFilter || undefined, lineupSex: lineupSexFilter }),
     enabled: !canSearch,
     staleTime: 1000 * 60 * 5,
     retry: false,
@@ -171,13 +174,14 @@ export default function TimesPublicos() {
   // Player search query (full filters)                                 //
   // ---------------------------------------------------------------- //
   const { data: searchData, isLoading: searchLoading } = useQuery({
-    queryKey: ["search", "teams", { level, region, openPosition, page }],
+    queryKey: ["search", "teams", { level, region, lineupSex, openPosition, page }],
     queryFn: () =>
       searchApi.teams({
         page,
         pageSize: 12,
         order: "asc",
         level: level as "amador" | "recreativo" | "semi-profissional" | "outro" | undefined,
+        lineupSex,
         region: region || undefined,
         openPosition: openPosition || undefined,
       }),
@@ -193,12 +197,15 @@ export default function TimesPublicos() {
   function handlePublicSearch(e: React.FormEvent) {
     e.preventDefault()
     setRegionFilter(region)
+    setLineupSexFilter(lineupSex)
     setPage(1)
   }
 
   function resetFilters() {
     setRegion("")
     setRegionFilter("")
+    setLineupSex(undefined)
+    setLineupSexFilter(undefined)
     setLevel(undefined)
     setOpenPosition(undefined)
     setPage(1)
@@ -252,6 +259,19 @@ export default function TimesPublicos() {
                   onChange={(e) => { setRegion(e.target.value); setPage(1) }}
                   className="w-[130px] h-10 rounded-none border-2 border-foreground bg-muted/50 font-bold tracking-widest text-xs uppercase focus:ring-0 focus-visible:ring-0 focus:border-primary placeholder:normal-case"
                 />
+                <Select value={lineupSex ?? "all"} onValueChange={(v) => { setLineupSex(v === "all" ? undefined : (v as TeamLineupSex)); setPage(1) }}>
+                  <SelectTrigger className="w-[150px] h-10 rounded-none border-2 border-foreground bg-muted/50 font-bold tracking-widest text-xs uppercase focus:ring-0 focus:border-primary">
+                    <SelectValue placeholder="ELENCO" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-none border-4 border-foreground">
+                    <SelectItem value="all" className="font-bold tracking-widest uppercase text-xs">TODOS</SelectItem>
+                    {TEAM_LINEUP_SEXES.map((value) => (
+                      <SelectItem key={value} value={value} className="font-bold tracking-widest uppercase text-xs">
+                        {value === "male" ? "MASCULINO" : "FEMININO"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <Select value={openPosition ?? "all"} onValueChange={(v) => { setOpenPosition(v === "all" ? undefined : v); setPage(1) }}>
                   <SelectTrigger className="w-[160px] h-10 rounded-none border-2 border-foreground bg-muted/50 font-bold tracking-widest text-xs uppercase focus:ring-0 focus:border-primary">
                     <SelectValue placeholder="POSIÇÃO ABERTA" />
@@ -263,7 +283,7 @@ export default function TimesPublicos() {
                     ))}
                   </SelectContent>
                 </Select>
-                {(level || region || openPosition) && (
+                {(level || region || lineupSex || openPosition) && (
                   <Button type="button" variant="outline" size="sm" className="rounded-none border-2 border-foreground font-display text-xs tracking-widest uppercase h-10 hover:bg-muted" onClick={resetFilters}>
                     LIMPAR
                   </Button>
@@ -277,11 +297,24 @@ export default function TimesPublicos() {
                   onChange={(e) => setRegion(e.target.value)}
                   className="max-w-sm rounded-none border-2 border-foreground font-display tracking-wide focus-visible:ring-0 focus-visible:border-primary transition-colors"
                 />
+                <Select value={lineupSex ?? "all"} onValueChange={(v) => setLineupSex(v === "all" ? undefined : (v as TeamLineupSex))}>
+                  <SelectTrigger className="w-[160px] rounded-none border-2 border-foreground font-display tracking-wide focus:ring-0 focus:border-primary">
+                    <SelectValue placeholder="Elenco" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-none border-4 border-foreground">
+                    <SelectItem value="all" className="font-bold tracking-widest uppercase text-xs">TODOS</SelectItem>
+                    {TEAM_LINEUP_SEXES.map((value) => (
+                      <SelectItem key={value} value={value} className="font-bold tracking-widest uppercase text-xs">
+                        {value === "male" ? "MASCULINO" : "FEMININO"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <Button type="submit" className="rounded-none border-2 border-foreground bg-foreground px-5 font-display tracking-widest text-background transition-all hover:bg-primary hover:border-primary hover:-translate-y-0.5">
                   <SearchIcon className="size-4 mr-2" />
                   BUSCAR
                 </Button>
-                {regionFilter && (
+                {(regionFilter || lineupSexFilter) && (
                   <Button type="button" variant="outline" className="rounded-none border-2 border-foreground font-display text-sm tracking-widest hover:bg-muted" onClick={resetFilters}>
                     LIMPAR
                   </Button>

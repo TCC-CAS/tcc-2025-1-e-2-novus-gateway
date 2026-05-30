@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PlayerSexSchema } from "./players.js";
 
 export const RoleSchema = z.enum(["player", "team", "admin"]);
 export type Role = z.infer<typeof RoleSchema>;
@@ -39,6 +40,7 @@ export const SignUpRequestSchema = z
     password: PasswordSchema,
     confirmPassword: z.string(),
     role: RoleSchema,
+    sex: PlayerSexSchema.optional(),
     cpf: z.string().regex(/^\d{11}$/, "CPF deve ter 11 dígitos sem pontuação"),
     teamName: z.string().min(2, "Nome do time deve ter pelo menos 2 caracteres").or(z.literal("")).optional(),
   })

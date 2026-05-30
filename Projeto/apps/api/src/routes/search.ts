@@ -24,7 +24,7 @@ const searchRoutes: FastifyPluginAsync = async (fastify) => {
     async (request, reply) => {
       const userId = request.session!.user.id
       const role = request.session!.user.role
-      const { page = 1, pageSize = 10, name, position, skills, region, availability, level, minAge, maxAge } = request.query as z.infer<typeof SearchPlayersQuerySchema>
+      const { page = 1, pageSize = 10, name, position, skills, region, availability, level, sex, minAge, maxAge } = request.query as z.infer<typeof SearchPlayersQuerySchema>
 
       // Plan limit resolution
       const sub = await fastify.db.query.subscriptions.findFirst({
@@ -86,6 +86,13 @@ const searchRoutes: FastifyPluginAsync = async (fastify) => {
       // Level filter: exact match
       if (level) {
         filters.push(eq(players.level, level) as unknown as ReturnType<typeof sql>)
+      }
+
+      // Sex filter: binary customer-facing filter includes trans identities and rather_not_say in matching groups
+      if (sex === "male") {
+        filters.push(sql`${players.sex} IN ('male', 'rather_not_say')` as unknown as ReturnType<typeof sql>)
+      } else if (sex === "female") {
+        filters.push(sql`${players.sex} IN ('female', 'rather_not_say')` as unknown as ReturnType<typeof sql>)
       }
 
       // Age filters (D-05): birthDate is stored as text, cast to date
@@ -160,7 +167,7 @@ const searchRoutes: FastifyPluginAsync = async (fastify) => {
     async (request, reply) => {
       const userId = request.session!.user.id
       const role = request.session!.user.role
-      const { page = 1, pageSize = 10, name, level, region, openPosition } = request.query as z.infer<typeof SearchTeamsQuerySchema>
+      const { page = 1, pageSize = 10, name, level, lineupSex, region, openPosition } = request.query as z.infer<typeof SearchTeamsQuerySchema>
 
       // Plan limit resolution
       const sub = await fastify.db.query.subscriptions.findFirst({
@@ -197,6 +204,10 @@ const searchRoutes: FastifyPluginAsync = async (fastify) => {
       // Level filter: enum — exact match
       if (level) {
         filters.push(eq(teams.level, level) as unknown as ReturnType<typeof sql>)
+      }
+
+      if (lineupSex) {
+        filters.push(eq(teams.lineupSex, lineupSex) as unknown as ReturnType<typeof sql>)
       }
 
       // Region filter (D-04): case-insensitive exact match
@@ -267,10 +278,11 @@ const searchRoutes: FastifyPluginAsync = async (fastify) => {
     "/community-players",
     { preHandler: [requireSession] },
     async (request, reply) => {
-      const { position, region, level, page = "1" } = request.query as {
+      const { position, region, level, sex, page = "1" } = request.query as {
         position?: string
         region?: string
         level?: string
+        sex?: "male" | "female"
         page?: string
       }
 
@@ -301,12 +313,18 @@ const searchRoutes: FastifyPluginAsync = async (fastify) => {
       if (level) {
         conditions.push(eq(players.level, level))
       }
+      if (sex === "male") {
+        conditions.push(sql`${players.sex} IN ('male', 'rather_not_say')` as unknown as SQL)
+      } else if (sex === "female") {
+        conditions.push(sql`${players.sex} IN ('female', 'rather_not_say')` as unknown as SQL)
+      }
 
       const [rows, [countRow]] = await Promise.all([
         fastify.db
           .select({
             id: players.id,
             name: players.name,
+            sex: players.sex,
             photoUrl: players.photoUrl,
             positions: players.positions,
             level: players.level,

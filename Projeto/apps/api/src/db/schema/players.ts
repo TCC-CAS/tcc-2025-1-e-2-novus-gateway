@@ -1,11 +1,12 @@
 import { pgTable, text, timestamp, integer, boolean, json } from "drizzle-orm/pg-core"
 import type { CareerEntry, DetailedStats } from "../../../../../shared/contracts/players.js"
-import { users } from "./users.js"
+import { playerSexEnum, users } from "./users.js"
 
 export const players = pgTable("players", {
   id: text("id").primaryKey(),
   userId: text("user_id").notNull().references(() => users.id).unique(),
   name: text("name").notNull(),
+  sex: playerSexEnum("sex").notNull().default("rather_not_say"),
   photoUrl: text("photo_url"),
   positions: text("positions").array().notNull().default([]),
   bio: text("bio"),

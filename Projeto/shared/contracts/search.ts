@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { PaginationQuerySchema, PaginationMetaSchema } from "./common.js";
-import { PlayerSummarySchema, PositionSchema, PlayerLevelSchema } from "./players.js";
-import { TeamSummarySchema, TeamLevelSchema } from "./teams.js";
+import { PlayerSummarySchema, PositionSchema, PlayerLevelSchema, SexFilterSchema } from "./players.js";
+import { TeamSummarySchema, TeamLevelSchema, TeamLineupSexSchema } from "./teams.js";
 
 /** Search players query (teams use this) */
 export const SearchPlayersQuerySchema = PaginationQuerySchema.extend({
@@ -11,6 +11,7 @@ export const SearchPlayersQuerySchema = PaginationQuerySchema.extend({
   region: z.string().optional(),
   availability: z.string().optional(),
   level: PlayerLevelSchema.optional(),
+  sex: SexFilterSchema.optional(),
   minAge: z.coerce.number().int().optional(),
   maxAge: z.coerce.number().int().optional(),
 });
@@ -27,6 +28,7 @@ export type SearchPlayersResponse = z.infer<typeof SearchPlayersResponseSchema>;
 export const SearchTeamsQuerySchema = PaginationQuerySchema.extend({
   name: z.string().optional(),
   level: TeamLevelSchema.optional(),
+  lineupSex: TeamLineupSexSchema.optional(),
   region: z.string().optional(),
   openPosition: z.string().optional(),
 });

@@ -68,7 +68,7 @@ export const authApi = {
       "/auth/sign-in/email",
       { method: "POST", body: JSON.stringify(body) }
     ),
-  signUp: (body: { name: string; email: string; password: string; role: string; cpf?: string; teamName?: string }) =>
+  signUp: (body: { name: string; email: string; password: string; role: string; cpf?: string; sex?: string; teamName?: string }) =>
     request<{ user: BetterAuthUser; token?: string }>(
       "/auth/sign-up/email",
       { method: "POST", body: JSON.stringify(body) }
@@ -114,6 +114,7 @@ export const playersApi = {
 export type RosterMember = {
   id: string
   name: string
+  sex: string
   photoUrl: string | null
   positions: string[]
   region: string | null
@@ -161,12 +162,14 @@ export const searchApi = {
     position?: string
     region?: string
     level?: string
+    sex?: string
     page?: number
   }) =>
     request<{
       data: Array<{
         id: string
         name: string
+        sex: string
         photoUrl: string | null
         positions: string[]
         level: string | null
@@ -429,6 +432,7 @@ export const connectionsApi = {
 export type ShowcasePlayer = {
   id: string
   name: string
+  sex: string
   photoUrl: string | null
   positions: string[]
   level: string | null
@@ -439,6 +443,7 @@ export type ShowcasePlayer = {
 export type ShowcaseTeam = {
   id: string
   name: string
+  lineupSex?: string
   logoUrl: string | null
   level: string
   region: string | null
@@ -450,12 +455,12 @@ export type PublicTeam = ShowcaseTeam & { openPositions: string[] }
 export const publicApi = {
   showcase: () =>
     request<ShowcaseResponse>("/public/showcase"),
-  teams: (params?: { page?: number; pageSize?: number; region?: string }) =>
+  teams: (params?: { page?: number; pageSize?: number; region?: string; lineupSex?: string }) =>
     request<{ data: PublicTeam[]; meta: { page: number; pageSize: number; total: number; totalPages: number } }>(
       "/public/teams",
       { params: params as Record<string, string | number | undefined> }
     ),
-  players: (params?: { page?: number; pageSize?: number; region?: string }) =>
+  players: (params?: { page?: number; pageSize?: number; region?: string; sex?: string }) =>
     request<{ data: ShowcasePlayer[]; meta: { page: number; pageSize: number; total: number; totalPages: number } }>(
       "/public/players",
       { params: params as Record<string, string | number | undefined> }
