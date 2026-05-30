@@ -1,7 +1,7 @@
 import type { FastifyPluginAsync } from "fastify"
 import { ZodTypeProvider } from "fastify-type-provider-zod"
 import { z } from "zod"
-import { and, eq, ne, ilike, desc, sql, count, inArray } from "drizzle-orm"
+import { and, eq, ne, ilike, desc, sql, count } from "drizzle-orm"
 import type { SQL } from "drizzle-orm"
 import { requireRole, requireSession } from "../hooks/require-auth.js"
 import { list } from "../lib/response.js"
@@ -14,17 +14,17 @@ import type { PlanId } from "../../../../shared/contracts/subscription.js"
 import { buildProximityScore, getRegionsInSameMacro } from "../lib/geo.js"
 
 const searchRoutes: FastifyPluginAsync = async (fastify) => {
-  // GET /players — authenticated team users search for players
+  // GET /players — any authenticated user can search players
   fastify.withTypeProvider<ZodTypeProvider>().get(
     "/players",
     {
-      preHandler: [requireRole("team")],
+      preHandler: [requireSession],
       schema: { querystring: SearchPlayersQuerySchema },
     },
     async (request, reply) => {
       const userId = request.session!.user.id
       const role = request.session!.user.role
-      const { page = 1, pageSize = 10, position, skills, region, availability, level, minAge, maxAge } = request.query as z.infer<typeof SearchPlayersQuerySchema>
+      const { page = 1, pageSize = 10, name, position, skills, region, availability, level, minAge, maxAge } = request.query as z.infer<typeof SearchPlayersQuerySchema>
 
       // Plan limit resolution
       const sub = await fastify.db.query.subscriptions.findFirst({
@@ -52,6 +52,11 @@ const searchRoutes: FastifyPluginAsync = async (fastify) => {
 
       // Exclude hidden profiles (removed by moderation)
       filters.push(sql`${players.hidden} = false` as unknown as ReturnType<typeof sql>)
+
+      // Name filter: case-insensitive partial match
+      if (name) {
+        filters.push(ilike(players.name, `%${name}%`) as unknown as ReturnType<typeof sql>)
+      }
 
       // Position filter: array containment — player positions must include the requested position
       if (position) {
@@ -108,35 +113,32 @@ const searchRoutes: FastifyPluginAsync = async (fastify) => {
         viewerRegion, viewerCity, sameRegions
       )
 
+      // Premium tier boost: fenomeno=300, craque=200, free=0
+      // Paid users always surface before free users within the same proximity band
+      const tierBoost = sql<number>`CASE COALESCE(${subscriptions.planId}, 'free')
+        WHEN 'fenomeno' THEN 300
+        WHEN 'craque'   THEN 200
+        ELSE 0
+      END`
+
       const rows = await fastify.db
-        .select()
+        .select({ player: players, planId: subscriptions.planId })
         .from(players)
+        .leftJoin(subscriptions, eq(subscriptions.userId, players.userId))
         .where(whereClause)
         .orderBy(
+          sql`(${tierBoost}) DESC`,
           ...(proximityExpr ? [sql`(${proximityExpr}) DESC` as ReturnType<typeof sql>] : []),
           desc(players.updatedAt)
         )
         .limit(effectivePageSize)
         .offset((page - 1) * effectivePageSize)
 
-      // Bulk-fetch player subscriptions to avoid N+1
-      let playerPlanMap: Record<string, PlanId> = {}
-      const playerUserIds = rows.map((p) => p.userId)
-      if (playerUserIds.length > 0) {
-        const playerSubs = await fastify.db
-          .select({ userId: subscriptions.userId, planId: subscriptions.planId })
-          .from(subscriptions)
-          .where(inArray(subscriptions.userId, playerUserIds))
-        for (const s of playerSubs) {
-          playerPlanMap[s.userId] = s.planId as PlanId
-        }
-      }
-
-      const data = rows.map((p) => {
-        const playerPlanId = playerPlanMap[p.userId] ?? "free"
+      const data = rows.map(({ player: p, planId }) => {
+        const playerPlanId = (planId ?? "free") as PlanId
         return {
           ...p,
-          cardTier: (playerPlanId === "craque" ? "gold" : playerPlanId === "fenomeno" ? "legendary" : "none") as "none" | "gold" | "legendary",
+          cardTier: (playerPlanId === "fenomeno" ? "legendary" : playerPlanId === "craque" ? "gold" : "none") as "none" | "gold" | "legendary",
           careerHistory: p.careerHistory ?? [],
           detailedStats: p.detailedStats ?? null,
           createdAt: p.createdAt.toISOString(),
@@ -148,17 +150,17 @@ const searchRoutes: FastifyPluginAsync = async (fastify) => {
     }
   )
 
-  // GET /teams — authenticated player users search for teams
+  // GET /teams — any authenticated user can search teams
   fastify.withTypeProvider<ZodTypeProvider>().get(
     "/teams",
     {
-      preHandler: [requireRole("player")],
+      preHandler: [requireSession],
       schema: { querystring: SearchTeamsQuerySchema },
     },
     async (request, reply) => {
       const userId = request.session!.user.id
       const role = request.session!.user.role
-      const { page = 1, pageSize = 10, level, region, openPosition } = request.query as z.infer<typeof SearchTeamsQuerySchema>
+      const { page = 1, pageSize = 10, name, level, region, openPosition } = request.query as z.infer<typeof SearchTeamsQuerySchema>
 
       // Plan limit resolution
       const sub = await fastify.db.query.subscriptions.findFirst({
@@ -186,6 +188,11 @@ const searchRoutes: FastifyPluginAsync = async (fastify) => {
 
       // Exclude hidden profiles (removed by moderation)
       filters.push(sql`${teams.hidden} = false` as unknown as ReturnType<typeof sql>)
+
+      // Name filter: case-insensitive partial match
+      if (name) {
+        filters.push(ilike(teams.name, `%${name}%`) as unknown as ReturnType<typeof sql>)
+      }
 
       // Level filter: enum — exact match
       if (level) {
@@ -225,11 +232,19 @@ const searchRoutes: FastifyPluginAsync = async (fastify) => {
         ELSE                          0
       END`
 
+      // Premium tier boost for teams: profissional=300, free=0
+      const teamTierBoost = sql<number>`CASE COALESCE(${subscriptions.planId}, 'free')
+        WHEN 'profissional' THEN 300
+        ELSE 0
+      END`
+
       const rows = await fastify.db
-        .select()
+        .select({ team: teams, planId: subscriptions.planId })
         .from(teams)
+        .leftJoin(subscriptions, eq(subscriptions.userId, teams.userId))
         .where(whereClause)
         .orderBy(
+          sql`(${teamTierBoost}) DESC`,
           ...(proximityExpr ? [sql`(${proximityExpr}) DESC` as ReturnType<typeof sql>] : []),
           sql`(${levelWeight}) DESC`,
           desc(teams.updatedAt)
@@ -237,8 +252,9 @@ const searchRoutes: FastifyPluginAsync = async (fastify) => {
         .limit(effectivePageSize)
         .offset((page - 1) * effectivePageSize)
 
-      const data = rows.map((t) => ({
+      const data = rows.map(({ team: t, planId }) => ({
         ...t,
+        cardTier: (planId === "profissional" ? "gold" : "none") as "none" | "gold" | "legendary",
         createdAt: t.createdAt.toISOString(),
         updatedAt: t.updatedAt.toISOString(),
       }))

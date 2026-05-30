@@ -15,6 +15,8 @@ export const teams = pgTable("teams", {
   description: text("description"),
   openPositions: text("open_positions").array().notNull().default([]),
   matchDays: text("match_days").array().default([]),
+  matchTime: text("match_time"),
+  whatsapp: text("whatsapp"),
   hidden: boolean("hidden").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

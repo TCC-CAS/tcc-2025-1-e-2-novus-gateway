@@ -22,6 +22,8 @@ export const TeamProfileSchema = z.object({
   description: z.string().optional(),
   openPositions: z.array(z.string()),
   matchDays: z.array(z.string()).optional(),
+  matchTime: z.string().optional(),
+  whatsapp: z.string().optional(),
   cardTier: z.enum(["none", "gold", "legendary"]).optional(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
@@ -50,6 +52,8 @@ export const UpsertTeamProfileRequestSchema = z.object({
   description: z.string().optional(),
   openPositions: z.array(z.string()),
   matchDays: z.array(z.string()).optional(),
+  matchTime: z.string().optional(),
+  whatsapp: z.string().optional(),
 });
 export type UpsertTeamProfileRequest = z.infer<
   typeof UpsertTeamProfileRequestSchema

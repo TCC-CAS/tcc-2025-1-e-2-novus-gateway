@@ -45,6 +45,7 @@ export default [
       route("moderation", "routes/admin/moderation.tsx"),
     ]),
     route("configuracoes", "routes/configuracoes.tsx"),
+    route("buscar", "routes/buscar.tsx"),
   ]),
   route("*", "routes/404.tsx"),
 ] satisfies RouteConfig;

@@ -212,7 +212,10 @@ export default function TimeHome() {
             )}
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">Nenhum jogo agendado. <a href="/time/perfil/editar" className="underline font-bold">Agendar agora →</a></p>
+          <p className="text-sm text-muted-foreground">
+            Nenhum jogo agendado.{" "}
+            <Link to="/time/jogos" className="underline font-bold">Agendar agora →</Link>
+          </p>
         )}
       </div>
 

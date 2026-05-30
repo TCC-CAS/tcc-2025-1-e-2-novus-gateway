@@ -8,7 +8,7 @@ import { ConnectionButton } from "~/components/connection-button"
 import { canSearchTeams } from "~/lib/auth"
 import { OptimizedImage } from "~/components/optimized-image"
 import { Button } from "~/components/ui/button"
-import { MessageCircle, Shield, MapPin, Trophy, Search, Calendar, Heart, User, Users, ArrowLeft, Star } from "lucide-react"
+import { MessageCircle, Shield, MapPin, Trophy, Search, Calendar, Heart, User, Users, ArrowLeft, Star, Phone } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "~/lib/utils"
 
@@ -228,6 +228,17 @@ export default function TimePublicProfile() {
                       ENTRAR EM CONTATO
                     </Button>
                   )}
+                  {profile.whatsapp && isConnected && (
+                    <a
+                      href={`https://wa.me/55${profile.whatsapp.replace(/\D/g, "")}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-none border-2 border-[#25D366] bg-[#25D366] px-8 py-4 h-auto font-display text-lg tracking-widest text-white transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_var(--color-foreground)] flex items-center gap-2"
+                    >
+                      <Phone className="size-5" />
+                      WHATSAPP
+                    </a>
+                  )}
                   {user && !isOwnProfile && (
                     <ConnectionButton targetUserId={profile.userId} />
                   )}
@@ -317,6 +328,11 @@ export default function TimePublicProfile() {
                 ) : (
                   <p className="font-display text-sm tracking-widest text-muted-foreground uppercase border-2 border-dashed border-foreground/20 p-4 text-center">
                     Sem calendário fixo
+                  </p>
+                )}
+                {profile.matchTime && (
+                  <p className="mt-3 font-display text-sm tracking-widest text-muted-foreground uppercase">
+                    às <span className="text-foreground font-black">{profile.matchTime}</span>
                   </p>
                 )}
               </div>
@@ -443,7 +459,7 @@ export default function TimePublicProfile() {
           )}
 
           {/* MOBILE ACTIONS */}
-          {(canContact || (user && !isOwnProfile)) && (
+          {(canContact || (user && !isOwnProfile) || (!!profile.whatsapp && isConnected)) && (
             <div className="sm:hidden border-t-4 border-foreground bg-background px-4 py-4 space-y-3">
               {user && !isOwnProfile && (
                 <ConnectionButton targetUserId={profile.userId} className="w-full justify-center" />
@@ -459,6 +475,17 @@ export default function TimePublicProfile() {
                   <MessageCircle className="size-5" />
                   ENTRAR EM CONTATO
                 </Button>
+              )}
+              {profile.whatsapp && isConnected && (
+                <a
+                  href={`https://wa.me/55${profile.whatsapp.replace(/\D/g, "")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full h-14 rounded-none border-2 border-[#25D366] bg-[#25D366] font-display text-xl tracking-widest text-white transition-all uppercase gap-2 flex items-center justify-center"
+                >
+                  <Phone className="size-5" />
+                  WHATSAPP
+                </a>
               )}
               {user && !isOwnProfile && (
                 <Button

@@ -1,11 +1,11 @@
 import type { FastifyPluginAsync } from "fastify"
 import { ZodTypeProvider } from "fastify-type-provider-zod"
 import { z } from "zod"
-import { eq, and } from "drizzle-orm"
+import { eq, and, or } from "drizzle-orm"
 import { nanoid } from "nanoid"
 import { requireSession, requireRole } from "../hooks/require-auth.js"
 import { ok } from "../lib/response.js"
-import { teams, players, teamMembers, users } from "../db/schema/index.js"
+import { teams, players, teamMembers, users, connections } from "../db/schema/index.js"
 import { UpsertTeamProfileRequestSchema } from "../../../../shared/contracts/teams.js"
 
 const teamsRoutes: FastifyPluginAsync = async (fastify) => {
@@ -74,13 +74,15 @@ const teamsRoutes: FastifyPluginAsync = async (fastify) => {
     }
   )
 
-  // GET /:id — public (no auth required)
+  // GET /:id — public (no auth required); whatsapp gated by accepted connection
   fastify.withTypeProvider<ZodTypeProvider>().get(
     "/:id",
     {
       schema: { params: z.object({ id: z.string() }) },
     },
     async (request, reply) => {
+      const viewerUserId = request.session?.user.id
+
       const profile = await fastify.db.query.teams.findFirst({
         where: eq(teams.id, request.params.id),
       })
@@ -90,17 +92,41 @@ const teamsRoutes: FastifyPluginAsync = async (fastify) => {
         })
       }
 
-      const user = await fastify.db.query.users.findFirst({
+      const teamUser = await fastify.db.query.users.findFirst({
         where: eq(users.id, profile.userId),
         columns: { planId: true },
       })
 
-      const cardTier = (user?.planId === "fenomeno" ? "legendary"
-        : user?.planId === "craque" || user?.planId === "profissional" ? "gold"
+      const cardTier = (teamUser?.planId === "fenomeno" ? "legendary"
+        : teamUser?.planId === "craque" || teamUser?.planId === "profissional" ? "gold"
         : "none") as "none" | "gold" | "legendary"
+
+      const isOwn = viewerUserId === profile.userId
+
+      let exposedWhatsapp: string | null = null
+      if (isOwn) {
+        exposedWhatsapp = profile.whatsapp ?? null
+      } else if (viewerUserId) {
+        const acceptedConn = await fastify.db.query.connections.findFirst({
+          where: or(
+            and(
+              eq(connections.requesterId, viewerUserId),
+              eq(connections.receiverId, profile.userId),
+              eq(connections.status, "accepted")
+            ),
+            and(
+              eq(connections.requesterId, profile.userId),
+              eq(connections.receiverId, viewerUserId),
+              eq(connections.status, "accepted")
+            )
+          ),
+        })
+        exposedWhatsapp = acceptedConn ? (profile.whatsapp ?? null) : null
+      }
 
       return ok({
         ...profile,
+        whatsapp: exposedWhatsapp,
         cardTier,
         createdAt: profile.createdAt.toISOString(),
         updatedAt: profile.updatedAt.toISOString(),

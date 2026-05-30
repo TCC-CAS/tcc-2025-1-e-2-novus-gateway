@@ -106,19 +106,20 @@ const matchesRoutes: FastifyPluginAsync = async (fastify) => {
         return reply.status(404).send({ error: { code: "NOT_FOUND", message: "Perfil de time não encontrado" } })
       }
 
+      const emptyToNull = (v: string | undefined) => (v === "" || v == null ? null : v)
       const now = new Date()
       const [inserted] = await fastify.db
         .insert(matches)
         .values({
           id: nanoid(),
           teamId: team.id,
-          opponentName: body.opponentName,
+          opponentName: emptyToNull(body.opponentName),
           matchDate: body.matchDate,
-          matchTime: body.matchTime,
-          address: body.address,
-          venueName: body.venueName,
-          neighborhood: body.neighborhood,
-          city: body.city,
+          matchTime: emptyToNull(body.matchTime),
+          address: emptyToNull(body.address),
+          venueName: emptyToNull(body.venueName),
+          neighborhood: emptyToNull(body.neighborhood),
+          city: emptyToNull(body.city),
           status: "scheduled",
           createdAt: now,
           updatedAt: now,

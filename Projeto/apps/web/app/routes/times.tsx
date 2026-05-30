@@ -127,8 +127,8 @@ function TeamCard({ team }: { team: CardTeam }) {
 
 export default function TimesPublicos() {
   const { user, role } = useAuth()
-  // Only player role can call searchApi.teams (backend enforces requireRole("player"))
-  const canSearch = role === "player"
+  // Any authenticated user can use the full search endpoint
+  const canSearch = !!user
 
   // Shared
   const [region, setRegion] = useState("")
@@ -145,7 +145,7 @@ export default function TimesPublicos() {
   const { data: myProfile } = useQuery({
     queryKey: ["myPlayerProfile"],
     queryFn: () => playersApi.getMe(),
-    enabled: canSearch,
+    enabled: role === "player",
     staleTime: 1000 * 60 * 10,
     retry: false,
   })

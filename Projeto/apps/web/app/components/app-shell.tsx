@@ -1,8 +1,14 @@
 "use client"
 
+import { useLocation } from "react-router"
 import { GlobalHeader } from "~/components/global-header"
 
+const FULL_BLEED_ROUTES = ["/jogador/mensagens", "/time/mensagens"]
+
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const location = useLocation()
+  const fullBleed = FULL_BLEED_ROUTES.includes(location.pathname)
+
   return (
     <div className="flex min-h-dvh flex-col bg-background selection:bg-primary selection:text-primary-foreground relative overflow-x-hidden">
       {/* Decorative Global Noise */}
@@ -16,11 +22,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <GlobalHeader />
 
-      <main className="flex-1 pb-20 md:pb-0 relative z-10">
-        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6">
+      {fullBleed ? (
+        <main className="flex-1 relative z-10">
           {children}
-        </div>
-      </main>
+        </main>
+      ) : (
+        <main className="flex-1 pb-20 md:pb-0 relative z-10">
+          <div className="mx-auto w-full max-w-7xl px-4 sm:px-6">
+            {children}
+          </div>
+        </main>
+      )}
     </div>
   )
 }

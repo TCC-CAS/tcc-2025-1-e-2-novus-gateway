@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { Search, MessageCircle, Shield, User } from "lucide-react";
 import { GlobalHeader } from "~/components/global-header";
 import { Button } from "~/components/ui/button";
+import { PLAN_CONFIGS } from "~shared/contracts";
 
 export function meta() {
   return [
@@ -455,7 +456,7 @@ function PricingSection() {
               <h3 className="mt-2 font-display text-4xl text-foreground">CRAQUE</h3>
               <p className="mt-1">
                 <span className="font-display text-lg text-muted-foreground">R$</span>
-                <span className="font-display text-5xl text-primary">9,90</span>
+                <span className="font-display text-5xl text-primary">{PLAN_CONFIGS.craque.price.toFixed(2).replace(".", ",")}</span>
                 <span className="text-sm font-bold text-muted-foreground">/mês</span>
               </p>
               <ul className="mt-6 space-y-2 text-sm font-bold uppercase tracking-widest text-muted-foreground">
@@ -474,7 +475,7 @@ function PricingSection() {
               <h3 className="mt-2 font-display text-4xl text-foreground">FENÔMENO</h3>
               <p className="mt-1">
                 <span className="font-display text-lg text-muted-foreground">R$</span>
-                <span className="font-display text-5xl text-foreground">19,90</span>
+                <span className="font-display text-5xl text-foreground">{PLAN_CONFIGS.fenomeno.price.toFixed(2).replace(".", ",")}</span>
                 <span className="text-sm font-bold text-muted-foreground">/mês</span>
               </p>
               <ul className="mt-6 space-y-2 text-sm font-bold uppercase tracking-widest text-muted-foreground">
@@ -513,7 +514,7 @@ function PricingSection() {
               <h3 className="mt-2 font-display text-4xl text-foreground">PROFISSIONAL</h3>
               <p className="mt-1">
                 <span className="font-display text-lg text-muted-foreground">R$</span>
-                <span className="font-display text-5xl text-primary">49,90</span>
+                <span className="font-display text-5xl text-primary">{PLAN_CONFIGS.profissional.price.toFixed(2).replace(".", ",")}</span>
                 <span className="text-sm font-bold text-muted-foreground">/mês</span>
               </p>
               <ul className="mt-6 space-y-2 text-sm font-bold uppercase tracking-widest text-muted-foreground">

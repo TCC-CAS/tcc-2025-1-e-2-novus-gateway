@@ -153,8 +153,8 @@ function PlayerCard({ player }: { player: CardPlayer }) {
 
 export default function JogadoresPublicos() {
   const { user, role } = useAuth()
-  // Only team role can call searchApi.players (backend enforces requireRole("team"))
-  const canSearch = role === "team"
+  // Any authenticated user can use the full search endpoint
+  const canSearch = !!user
 
   // Shared filters
   const [region, setRegion] = useState("")
@@ -210,11 +210,11 @@ export default function JogadoresPublicos() {
   const visiblePlayers = useMemo<CardPlayer[]>(() => {
     if (!rawData) return []
     const players = rawData.data as CardPlayer[]
-    if (canSearch && isLimited) return players.slice(0, searchLimit)
+    if (role === "team" && isLimited) return players.slice(0, searchLimit)
     return players
-  }, [rawData, canSearch, isLimited, searchLimit])
+  }, [rawData, role, isLimited, searchLimit])
 
-  const hiddenCount = canSearch ? (rawData?.data.length ?? 0) - visiblePlayers.length : 0
+  const hiddenCount = role === "team" ? (rawData?.data.length ?? 0) - visiblePlayers.length : 0
 
   function handlePublicSearch(e: React.FormEvent) {
     e.preventDefault()

@@ -338,7 +338,7 @@ export default function Cadastro() {
                       htmlFor="confirmPassword"
                       className="font-display text-xl tracking-wide"
                     >
-                      CONFIMAR
+                      CONFIRMAR
                     </Label>
                     <Input
                       id="confirmPassword"

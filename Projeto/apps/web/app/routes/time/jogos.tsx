@@ -194,6 +194,7 @@ function CreateMatchForm({ onClose }: { onClose: () => void }) {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const queryClient = useQueryClient()
+  const today = new Date().toISOString().split("T")[0]
 
   async function onSubmit(data: CreateMatchRequest) {
     setIsSubmitting(true)
@@ -217,31 +218,37 @@ function CreateMatchForm({ onClose }: { onClose: () => void }) {
         <div>
           <Label className="font-display text-xs tracking-widest uppercase">Adversário</Label>
           <Input {...register("opponentName")} placeholder="Nome do adversário" className="rounded-none border-2 border-foreground mt-1" />
+          {errors.opponentName && <p className="text-xs text-destructive mt-1">{errors.opponentName.message}</p>}
         </div>
         <div>
           <Label className="font-display text-xs tracking-widest uppercase">Data *</Label>
-          <Input {...register("matchDate")} type="date" className="rounded-none border-2 border-foreground mt-1" />
+          <Input {...register("matchDate")} type="date" min={today} className="rounded-none border-2 border-foreground mt-1" />
           {errors.matchDate && <p className="text-xs text-destructive mt-1">{errors.matchDate.message}</p>}
         </div>
         <div>
           <Label className="font-display text-xs tracking-widest uppercase">Horário</Label>
           <Input {...register("matchTime")} type="time" className="rounded-none border-2 border-foreground mt-1" />
+          {errors.matchTime && <p className="text-xs text-destructive mt-1">{errors.matchTime.message}</p>}
         </div>
         <div>
           <Label className="font-display text-xs tracking-widest uppercase">Local</Label>
           <Input {...register("venueName")} placeholder="Ex: Campo do Zé" className="rounded-none border-2 border-foreground mt-1" />
+          {errors.venueName && <p className="text-xs text-destructive mt-1">{errors.venueName.message}</p>}
         </div>
         <div className="sm:col-span-2">
           <Label className="font-display text-xs tracking-widest uppercase">Endereço</Label>
           <Input {...register("address")} placeholder="Rua, número..." className="rounded-none border-2 border-foreground mt-1" />
+          {errors.address && <p className="text-xs text-destructive mt-1">{errors.address.message}</p>}
         </div>
         <div>
           <Label className="font-display text-xs tracking-widest uppercase">Bairro</Label>
           <Input {...register("neighborhood")} placeholder="Bairro" className="rounded-none border-2 border-foreground mt-1" />
+          {errors.neighborhood && <p className="text-xs text-destructive mt-1">{errors.neighborhood.message}</p>}
         </div>
         <div>
           <Label className="font-display text-xs tracking-widest uppercase">Cidade</Label>
           <Input {...register("city")} placeholder="Cidade" className="rounded-none border-2 border-foreground mt-1" />
+          {errors.city && <p className="text-xs text-destructive mt-1">{errors.city.message}</p>}
         </div>
       </div>
       <div className="flex gap-2">

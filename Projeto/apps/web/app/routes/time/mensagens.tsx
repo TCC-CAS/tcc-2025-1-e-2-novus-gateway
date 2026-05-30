@@ -7,17 +7,38 @@ import { useAuth } from "~/lib/auth/auth-context"
 import { usePlan } from "~/lib/plan"
 import { MessageLimitBanner } from "~/lib/plan/plan-gate"
 import { isUnlimited } from "~shared/contracts"
+import type { Message } from "~shared/contracts"
 import { Button } from "~/components/ui/button"
 import { Input } from "~/components/ui/input"
 import { ScrollArea } from "~/components/ui/scroll-area"
-import { format } from "date-fns"
+import { format, isToday } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { cn } from "~/lib/utils"
-import { ArrowLeft, Send, MessageCircle, User } from "lucide-react"
+import { ArrowLeft, Send, MessageCircle, User, Check, CheckCheck } from "lucide-react"
 import { Link } from "react-router"
 
 export function meta() {
   return [{ title: "Mensagens - VárzeaPro" }]
+}
+
+function formatConvTime(dateStr: string): string {
+  const d = new Date(dateStr)
+  if (isToday(d)) return format(d, "HH:mm", { locale: ptBR })
+  return format(d, "dd/MM", { locale: ptBR })
+}
+
+type MessageGroup = { senderId: string; msgs: Message[] }
+
+function groupMessages(messages: Message[]): MessageGroup[] {
+  return messages.reduce<MessageGroup[]>((acc, msg) => {
+    const last = acc[acc.length - 1]
+    if (last && last.senderId === msg.senderId) {
+      last.msgs.push(msg)
+    } else {
+      acc.push({ senderId: msg.senderId, msgs: [msg] })
+    }
+    return acc
+  }, [])
 }
 
 export default function TimeMensagens() {
@@ -32,7 +53,6 @@ export default function TimeMensagens() {
   )
   const [message, setMessage] = useState("")
 
-  // If a conversationId arrives via query param after mount, select it
   useEffect(() => {
     const id = searchParams.get("conversationId")
     if (id) setSelectedId(id)
@@ -69,13 +89,14 @@ export default function TimeMensagens() {
   const list = conversations?.data ?? []
   const current = list.find((c) => c.id === selectedId)
 
-  // Auto-scroll to latest message whenever messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [thread?.data])
 
+  const groups = groupMessages(thread?.data ?? [])
+
   return (
-    <div className="flex h-[calc(100dvh-3rem)] flex-col md:h-[calc(100dvh-5rem)] md:flex-row border-4 border-foreground bg-background shadow-[8px_8px_0px_0px_var(--color-primary)] dark:shadow-[8px_8px_0px_0px_var(--color-primary)] m-4 md:m-8 overflow-hidden">
+    <div className="flex h-[calc(100dvh-4rem)] flex-col md:h-[calc(100dvh-5rem)] md:flex-row border-t-4 border-foreground bg-background overflow-hidden">
       {/* Conversation list */}
       <aside
         className={cn(
@@ -115,7 +136,7 @@ export default function TimeMensagens() {
                   key={c.id}
                   type="button"
                   className={cn(
-                    "flex w-full items-start gap-4 px-6 py-5 text-left transition-colors border-l-8 group",
+                    "flex w-full items-start gap-3 px-4 py-4 text-left transition-colors border-l-8 group",
                     selectedId === c.id
                       ? "border-primary bg-primary/10"
                       : "border-transparent hover:bg-muted/30",
@@ -124,27 +145,38 @@ export default function TimeMensagens() {
                 >
                   <div
                     className={cn(
-                      "flex size-12 shrink-0 items-center justify-center border-2 border-foreground bg-background group-hover:bg-primary transition-colors relative",
-                      selectedId === c.id &&
-                        "bg-primary text-primary-foreground",
+                      "flex size-11 shrink-0 items-center justify-center border-2 border-foreground bg-background group-hover:bg-primary transition-colors relative",
+                      selectedId === c.id && "bg-primary text-primary-foreground",
                     )}
                   >
-                    <User className="size-6" />
+                    <User className="size-5" />
                     <span
                       className={cn(
                         "absolute -bottom-1 -right-1 size-3 border-2 border-background",
-                        isUserOnline(c.otherParticipant.id)
-                          ? "bg-green-500"
-                          : "bg-muted"
+                        isUserOnline(c.otherParticipant.id) ? "bg-green-500" : "bg-muted"
                       )}
                     />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <span className="font-display text-xl tracking-wide uppercase text-foreground leading-none block truncate pb-1">
-                      {c.otherParticipant.name}
-                    </span>
+                  <div className="flex-1 min-w-0 overflow-hidden">
+                    <div className="flex items-baseline justify-between gap-1">
+                      <span className="min-w-0 font-display text-base tracking-wide uppercase text-foreground leading-none truncate">
+                        {c.otherParticipant.name}
+                      </span>
+                      <div className="flex items-center gap-1 shrink-0 ml-1">
+                        {c.unreadCount > 0 && (
+                          <span className="flex size-4 items-center justify-center bg-primary text-primary-foreground text-[9px] font-bold">
+                            {c.unreadCount > 9 ? "9+" : c.unreadCount}
+                          </span>
+                        )}
+                        {c.lastMessage && (
+                          <span className="text-[10px] text-muted-foreground font-bold whitespace-nowrap">
+                            {formatConvTime(c.lastMessage.createdAt)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                     {c.lastMessage && (
-                      <span className="font-bold text-[11px] text-muted-foreground truncate block opacity-80">
+                      <span className="font-bold text-[11px] text-muted-foreground truncate block opacity-70 mt-0.5">
                         {c.lastMessage.content}
                       </span>
                     )}
@@ -159,11 +191,11 @@ export default function TimeMensagens() {
       {/* Chat area */}
       <section
         className={cn(
-          "flex flex-1 flex-col min-h-0 bg-background relative z-0",
+          "flex flex-1 flex-col min-h-0 min-w-0 bg-background relative z-0",
           selectedId ? "flex h-full" : "hidden md:flex",
         )}
       >
-        {/* Background Noise for Chat Area */}
+        {/* Background Noise */}
         <div
           className="pointer-events-none absolute inset-0 z-0 opacity-[0.03] mix-blend-overlay"
           style={{
@@ -182,7 +214,7 @@ export default function TimeMensagens() {
         ) : (
           <>
             {/* Chat header */}
-            <div className="flex items-center gap-4 border-b-4 border-foreground px-6 py-5 bg-background relative z-10 shadow-sm">
+            <div className="flex items-center gap-4 border-b-4 border-foreground px-6 py-4 bg-background relative z-10 shadow-sm">
               <button
                 type="button"
                 onClick={() => setSelectedId(null)}
@@ -203,16 +235,25 @@ export default function TimeMensagens() {
               </div>
               <div className="flex flex-col justify-center min-w-0">
                 {current ? (
-                  <Link
-                    to={current.otherParticipant.role === "player"
-                      ? `/jogadores/${current.otherParticipant.profileId}`
-                      : `/times/${current.otherParticipant.profileId}`}
-                    className="font-display text-3xl tracking-wide text-foreground uppercase pt-1 leading-none hover:text-primary transition-colors"
-                  >
-                    {current.otherParticipant.name}
-                  </Link>
+                  <>
+                    <Link
+                      to={current.otherParticipant.role === "player"
+                        ? `/jogadores/${current.otherParticipant.profileId}`
+                        : `/times/${current.otherParticipant.profileId}`}
+                      className="font-display text-2xl tracking-wide text-foreground uppercase leading-none hover:text-primary transition-colors truncate block"
+                    >
+                      {current.otherParticipant.name}
+                    </Link>
+                    <p className="text-xs font-bold tracking-widest uppercase mt-0.5">
+                      {isUserOnline(current.otherParticipant.id) ? (
+                        <span className="text-green-500">ONLINE</span>
+                      ) : (
+                        <span className="text-muted-foreground">OFFLINE</span>
+                      )}
+                    </p>
+                  </>
                 ) : (
-                  <p className="font-display text-3xl tracking-wide text-foreground uppercase pt-1 leading-none">
+                  <p className="font-display text-2xl tracking-wide text-foreground uppercase leading-none">
                     CARREGANDO...
                   </p>
                 )}
@@ -220,7 +261,7 @@ export default function TimeMensagens() {
             </div>
 
             {/* Messages */}
-            <ScrollArea className="flex-1 min-h-0 px-4 py-8 relative z-10">
+            <ScrollArea className="flex-1 min-h-0 relative z-10">
               {loadingThread && (
                 <div className="flex justify-center p-8">
                   <p className="font-display tracking-widest text-xl animate-pulse text-primary uppercase">
@@ -228,47 +269,54 @@ export default function TimeMensagens() {
                   </p>
                 </div>
               )}
-              <div className="space-y-6 max-w-4xl mx-auto">
-                {thread?.data.map((msg) => {
-                  const isMine = msg.senderId === user?.id
+              <div className="space-y-4 max-w-4xl mx-auto px-4 py-6">
+                {groups.map((group, gi) => {
+                  const isMine = group.senderId === user?.id
                   return (
-                    <div
-                      key={msg.id}
-                      className={cn(
-                        "flex",
-                        isMine ? "justify-end" : "justify-start",
-                      )}
-                    >
-                      <div
-                        className={cn(
-                          "max-w-[85%] border-2 border-foreground px-5 py-4 relative",
-                          isMine
-                            ? "bg-primary text-primary-foreground shadow-[4px_4px_0px_0px_var(--color-foreground)] dark:shadow-[4px_4px_0px_0px_var(--color-foreground)]"
-                            : "bg-muted/80 text-foreground shadow-[4px_4px_0px_0px_var(--color-primary)] dark:shadow-[4px_4px_0px_0px_var(--color-primary)]",
-                        )}
-                      >
-                        <p className="text-lg font-medium leading-relaxed break-words">
-                          {msg.content}
-                        </p>
-                        <p
-                          className={cn(
-                            "mt-3 text-[10px] font-bold flex items-center justify-end border-t border-dashed border-foreground/20 pt-2",
-                            isMine
-                              ? "text-background"
-                              : "text-muted-foreground",
-                          )}
-                        >
-                          {format(new Date(msg.createdAt), "HH:mm", {
-                            locale: ptBR,
-                          })}
-                        </p>
-                      </div>
+                    <div key={gi} className={cn("flex flex-col gap-1 w-full", isMine ? "items-end" : "items-start")}>
+                      {group.msgs.map((msg, mi) => {
+                        const isLast = mi === group.msgs.length - 1
+                        return (
+                          <div
+                            key={msg.id}
+                            className={cn("flex w-full", isMine ? "justify-end" : "justify-start")}
+                          >
+                            <div
+                              className={cn(
+                                "max-w-[80%] border-2 border-foreground px-4 py-2 relative",
+                                isMine
+                                  ? "bg-primary text-primary-foreground shadow-[3px_3px_0px_0px_var(--color-foreground)] dark:shadow-[3px_3px_0px_0px_var(--color-foreground)]"
+                                  : "bg-muted/80 text-foreground shadow-[3px_3px_0px_0px_var(--color-primary)] dark:shadow-[3px_3px_0px_0px_var(--color-primary)]",
+                              )}
+                            >
+                              <p className="text-base font-medium leading-relaxed [overflow-wrap:anywhere]">
+                                {msg.content}
+                              </p>
+                              {isLast && (
+                                <div className={cn(
+                                  "flex items-center justify-end gap-1 mt-1",
+                                  isMine ? "text-primary-foreground/70" : "text-muted-foreground",
+                                )}>
+                                  <span className="text-[10px] font-bold">
+                                    {format(new Date(msg.createdAt), "HH:mm", { locale: ptBR })}
+                                  </span>
+                                  {isMine && (
+                                    msg.readAt
+                                      ? <CheckCheck className="size-3" />
+                                      : <Check className="size-3" />
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })}
                     </div>
                   )
                 })}
                 {isTyping && (
                   <div className="flex justify-start">
-                    <div className="border-2 border-foreground bg-muted/80 px-5 py-3 shadow-[4px_4px_0px_0px_var(--color-primary)] dark:shadow-[4px_4px_0px_0px_var(--color-primary)]">
+                    <div className="border-2 border-foreground bg-muted/80 px-4 py-3 shadow-[3px_3px_0px_0px_var(--color-primary)] dark:shadow-[3px_3px_0px_0px_var(--color-primary)]">
                       <div className="flex items-center gap-[6px]">
                         <span className="typing-bounce inline-block size-2 rounded-full bg-foreground/60" />
                         <span className="typing-bounce inline-block size-2 rounded-full bg-foreground/60" />
@@ -282,8 +330,8 @@ export default function TimeMensagens() {
             </ScrollArea>
 
             {/* Input */}
-            <div className="flex-shrink-0 border-t-4 border-foreground bg-background p-4 relative z-10">
-              <div className="flex gap-4 max-w-5xl mx-auto">
+            <div className="flex-shrink-0 border-t-4 border-foreground bg-background p-3 relative z-10">
+              <div className="flex gap-3 max-w-5xl mx-auto">
                 <Input
                   placeholder="Envie uma proposta ou mensagem..."
                   value={message}
@@ -295,17 +343,17 @@ export default function TimeMensagens() {
                       if (message.trim()) sendMutation.mutate(message.trim())
                     }
                   }}
-                  className="h-16 flex-1 rounded-none border-4 border-foreground bg-muted/30 px-6 font-display text-xl tracking-wider text-foreground placeholder:text-muted-foreground/60 focus-visible:ring-0 focus-visible:border-primary transition-colors"
+                  className="h-12 flex-1 rounded-none border-2 border-foreground bg-muted/30 px-4 font-display text-base tracking-wider text-foreground placeholder:text-muted-foreground/60 focus-visible:ring-0 focus-visible:border-primary transition-colors"
                 />
                 <Button
                   size="icon"
-                  className="h-16 w-16 shrink-0 rounded-none border-4 border-foreground bg-primary transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_var(--color-foreground)] dark:hover:shadow-[4px_4px_0px_0px_var(--color-foreground)] disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+                  className="h-12 w-12 shrink-0 rounded-none border-2 border-foreground bg-primary transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_var(--color-foreground)] dark:hover:shadow-[4px_4px_0px_0px_var(--color-foreground)] disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
                   onClick={() =>
                     message.trim() && sendMutation.mutate(message.trim())
                   }
                   disabled={!message.trim() || sendMutation.isPending}
                 >
-                  <Send className="size-8 text-foreground" />
+                  <Send className="size-5 text-foreground" />
                 </Button>
               </div>
             </div>

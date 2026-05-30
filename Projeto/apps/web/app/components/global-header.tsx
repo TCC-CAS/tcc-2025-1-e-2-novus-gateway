@@ -18,6 +18,7 @@ import {
   User,
   CalendarDays,
   Link2,
+  Search,
 } from "lucide-react"
 import { useAuth } from "~/lib/auth/auth-context"
 import { usePlan } from "~/lib/plan"
@@ -54,6 +55,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   "log-in": LogIn,
   "calendar-days": CalendarDays,
   "link-2": Link2,
+  search: Search,
 }
 
 function NavIcon({ icon, className }: { icon: string; className?: string }) {
@@ -205,14 +207,14 @@ export function GlobalHeader() {
     if (!role) return []
     if (role === "player") return [
       { label: "Início",    href: "/jogador",           icon: "home" },
-      { label: "Jogadores", href: "/jogadores",          icon: "users" },
+      { label: "Buscar",    href: "/buscar",             icon: "search" },
       { label: "Mensagens", href: "/jogador/mensagens",  icon: "message-circle" },
       { label: "Convites",  href: "/jogador/convites",   icon: "calendar-days" },
       { label: "Conexões",  href: "/jogador/conexoes",   icon: "link-2" },
     ]
     if (role === "team") return [
       { label: "Início",    href: "/time",              icon: "home" },
-      { label: "Jogadores", href: "/jogadores",          icon: "users" },
+      { label: "Buscar",    href: "/buscar",             icon: "search" },
       { label: "Mensagens", href: "/time/mensagens",     icon: "message-circle" },
       { label: "Jogos",     href: "/time/jogos",         icon: "calendar-days" },
       { label: "Conexões",  href: "/time/conexoes",      icon: "link-2" },

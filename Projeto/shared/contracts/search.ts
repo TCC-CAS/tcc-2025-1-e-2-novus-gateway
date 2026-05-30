@@ -5,6 +5,7 @@ import { TeamSummarySchema, TeamLevelSchema } from "./teams.js";
 
 /** Search players query (teams use this) */
 export const SearchPlayersQuerySchema = PaginationQuerySchema.extend({
+  name: z.string().optional(),
   position: PositionSchema.optional(),
   skills: z.string().optional(), // comma-separated or single
   region: z.string().optional(),
@@ -24,6 +25,7 @@ export type SearchPlayersResponse = z.infer<typeof SearchPlayersResponseSchema>;
 
 /** Search teams query (players use this) */
 export const SearchTeamsQuerySchema = PaginationQuerySchema.extend({
+  name: z.string().optional(),
   level: TeamLevelSchema.optional(),
   region: z.string().optional(),
   openPosition: z.string().optional(),
