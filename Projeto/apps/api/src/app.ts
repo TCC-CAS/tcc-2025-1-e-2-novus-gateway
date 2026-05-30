@@ -2,6 +2,32 @@ import Fastify from "fastify"
 import { serializerCompiler, validatorCompiler, ZodTypeProvider } from "fastify-type-provider-zod"
 import { registerErrorHandler } from "./lib/errors.js"
 import { requireSession, requireRole } from "./hooks/require-auth.js"
+import { ImageStorage } from "./lib/images/storage.js"
+
+const IMAGE_URL_FIELDS = new Set([
+  "photoUrl", "logoUrl", "avatarUrl",
+  "thumbnailUrl", "mediumUrl", "originalUrl",
+  "playerPhotoUrl", "teamLogoUrl",
+])
+
+async function resolveUrlFields(obj: unknown, storage: ImageStorage, depth = 0): Promise<void> {
+  if (depth > 6 || !obj || typeof obj !== "object") return
+  if (Array.isArray(obj)) {
+    await Promise.all(obj.map((item) => resolveUrlFields(item, storage, depth + 1)))
+    return
+  }
+  const record = obj as Record<string, unknown>
+  const tasks: Promise<void>[] = []
+  for (const key of Object.keys(record)) {
+    const value = record[key]
+    if (IMAGE_URL_FIELDS.has(key) && typeof value === "string" && value) {
+      tasks.push(storage.resolveUrl(value).then((resolved) => { record[key] = resolved }))
+    } else if (value && typeof value === "object") {
+      tasks.push(resolveUrlFields(value, storage, depth + 1))
+    }
+  }
+  await Promise.all(tasks)
+}
 
 export async function buildApp() {
   const isDev = process.env.NODE_ENV !== "production" && process.env.NODE_ENV !== "test"
@@ -34,6 +60,14 @@ export async function buildApp() {
   })
 
   registerErrorHandler(fastify)
+
+  // Resolve S3 keys / legacy presigned URLs to fresh signed URLs before every response.
+  // getSignedUrl() is CPU-only (no network), so concurrent resolution is cheap.
+  const storage = new ImageStorage()
+  fastify.addHook("preSerialization", async (_request, _reply, payload) => {
+    await resolveUrlFields(payload, storage)
+    return payload
+  })
 
   // Cache-Control headers — short cache for profile data, no-store for authenticated
   fastify.addHook("onSend", async (_request, reply) => {

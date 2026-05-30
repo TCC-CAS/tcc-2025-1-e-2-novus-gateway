@@ -104,7 +104,7 @@ export class ImageService {
       }),
     ])
 
-    // 5. Generate access URLs
+    // 5. Generate fresh access URLs for the immediate upload response only — never stored
     const [thumbnailUrl, mediumUrl, originalUrl] = await Promise.all([
       this.storage.getUrl(thumbnailKey),
       this.storage.getUrl(mediumKey),
@@ -115,7 +115,7 @@ export class ImageService {
     const totalSize =
       variants.thumbnail.length + variants.medium.length + variants.original.length
 
-    // 6. Insert media_asset record
+    // 6. Insert media_asset record — store S3 keys (not presigned URLs) so they never expire
     await this.db.insert(mediaAssets).values({
       id: assetId,
       ownerUserId: userId,
@@ -126,21 +126,21 @@ export class ImageService {
       sizeBytes: totalSize,
       width: variants.metadata.width,
       height: variants.metadata.height,
-      thumbnailUrl,
-      mediumUrl,
-      originalUrl,
+      thumbnailUrl: thumbnailKey,
+      mediumUrl: mediumKey,
+      originalUrl: originalKey,
     })
 
-    // 7. Update profile with new URLs
+    // 7. Update profile — store S3 key, not presigned URL
     if (entityType === "player_avatar") {
       await this.db
         .update(players)
-        .set({ photoUrl: mediumUrl, updatedAt: new Date() })
+        .set({ photoUrl: mediumKey, updatedAt: new Date() })
         .where(eq(players.userId, userId))
     } else {
       await this.db
         .update(teams)
-        .set({ logoUrl: mediumUrl, updatedAt: new Date() })
+        .set({ logoUrl: mediumKey, updatedAt: new Date() })
         .where(eq(teams.userId, userId))
     }
 
