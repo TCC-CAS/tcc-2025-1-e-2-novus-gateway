@@ -479,6 +479,10 @@ export default function Planos() {
                         >
                           <Link to="/cadastro">COMEÇAR GRÁTIS</Link>
                         </Button>
+                      ) : isPaid ? (
+                        <div className="flex h-14 items-center justify-center border-2 border-foreground/10 font-display text-xl tracking-widest text-muted-foreground/40 uppercase">
+                          PLANO BASE
+                        </div>
                       ) : (
                         <div className="flex h-14 items-center justify-center border-2 border-foreground/30 font-display text-xl tracking-widest text-muted-foreground uppercase">
                           PLANO ATUAL
