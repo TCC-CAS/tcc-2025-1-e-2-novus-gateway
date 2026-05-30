@@ -175,10 +175,10 @@ describe("Search routes", () => {
         sex: "male",
       })
 
-      const transMale = await signUpAndGetCookie(app, "player")
-      await upsertPlayerProfile(app, transMale.sessionCookie, {
-        name: "Trans Male Player Filter Test",
-        sex: "trans_male",
+      const ratherNotSay = await signUpAndGetCookie(app, "player")
+      await upsertPlayerProfile(app, ratherNotSay.sessionCookie, {
+        name: "Rather Not Say Player Filter Test",
+        sex: "rather_not_say",
       })
 
       const female = await signUpAndGetCookie(app, "player")
@@ -197,10 +197,10 @@ describe("Search routes", () => {
       const body = res.json()
       const names = body.data.map((player: { name: string }) => player.name)
       expect(names).toContain("Male Player Filter Test")
-      expect(names).toContain("Trans Male Player Filter Test")
+      expect(names).toContain("Rather Not Say Player Filter Test")
       expect(names).not.toContain("Female Player Filter Test")
       for (const player of body.data) {
-        expect(["male", "trans_male"]).toContain(player.sex)
+        expect(["male", "rather_not_say"]).toContain(player.sex)
       }
     })
   })

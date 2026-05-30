@@ -134,9 +134,9 @@ const publicRoutes: FastifyPluginAsync = async (fastify) => {
       const conditions = [eq(players.hidden, false)]
       if (region) conditions.push(ilike(players.region, `%${region}%`))
       if (sex === "male") {
-        conditions.push(sql`${players.sex} IN ('male', 'trans_male')`)
+        conditions.push(sql`${players.sex} IN ('male', 'rather_not_say')`)
       } else if (sex === "female") {
-        conditions.push(sql`${players.sex} IN ('female', 'trans_female')`)
+        conditions.push(sql`${players.sex} IN ('female', 'rather_not_say')`)
       }
 
       const [rows, [countRow]] = await Promise.all([

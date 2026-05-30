@@ -270,7 +270,7 @@ export default function JogadoresPublicos() {
                   <Filter className="size-5 text-foreground" />
                   <span className="font-display text-sm tracking-widest text-foreground uppercase hidden sm:inline">FILTROS:</span>
                 </div>
-                <Select value={position ?? "all"} onValueChange={(v) => { setPosition(v === "all" ? undefined : v); setPage(1) }}>
+                <Select value={position ?? ""} onValueChange={(v) => { setPosition(v === "all" || v === "" ? undefined : v); setPage(1) }}>
                   <SelectTrigger className="w-[140px] h-10 rounded-none border-2 border-foreground bg-muted/50 font-bold tracking-widest text-xs uppercase focus:ring-0 focus:border-primary">
                     <SelectValue placeholder="POSIÇÃO" />
                   </SelectTrigger>
@@ -293,7 +293,7 @@ export default function JogadoresPublicos() {
                   onChange={(e) => { setRegion(e.target.value); setPage(1) }}
                   className="w-[130px] h-10 rounded-none border-2 border-foreground bg-muted/50 font-bold tracking-widest text-xs uppercase focus:ring-0 focus-visible:ring-0 focus:border-primary placeholder:normal-case"
                 />
-                <Select value={sex ?? "all"} onValueChange={(v) => { setSex(v === "all" ? undefined : (v as SexFilter)); setPage(1) }}>
+                <Select value={sex ?? ""} onValueChange={(v) => { setSex(v === "all" || v === "" ? undefined : (v as SexFilter)); setPage(1) }}>
                   <SelectTrigger className="w-[140px] h-10 rounded-none border-2 border-foreground bg-muted/50 font-bold tracking-widest text-xs uppercase focus:ring-0 focus:border-primary">
                     <SelectValue placeholder="SEXO" />
                   </SelectTrigger>
@@ -306,7 +306,7 @@ export default function JogadoresPublicos() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Select value={level ?? "all"} onValueChange={(v) => { setLevel(v === "all" ? undefined : v); setPage(1) }}>
+                <Select value={level ?? ""} onValueChange={(v) => { setLevel(v === "all" || v === "" ? undefined : v); setPage(1) }}>
                   <SelectTrigger className="w-[130px] h-10 rounded-none border-2 border-foreground bg-muted/50 font-bold tracking-widest text-xs uppercase focus:ring-0 focus:border-primary">
                     <SelectValue placeholder="NÍVEL" />
                   </SelectTrigger>
@@ -338,9 +338,9 @@ export default function JogadoresPublicos() {
                   onChange={(e) => setRegion(e.target.value)}
                   className="max-w-sm rounded-none border-2 border-foreground font-display tracking-wide focus-visible:ring-0 focus-visible:border-primary transition-colors"
                 />
-                <Select value={sex ?? "all"} onValueChange={(v) => setSex(v === "all" ? undefined : (v as SexFilter))}>
+                <Select value={sex ?? ""} onValueChange={(v) => setSex(v === "all" || v === "" ? undefined : (v as SexFilter))}>
                   <SelectTrigger className="w-[160px] rounded-none border-2 border-foreground font-display tracking-wide focus:ring-0 focus:border-primary">
-                    <SelectValue placeholder="Sexo" />
+                    <SelectValue placeholder="SEXO" />
                   </SelectTrigger>
                   <SelectContent className="rounded-none border-4 border-foreground">
                     <SelectItem value="all" className="font-bold tracking-widest uppercase text-xs">TODOS</SelectItem>

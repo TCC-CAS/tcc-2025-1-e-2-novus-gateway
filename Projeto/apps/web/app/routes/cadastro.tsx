@@ -52,8 +52,6 @@ const ROLES: {
 const PLAYER_SEX_LABELS: Record<PlayerSex, string> = {
   male: "MASCULINO",
   female: "FEMININO",
-  trans_male: "HOMEM TRANS",
-  trans_female: "MULHER TRANS",
   rather_not_say: "PREFIRO NÃO DIZER",
 };
 
@@ -70,7 +68,7 @@ export default function Cadastro() {
       password: "",
       confirmPassword: "",
       role: "player",
-      sex: "rather_not_say",
+      sex: undefined,
       cpf: "",
       teamName: "",
     },
@@ -264,14 +262,14 @@ export default function Cadastro() {
                           SEXO
                         </Label>
                         <Select
-                          value={form.watch("sex") ?? "rather_not_say"}
+                          value={form.watch("sex") ?? ""}
                           onValueChange={(value) =>
                             form.setValue("sex", value as PlayerSex, { shouldValidate: true })
                           }
                           disabled={isSubmitting}
                         >
                           <SelectTrigger className="h-14 rounded-none border-2 border-foreground bg-muted/50 px-4 text-lg uppercase font-bold tracking-widest focus:ring-0 focus:border-primary transition-colors">
-                            <SelectValue />
+                            <SelectValue placeholder="SELECIONE" />
                           </SelectTrigger>
                           <SelectContent className="rounded-none border-2 border-foreground">
                             {PLAYER_SEXES.map((sex) => (
@@ -285,26 +283,6 @@ export default function Cadastro() {
                     </>
                   ) : (
                     <>
-                      <Field className="space-y-2 md:col-span-2">
-                        <Label
-                          htmlFor="teamName"
-                          className="font-display text-xl tracking-wide"
-                        >
-                          NOME DO TIME
-                        </Label>
-                        <Input
-                          id="teamName"
-                          disabled={isSubmitting}
-                          placeholder="Nome do seu time"
-                          className="h-14 rounded-none border-2 border-foreground bg-muted/50 px-4 text-lg focus-visible:ring-0 focus-visible:border-primary transition-colors uppercase"
-                          {...form.register("teamName")}
-                        />
-                        {form.formState.errors.teamName && (
-                          <p className="font-bold tracking-wide text-destructive text-sm mt-1">
-                            {form.formState.errors.teamName.message}
-                          </p>
-                        )}
-                      </Field>
                       <Field className="space-y-2 md:col-span-2">
                         <Label
                           htmlFor="name"
@@ -323,6 +301,26 @@ export default function Cadastro() {
                         {form.formState.errors.name && (
                           <p className="font-bold tracking-wide text-destructive text-sm mt-1">
                             {form.formState.errors.name.message}
+                          </p>
+                        )}
+                      </Field>
+                      <Field className="space-y-2 md:col-span-2">
+                        <Label
+                          htmlFor="teamName"
+                          className="font-display text-xl tracking-wide"
+                        >
+                          NOME DO TIME
+                        </Label>
+                        <Input
+                          id="teamName"
+                          disabled={isSubmitting}
+                          placeholder="Nome do seu time"
+                          className="h-14 rounded-none border-2 border-foreground bg-muted/50 px-4 text-lg focus-visible:ring-0 focus-visible:border-primary transition-colors uppercase"
+                          {...form.register("teamName")}
+                        />
+                        {form.formState.errors.teamName && (
+                          <p className="font-bold tracking-wide text-destructive text-sm mt-1">
+                            {form.formState.errors.teamName.message}
                           </p>
                         )}
                       </Field>

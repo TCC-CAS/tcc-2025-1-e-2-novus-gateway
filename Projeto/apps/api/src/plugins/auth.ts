@@ -1,8 +1,8 @@
 import fp from "fastify-plugin"
-import { eq } from "drizzle-orm"
+import { nanoid } from "nanoid"
 import { createAuth } from "../lib/auth.js"
-import { players } from "../db/schema/index.js"
 import type { Auth } from "../lib/auth.js"
+import { players } from "../db/schema/index.js"
 import type { FastifyPluginAsync } from "fastify"
 
 // Augment FastifyInstance so fastify.auth is typed
@@ -14,8 +14,9 @@ declare module "fastify" {
 
 /** Maps Better Auth error codes to user-friendly Portuguese messages */
 const AUTH_ERROR_MESSAGES: Record<string, { status: number; message: string }> = {
-  USER_ALREADY_EXISTS:                    { status: 409, message: "Este e-mail já está cadastrado. Tente fazer login." },
-  USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL:  { status: 409, message: "Este e-mail já está cadastrado. Use outro e-mail ou faça login." },
+  USER_ALREADY_EXISTS:                    { status: 409, message: "E-mail ou CPF já cadastrado no sistema. Tente fazer login." },
+  USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL:  { status: 409, message: "E-mail ou CPF já cadastrado no sistema. Use outros dados ou faça login." },
+  FAILED_TO_CREATE_USER:                  { status: 409, message: "E-mail ou CPF já cadastrado no sistema. Tente fazer login." },
   INVALID_EMAIL_OR_PASSWORD:              { status: 401, message: "E-mail ou senha incorretos." },
   INVALID_EMAIL:                          { status: 400, message: "E-mail inválido." },
   INVALID_PASSWORD:                       { status: 400, message: "Senha inválida." },
@@ -31,7 +32,7 @@ const AUTH_ERROR_MESSAGES: Record<string, { status: number; message: string }> =
   USER_ALREADY_HAS_PASSWORD:              { status: 400, message: "Esta conta já possui uma senha definida." },
 }
 
-const playerSexValues = ["male", "female", "trans_male", "trans_female", "rather_not_say"] as const
+const playerSexValues = ["male", "female", "rather_not_say"] as const
 type PlayerSexValue = (typeof playerSexValues)[number]
 
 function normalizePlayerSex(value: unknown): PlayerSexValue {
@@ -94,10 +95,14 @@ async function handleAuthRequest(
         const userId = json.user?.id
         if (typeof userId === "string" && body?.role !== "team") {
           const sex = normalizePlayerSex(body?.sex)
+          const playerName = (json.user?.name as string | undefined) ?? ""
+          // Upsert to handle race condition: after hook and this code may run in any order.
+          // If player row doesn't exist yet → insert with correct sex.
+          // If after hook already inserted with default sex → update sex.
           await request.server.db
-            .update(players)
-            .set({ sex, updatedAt: new Date() })
-            .where(eq(players.userId, userId))
+            .insert(players)
+            .values({ id: nanoid(), userId, name: playerName, sex })
+            .onConflictDoUpdate({ target: players.userId, set: { sex, updatedAt: new Date() } })
             .catch((error: unknown) => {
               request.log.warn({ error }, "Could not persist player sex during sign-up")
             })
@@ -106,19 +111,36 @@ async function handleAuthRequest(
 
       // Translate Better Auth error codes to Portuguese
       const errorCode: string | undefined = json.code ?? json.error?.code
-      if (errorCode && response.status >= 400) {
-        const translated = AUTH_ERROR_MESSAGES[errorCode]
-        if (translated) {
-          reply.status(translated.status)
+      if (response.status >= 400) {
+        // DB-level unique constraint violation (postgres code 23505) during sign-up:
+        // covers CPF duplicates that Better Auth doesn't map to USER_ALREADY_EXISTS
+        const rawMessage: string = json.message ?? json.error?.message ?? ""
+        const isUniqueViolation =
+          isSignUpRequest(request) &&
+          (rawMessage.includes("23505") ||
+            rawMessage.toLowerCase().includes("unique constraint") ||
+            rawMessage.toLowerCase().includes("unique violation"))
+        if (isUniqueViolation) {
+          reply.status(409)
           return reply.send(JSON.stringify({
-            error: { code: errorCode, message: translated.message },
+            error: { code: "USER_ALREADY_EXISTS", message: "E-mail ou CPF já cadastrado no sistema. Tente fazer login." },
           }))
         }
-        // Fallback: wrap in our standard error shape with original message translated
-        const fallbackMessage = json.message ?? json.error?.message ?? "Ocorreu um erro. Tente novamente."
-        return reply.send(JSON.stringify({
-          error: { code: errorCode, message: fallbackMessage },
-        }))
+
+        if (errorCode) {
+          const translated = AUTH_ERROR_MESSAGES[errorCode]
+          if (translated) {
+            reply.status(translated.status)
+            return reply.send(JSON.stringify({
+              error: { code: errorCode, message: translated.message },
+            }))
+          }
+          // Fallback: wrap in our standard error shape with original message translated
+          const fallbackMessage = rawMessage || "Ocorreu um erro. Tente novamente."
+          return reply.send(JSON.stringify({
+            error: { code: errorCode, message: fallbackMessage },
+          }))
+        }
       }
 
       return reply.send(JSON.stringify(json))

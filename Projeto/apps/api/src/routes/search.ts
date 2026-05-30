@@ -88,11 +88,11 @@ const searchRoutes: FastifyPluginAsync = async (fastify) => {
         filters.push(eq(players.level, level) as unknown as ReturnType<typeof sql>)
       }
 
-      // Sex filter: binary customer-facing filter includes trans identities in matching groups
+      // Sex filter: binary customer-facing filter includes trans identities and rather_not_say in matching groups
       if (sex === "male") {
-        filters.push(sql`${players.sex} IN ('male', 'trans_male')` as unknown as ReturnType<typeof sql>)
+        filters.push(sql`${players.sex} IN ('male', 'rather_not_say')` as unknown as ReturnType<typeof sql>)
       } else if (sex === "female") {
-        filters.push(sql`${players.sex} IN ('female', 'trans_female')` as unknown as ReturnType<typeof sql>)
+        filters.push(sql`${players.sex} IN ('female', 'rather_not_say')` as unknown as ReturnType<typeof sql>)
       }
 
       // Age filters (D-05): birthDate is stored as text, cast to date
@@ -314,9 +314,9 @@ const searchRoutes: FastifyPluginAsync = async (fastify) => {
         conditions.push(eq(players.level, level))
       }
       if (sex === "male") {
-        conditions.push(sql`${players.sex} IN ('male', 'trans_male')` as unknown as SQL)
+        conditions.push(sql`${players.sex} IN ('male', 'rather_not_say')` as unknown as SQL)
       } else if (sex === "female") {
-        conditions.push(sql`${players.sex} IN ('female', 'trans_female')` as unknown as SQL)
+        conditions.push(sql`${players.sex} IN ('female', 'rather_not_say')` as unknown as SQL)
       }
 
       const [rows, [countRow]] = await Promise.all([

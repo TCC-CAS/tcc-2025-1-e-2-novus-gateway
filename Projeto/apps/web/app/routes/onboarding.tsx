@@ -15,9 +15,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { POSITIONS, PLAYER_LEVELS, PLAYER_SEXES } from "~shared/contracts";
+import { POSITIONS, PLAYER_LEVELS } from "~shared/contracts";
 import { TEAM_LEVELS, TEAM_LINEUP_SEXES } from "~shared/contracts";
-import type { Position, PlayerLevel, PlayerSex, TeamLevel, TeamLineupSex } from "~shared/contracts";
+import type { Position, PlayerLevel, TeamLevel, TeamLineupSex } from "~shared/contracts";
 import { playersApi, teamsApi, uploadApi } from "~/lib/api-client";
 import { Check, ChevronLeft, ChevronRight, Trophy, User, Shield } from "lucide-react";
 
@@ -51,14 +51,6 @@ const POSITION_LABELS: Record<string, string> = {
   atacante: "ATACANTE",
 };
 
-const PLAYER_SEX_LABELS: Record<PlayerSex, string> = {
-  male: "MASCULINO",
-  female: "FEMININO",
-  trans_male: "HOMEM TRANS",
-  trans_female: "MULHER TRANS",
-  rather_not_say: "PREFIRO NÃO DIZER",
-};
-
 const LINEUP_SEX_LABELS: Record<TeamLineupSex, string> = {
   male: "MASCULINO",
   female: "FEMININO",
@@ -70,7 +62,6 @@ export default function Onboarding() {
   const [step, setStep] = useState(0);
 
   const [playerPositions, setPlayerPositions] = useState<string[]>([]);
-  const [playerSex, setPlayerSex] = useState<PlayerSex>("rather_not_say");
   const [playerBio, setPlayerBio] = useState("");
   const [playerSkills, setPlayerSkills] = useState<string[]>([]);
   const [playerHeight, setPlayerHeight] = useState("");
@@ -78,12 +69,12 @@ export default function Onboarding() {
   const [playerAvailability, setPlayerAvailability] = useState<string[]>([]);
   const [playerPhone, setPlayerPhone] = useState("");
   const [playerLevel, setPlayerLevel] = useState<string>("");
+  const [skillsInput, setSkillsInput] = useState("");
   const [playerRegion, setPlayerRegion] = useState("");
   const [playerCity, setPlayerCity] = useState("");
 
-  const [teamName, setTeamName] = useState("");
-  const [teamLineupSex, setTeamLineupSex] = useState<TeamLineupSex>("male");
-  const [teamLevel, setTeamLevel] = useState("amador");
+  const [teamLineupSex, setTeamLineupSex] = useState<TeamLineupSex | "">("");
+  const [teamLevel, setTeamLevel] = useState("");
   const [teamRegion, setTeamRegion] = useState("");
   const [teamCity, setTeamCity] = useState("");
   const [teamDescription, setTeamDescription] = useState("");
@@ -108,7 +99,6 @@ export default function Onboarding() {
       if (isPlayer) {
         await playersApi.upsert({
           name: user!.name,
-          sex: playerSex,
           positions: playerPositions as Position[],
           bio: playerBio || undefined,
           skills: playerSkills,
@@ -122,9 +112,9 @@ export default function Onboarding() {
         });
       } else {
         await teamsApi.upsert({
-          name: teamName.trim() || user!.name,
-          lineupSex: teamLineupSex,
-          level: teamLevel as TeamLevel,
+          name: user!.name,
+          lineupSex: (teamLineupSex || "male") as TeamLineupSex,
+          level: (teamLevel || "outro") as TeamLevel,
           region: teamRegion || undefined,
           city: teamCity || undefined,
           description: teamDescription || undefined,
@@ -367,14 +357,12 @@ export default function Onboarding() {
                   <Input
                     id="onb-skills"
                     placeholder="Ex.: drible, passe longo, finalização"
-                    value={playerSkills.join(", ")}
-                    onChange={(e) =>
+                    value={skillsInput}
+                    onChange={(e) => setSkillsInput(e.target.value)}
+                    onBlur={() =>
                       setPlayerSkills(
-                        e.target.value
-                          ? e.target.value
-                              .split(",")
-                              .map((s) => s.trim())
-                              .filter(Boolean)
+                        skillsInput
+                          ? skillsInput.split(",").map((s) => s.trim()).filter(Boolean)
                           : [],
                       )
                     }
@@ -383,24 +371,6 @@ export default function Onboarding() {
                   <p className="font-bold tracking-widest text-xs text-muted-foreground uppercase">
                     SEPARE POR VÍRGULA
                   </p>
-                </div>
-
-                <div className="space-y-4 pt-4">
-                  <Label className="font-display text-2xl tracking-wide">
-                    SEXO
-                  </Label>
-                  <Select value={playerSex} onValueChange={(v) => setPlayerSex(v as PlayerSex)}>
-                    <SelectTrigger className="h-14 rounded-none border-2 border-foreground bg-muted/50 px-4 text-lg uppercase font-bold tracking-widest focus:ring-0 focus:border-primary transition-colors">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-none border-2 border-foreground">
-                      {PLAYER_SEXES.map((sex) => (
-                        <SelectItem key={sex} value={sex} className="font-bold tracking-widest uppercase hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground cursor-pointer rounded-none text-xs">
-                          {PLAYER_SEX_LABELS[sex]}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                 </div>
 
                 <div className="space-y-4 pt-4">
@@ -625,29 +595,13 @@ export default function Onboarding() {
                   </p>
                 </div>
 
-                <div className="space-y-4">
-                  <Label
-                    htmlFor="onb-team-name"
-                    className="font-display text-2xl tracking-wide"
-                  >
-                    NOME DO TIME
-                  </Label>
-                  <Input
-                    id="onb-team-name"
-                    placeholder="Ex.: FC Várzea Unidos"
-                    value={teamName}
-                    onChange={(e) => setTeamName(e.target.value)}
-                    className="h-14 rounded-none border-2 border-foreground bg-muted/50 px-4 text-lg focus-visible:ring-0 focus-visible:border-primary transition-colors uppercase"
-                  />
-                </div>
-
                 <div className="space-y-4 pt-4">
                   <Label className="font-display text-2xl tracking-wide">
                     ELENCO
                   </Label>
                   <Select value={teamLineupSex} onValueChange={(v) => setTeamLineupSex(v as TeamLineupSex)}>
                     <SelectTrigger className="h-14 rounded-none border-2 border-foreground bg-muted/50 px-4 text-lg uppercase font-bold tracking-widest focus:ring-0 focus:border-primary transition-colors">
-                      <SelectValue />
+                      <SelectValue placeholder="SELECIONE O ELENCO" />
                     </SelectTrigger>
                     <SelectContent className="rounded-none border-2 border-foreground">
                       {TEAM_LINEUP_SEXES.map((sex) => (
@@ -665,7 +619,7 @@ export default function Onboarding() {
                   </Label>
                   <Select value={teamLevel} onValueChange={setTeamLevel}>
                     <SelectTrigger className="h-14 rounded-none border-2 border-foreground bg-muted/50 px-4 text-lg uppercase font-bold tracking-widest focus:ring-0 focus:border-primary transition-colors">
-                      <SelectValue />
+                      <SelectValue placeholder="SELECIONE O NÍVEL" />
                     </SelectTrigger>
                     <SelectContent className="rounded-none border-2 border-foreground">
                       {TEAM_LEVELS.map((l) => (
@@ -817,11 +771,7 @@ export default function Onboarding() {
                     página administrativa do time.
                   </p>
                 </div>
-                {teamName && (
-                  <p className="font-display text-4xl text-primary">
-                    {teamName}
-                  </p>
-                )}
+
                 {teamOpenPositions.length > 0 && (
                   <div className="flex flex-wrap justify-center gap-3">
                     {teamOpenPositions.map((p) => (

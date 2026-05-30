@@ -44,8 +44,6 @@ const DAYS_OF_WEEK = ["SEG", "TER", "QUA", "QUI", "SEX", "SÁB", "DOM"] as const
 const PLAYER_SEX_LABELS: Record<PlayerSex, string> = {
   male: "MASCULINO",
   female: "FEMININO",
-  trans_male: "HOMEM TRANS",
-  trans_female: "MULHER TRANS",
   rather_not_say: "PREFIRO NÃO DIZER",
 };
 
@@ -84,6 +82,7 @@ export default function JogadorPerfilEditar() {
     resolver: zodResolver(UpsertPlayerProfileRequestSchema),
     defaultValues: {
       name: "",
+      sex: "rather_not_say" as PlayerSex,
       positions: [],
       bio: "",
       skills: [],
@@ -141,6 +140,7 @@ export default function JogadorPerfilEditar() {
 
   const positions = form.watch("positions") ?? [];
   const skills = form.watch("skills") ?? [];
+  const sexValue = form.watch("sex");
 
   function togglePosition(pos: Position) {
     const current = form.getValues("positions");
@@ -293,7 +293,8 @@ export default function JogadorPerfilEditar() {
                 SEXO
               </Label>
               <Select
-                value={form.watch("sex") ?? "rather_not_say"}
+                key={`sex-${sexValue ?? "unset"}`}
+                value={sexValue ?? "rather_not_say"}
                 onValueChange={(v) =>
                   form.setValue("sex", v as PlayerSex, { shouldValidate: true })
                 }
@@ -319,6 +320,7 @@ export default function JogadorPerfilEditar() {
                 NÍVEL DE COMPETIÇÃO
               </Label>
               <Select
+                key={`level-${playerLevel ?? "unset"}`}
                 value={playerLevel ?? "none"}
                 onValueChange={(v) =>
                   setPlayerLevel(v === "none" ? undefined : (v as PlayerLevel))
@@ -680,7 +682,7 @@ export default function JogadorPerfilEditar() {
             type="button"
             variant="outline"
             onClick={() => navigate("/jogador/perfil")}
-            className="w-full sm:w-auto h-14 rounded-none border-2 border-foreground py-3 px-8 font-display text-xl tracking-widest text-foreground transition-all hover:bg-muted/50 uppercase"
+            className="w-full sm:w-auto h-14 rounded-none border-2 border-foreground py-3 px-8 font-display text-xl tracking-widest text-foreground transition-all hover:bg-muted/90 hover:text-color-foreground hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_var(--color-foreground)] dark:hover:shadow-[4px_4px_0px_0px_var(--color-foreground)] uppercase"
           >
             CANCELAR
           </Button>

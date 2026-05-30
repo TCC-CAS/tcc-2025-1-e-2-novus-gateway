@@ -2,7 +2,7 @@ import { pgTable, text, timestamp, boolean, integer, pgEnum } from "drizzle-orm/
 
 export const roleEnum = pgEnum("role", ["player", "team", "admin"])
 export const planIdEnum = pgEnum("plan_id", ["free", "craque", "fenomeno", "titular", "campeao", "profissional"])
-export const playerSexEnum = pgEnum("player_sex", ["male", "female", "trans_male", "trans_female", "rather_not_say"])
+export const playerSexEnum = pgEnum("player_sex", ["male", "female", "rather_not_say"])
 
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
