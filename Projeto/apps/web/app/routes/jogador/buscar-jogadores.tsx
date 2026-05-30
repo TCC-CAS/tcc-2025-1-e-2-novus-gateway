@@ -106,7 +106,15 @@ export default function JogadorBuscarJogadores() {
       {isLoading && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-24 bg-muted border-2 border-foreground animate-pulse" />
+            <div key={i} className="border-2 border-foreground p-4 flex gap-3 items-start animate-pulse">
+              <div className="size-12 rounded-full bg-muted shrink-0" />
+              <div className="flex-1 min-w-0 space-y-2 pt-0.5">
+                <div className="h-4 bg-muted w-3/4" />
+                <div className="h-3 bg-muted w-1/2" />
+                <div className="h-3 bg-muted w-2/3" />
+                <div className="h-7 bg-muted w-24 mt-1" />
+              </div>
+            </div>
           ))}
         </div>
       )}

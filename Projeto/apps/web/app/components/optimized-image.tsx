@@ -103,8 +103,7 @@ export function OptimizedImage({
       {status === "loading" && (
         <Skeleton
           className={cn(
-            "absolute inset-0 border-2 border-foreground",
-            sizeClasses[size],
+            "absolute inset-0 rounded-none bg-muted",
             rounded && "rounded-full"
           )}
         />
@@ -131,8 +130,7 @@ export function OptimizedImage({
           onError?.()
         }}
         className={cn(
-          "block h-full w-full border-2 border-foreground transition-opacity duration-300",
-          sizeClasses[size],
+          "block h-full w-full transition-opacity duration-300",
           rounded && "rounded-full",
           fit === "cover" ? "object-cover" : "object-contain",
           status === "loaded" ? "opacity-100" : "opacity-0"

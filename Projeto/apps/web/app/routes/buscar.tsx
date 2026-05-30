@@ -66,7 +66,7 @@ function TeamCardSkeleton() {
   return (
     <div className="border-2 border-foreground animate-pulse">
       <div className="aspect-[4/3] bg-foreground/8 flex items-center justify-center relative overflow-hidden">
-        <div className="size-20 bg-foreground/15 rounded-sm" />
+        <div className="size-44 bg-foreground/15 rounded-sm" />
         <div className="absolute top-2 right-2 h-4 w-12 bg-foreground/20" />
       </div>
       <div className="p-3 border-t-2 border-foreground/10 space-y-2">
@@ -136,7 +136,7 @@ function TeamCard({ team }: { team: TeamSummary }) {
           <OptimizedImage
             src={team.logoUrl}
             alt={team.name}
-            className="size-20 object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-md"
+            className="size-40 object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-md"
           />
         ) : (
           <div className="flex flex-col items-center gap-2">
