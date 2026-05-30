@@ -152,6 +152,7 @@ const teamsRoutes: FastifyPluginAsync = async (fastify) => {
         .select({
           id: players.id,
           name: players.name,
+          sex: players.sex,
           photoUrl: players.photoUrl,
           positions: players.positions,
           region: players.region,

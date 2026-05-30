@@ -4,12 +4,15 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { z } from "zod";
 import {
   UpsertTeamProfileRequestSchema,
   type UpsertTeamProfileRequest,
   TEAM_LEVELS,
+  TEAM_LINEUP_SEXES,
   POSITIONS,
 } from "~shared/contracts";
+import type { TeamLineupSex } from "~shared/contracts";
 import { teamsApi, searchApi, uploadApi, ApiError, type RosterMember } from "~/lib/api-client";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -36,6 +39,13 @@ const POSITION_LABELS: Record<string, string> = {
 };
 
 const DAYS_OF_WEEK = ["SEG", "TER", "QUA", "QUI", "SEX", "SÁB", "DOM"] as const;
+
+const LINEUP_SEX_LABELS: Record<TeamLineupSex, string> = {
+  male: "MASCULINO",
+  female: "FEMININO",
+};
+
+type TeamProfileFormValues = z.input<typeof UpsertTeamProfileRequestSchema>;
 
 export function meta() {
   return [{ title: "Editar time - VárzeaPro" }];
@@ -87,10 +97,11 @@ export default function TimePerfilEditar() {
     },
   })
 
-  const form = useForm<UpsertTeamProfileRequest>({
+  const form = useForm<TeamProfileFormValues>({
     resolver: zodResolver(UpsertTeamProfileRequestSchema),
     defaultValues: {
       name: "",
+      lineupSex: "male",
       level: "amador",
       region: "",
       city: "",
@@ -106,6 +117,7 @@ export default function TimePerfilEditar() {
     if (profile) {
       form.reset({
         name: profile.name,
+        lineupSex: profile.lineupSex ?? "male",
         level: profile.level,
         region: profile.region ?? "",
         city: profile.city ?? "",
@@ -205,7 +217,7 @@ export default function TimePerfilEditar() {
       </div>
 
       <form
-        onSubmit={form.handleSubmit((data) => mutation.mutate(data))}
+        onSubmit={form.handleSubmit((data) => mutation.mutate(UpsertTeamProfileRequestSchema.parse(data)))}
         className="space-y-10 relative z-10"
       >
         {/* Basic info */}
@@ -238,6 +250,33 @@ export default function TimePerfilEditar() {
                   {form.formState.errors.name.message}
                 </p>
               ) : null}
+            </div>
+
+            <div className="space-y-3">
+              <Label className="font-display text-xl tracking-wide uppercase">
+                ELENCO
+              </Label>
+              <Select
+                value={form.watch("lineupSex") ?? "male"}
+                onValueChange={(v) =>
+                  form.setValue("lineupSex", v as TeamLineupSex, { shouldValidate: true })
+                }
+              >
+                <SelectTrigger className="h-14 rounded-none border-2 border-foreground bg-muted/50 px-4 text-lg font-bold tracking-widest uppercase focus:ring-0 focus:border-primary transition-colors">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="rounded-none border-4 border-foreground">
+                  {TEAM_LINEUP_SEXES.map((sex) => (
+                    <SelectItem
+                      key={sex}
+                      value={sex}
+                      className="font-bold tracking-widest uppercase cursor-pointer rounded-none focus:bg-primary focus:text-primary-foreground"
+                    >
+                      {LINEUP_SEX_LABELS[sex]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-3">

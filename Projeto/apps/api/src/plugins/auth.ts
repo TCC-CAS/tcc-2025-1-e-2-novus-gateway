@@ -1,5 +1,7 @@
 import fp from "fastify-plugin"
+import { eq } from "drizzle-orm"
 import { createAuth } from "../lib/auth.js"
+import { players } from "../db/schema/index.js"
 import type { Auth } from "../lib/auth.js"
 import type { FastifyPluginAsync } from "fastify"
 
@@ -27,6 +29,17 @@ const AUTH_ERROR_MESSAGES: Record<string, { status: number; message: string }> =
   BAD_REQUEST:                            { status: 400, message: "Requisição inválida. Verifique os dados e tente novamente." },
   NOT_FOUND:                              { status: 404, message: "Recurso não encontrado." },
   USER_ALREADY_HAS_PASSWORD:              { status: 400, message: "Esta conta já possui uma senha definida." },
+}
+
+const playerSexValues = ["male", "female", "trans_male", "trans_female", "rather_not_say"] as const
+type PlayerSexValue = (typeof playerSexValues)[number]
+
+function normalizePlayerSex(value: unknown): PlayerSexValue {
+  return playerSexValues.includes(value as PlayerSexValue) ? (value as PlayerSexValue) : "rather_not_say"
+}
+
+function isSignUpRequest(request: import("fastify").FastifyRequest) {
+  return request.method === "POST" && request.url.split("?")[0].endsWith("/api/auth/sign-up/email")
 }
 
 /**
@@ -75,6 +88,21 @@ async function handleAuthRequest(
     try {
       const json = JSON.parse(responseBody)
       if ("token" in json) delete json.token
+
+      if (isSignUpRequest(request) && response.status < 400) {
+        const body = request.body as Record<string, unknown> | undefined
+        const userId = json.user?.id
+        if (typeof userId === "string" && body?.role !== "team") {
+          const sex = normalizePlayerSex(body?.sex)
+          await request.server.db
+            .update(players)
+            .set({ sex, updatedAt: new Date() })
+            .where(eq(players.userId, userId))
+            .catch((error: unknown) => {
+              request.log.warn({ error }, "Could not persist player sex during sign-up")
+            })
+        }
+      }
 
       // Translate Better Auth error codes to Portuguese
       const errorCode: string | undefined = json.code ?? json.error?.code

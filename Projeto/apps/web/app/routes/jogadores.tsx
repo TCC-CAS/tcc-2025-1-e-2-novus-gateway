@@ -6,8 +6,8 @@ import { publicApi, searchApi, type ShowcasePlayer } from "~/lib/api-client"
 import { useAuth } from "~/lib/auth/auth-context"
 import { usePlan } from "~/lib/plan"
 import { UpsellCard } from "~/lib/plan/plan-gate"
-import { isUnlimited, POSITIONS, PLAYER_LEVELS } from "~shared/contracts"
-import type { Position, PlayerLevel } from "~shared/contracts"
+import { isUnlimited, POSITIONS, PLAYER_LEVELS, SEX_FILTERS } from "~shared/contracts"
+import type { Position, PlayerLevel, SexFilter } from "~shared/contracts"
 import { cn } from "~/lib/utils"
 import { Button } from "~/components/ui/button"
 import { Input } from "~/components/ui/input"
@@ -38,6 +38,7 @@ export function meta() {
 type CardPlayer = {
   id: string
   name: string
+  sex?: string
   photoUrl?: string | null
   positions: string[]
   level?: string | null
@@ -158,6 +159,7 @@ export default function JogadoresPublicos() {
 
   // Shared filters
   const [region, setRegion] = useState("")
+  const [sex, setSex] = useState<SexFilter | undefined>(undefined)
   const [page, setPage] = useState(1)
 
   // Logged-in filters (only shown/used when canSearch)
@@ -167,6 +169,7 @@ export default function JogadoresPublicos() {
 
   // Public filter state (applied on form submit)
   const [regionFilter, setRegionFilter] = useState("")
+  const [sexFilter, setSexFilter] = useState<SexFilter | undefined>(undefined)
 
   // Plan gating (only relevant for team searchers)
   const { getSearchResultsLimit } = usePlan()
@@ -177,8 +180,8 @@ export default function JogadoresPublicos() {
   // Public query (player, admin, unauthenticated)                      //
   // ---------------------------------------------------------------- //
   const { data: publicData, isLoading: publicLoading } = useQuery({
-    queryKey: ["public", "players", { page, region: regionFilter }],
-    queryFn: () => publicApi.players({ page, pageSize: 12, region: regionFilter || undefined }),
+    queryKey: ["public", "players", { page, region: regionFilter, sex: sexFilter }],
+    queryFn: () => publicApi.players({ page, pageSize: 12, region: regionFilter || undefined, sex: sexFilter }),
     enabled: !canSearch,
     staleTime: 1000 * 60 * 5,
     retry: false,
@@ -188,7 +191,7 @@ export default function JogadoresPublicos() {
   // Team search query (full filters, plan gating)                      //
   // ---------------------------------------------------------------- //
   const { data: searchData, isLoading: searchLoading } = useQuery({
-    queryKey: ["search", "players", { position, skills, region, level, page }],
+    queryKey: ["search", "players", { position, skills, region, level, sex, page }],
     queryFn: () =>
       searchApi.players({
         page,
@@ -198,6 +201,7 @@ export default function JogadoresPublicos() {
         skills: skills || undefined,
         region: region || undefined,
         level: level as PlayerLevel | undefined,
+        sex,
       }),
     enabled: canSearch,
     staleTime: 1000 * 60 * 2,
@@ -219,12 +223,15 @@ export default function JogadoresPublicos() {
   function handlePublicSearch(e: React.FormEvent) {
     e.preventDefault()
     setRegionFilter(region)
+    setSexFilter(sex)
     setPage(1)
   }
 
   function resetFilters() {
     setRegion("")
     setRegionFilter("")
+    setSex(undefined)
+    setSexFilter(undefined)
     setPosition(undefined)
     setSkills("")
     setLevel(undefined)
@@ -286,6 +293,19 @@ export default function JogadoresPublicos() {
                   onChange={(e) => { setRegion(e.target.value); setPage(1) }}
                   className="w-[130px] h-10 rounded-none border-2 border-foreground bg-muted/50 font-bold tracking-widest text-xs uppercase focus:ring-0 focus-visible:ring-0 focus:border-primary placeholder:normal-case"
                 />
+                <Select value={sex ?? "all"} onValueChange={(v) => { setSex(v === "all" ? undefined : (v as SexFilter)); setPage(1) }}>
+                  <SelectTrigger className="w-[140px] h-10 rounded-none border-2 border-foreground bg-muted/50 font-bold tracking-widest text-xs uppercase focus:ring-0 focus:border-primary">
+                    <SelectValue placeholder="SEXO" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-none border-4 border-foreground">
+                    <SelectItem value="all" className="font-bold tracking-widest uppercase text-xs">TODOS</SelectItem>
+                    {SEX_FILTERS.map((value) => (
+                      <SelectItem key={value} value={value} className="font-bold tracking-widest uppercase text-xs">
+                        {value === "male" ? "MASCULINO" : "FEMININO"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <Select value={level ?? "all"} onValueChange={(v) => { setLevel(v === "all" ? undefined : v); setPage(1) }}>
                   <SelectTrigger className="w-[130px] h-10 rounded-none border-2 border-foreground bg-muted/50 font-bold tracking-widest text-xs uppercase focus:ring-0 focus:border-primary">
                     <SelectValue placeholder="NÍVEL" />
@@ -297,7 +317,7 @@ export default function JogadoresPublicos() {
                     ))}
                   </SelectContent>
                 </Select>
-                {(position || skills || region || level) && (
+                {(position || skills || region || level || sex) && (
                   <Button
                     type="button"
                     variant="outline"
@@ -318,11 +338,24 @@ export default function JogadoresPublicos() {
                   onChange={(e) => setRegion(e.target.value)}
                   className="max-w-sm rounded-none border-2 border-foreground font-display tracking-wide focus-visible:ring-0 focus-visible:border-primary transition-colors"
                 />
+                <Select value={sex ?? "all"} onValueChange={(v) => setSex(v === "all" ? undefined : (v as SexFilter))}>
+                  <SelectTrigger className="w-[160px] rounded-none border-2 border-foreground font-display tracking-wide focus:ring-0 focus:border-primary">
+                    <SelectValue placeholder="Sexo" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-none border-4 border-foreground">
+                    <SelectItem value="all" className="font-bold tracking-widest uppercase text-xs">TODOS</SelectItem>
+                    {SEX_FILTERS.map((value) => (
+                      <SelectItem key={value} value={value} className="font-bold tracking-widest uppercase text-xs">
+                        {value === "male" ? "MASCULINO" : "FEMININO"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <Button type="submit" className="rounded-none border-2 border-foreground bg-foreground px-5 font-display tracking-widest text-background transition-all hover:bg-primary hover:border-primary hover:-translate-y-0.5">
                   <SearchIcon className="size-4 mr-2" />
                   BUSCAR
                 </Button>
-                {regionFilter && (
+                {(regionFilter || sexFilter) && (
                   <Button type="button" variant="outline" className="rounded-none border-2 border-foreground font-display text-sm tracking-widest hover:bg-muted" onClick={resetFilters}>
                     LIMPAR
                   </Button>

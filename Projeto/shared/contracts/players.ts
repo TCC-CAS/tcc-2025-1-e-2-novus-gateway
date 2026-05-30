@@ -23,11 +23,28 @@ export const PLAYER_LEVELS = [
 export const PlayerLevelSchema = z.enum(PLAYER_LEVELS);
 export type PlayerLevel = z.infer<typeof PlayerLevelSchema>;
 
+/** Player sex, used for profile registration and binary search grouping */
+export const PLAYER_SEXES = [
+  "male",
+  "female",
+  "trans_male",
+  "trans_female",
+  "rather_not_say",
+] as const;
+export const PlayerSexSchema = z.enum(PLAYER_SEXES);
+export type PlayerSex = z.infer<typeof PlayerSexSchema>;
+
+/** Binary search filter. Trans male profiles are included in male, trans female in female. */
+export const SEX_FILTERS = ["male", "female"] as const;
+export const SexFilterSchema = z.enum(SEX_FILTERS);
+export type SexFilter = z.infer<typeof SexFilterSchema>;
+
 /** Player profile (full) */
 export const PlayerProfileSchema = z.object({
   id: z.string(),
   userId: z.string(),
   name: z.string(),
+  sex: PlayerSexSchema,
   photoUrl: z.string().url().optional(),
   positions: z.array(PositionSchema),
   bio: z.string().optional(),
@@ -64,6 +81,7 @@ export type PlayerProfile = z.infer<typeof PlayerProfileSchema>;
 export const PlayerSummarySchema = z.object({
   id: z.string(),
   name: z.string(),
+  sex: PlayerSexSchema,
   photoUrl: z.string().url().optional(),
   positions: z.array(PositionSchema),
   skills: z.array(z.string()),
@@ -77,6 +95,7 @@ export type PlayerSummary = z.infer<typeof PlayerSummarySchema>;
 /** Create/update player profile request */
 export const UpsertPlayerProfileRequestSchema = z.object({
   name: z.string().min(2, "Nome obrigatório"),
+  sex: PlayerSexSchema.default("rather_not_say"),
   photoUrl: z.string().url().optional().or(z.literal("")),
   positions: z.array(PositionSchema),
   bio: z.string().optional(),

@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from "fastify"
 import { ZodTypeProvider } from "fastify-type-provider-zod"
-import { desc, eq, and, count, ilike } from "drizzle-orm"
+import { desc, eq, and, count, ilike, sql } from "drizzle-orm"
 import { ok } from "../lib/response.js"
 import { teams, players, users } from "../db/schema/index.js"
 
@@ -15,6 +15,7 @@ const publicRoutes: FastifyPluginAsync = async (fastify) => {
           .select({
             id: teams.id,
             name: teams.name,
+            lineupSex: teams.lineupSex,
             logoUrl: teams.logoUrl,
             level: teams.level,
             region: teams.region,
@@ -28,6 +29,7 @@ const publicRoutes: FastifyPluginAsync = async (fastify) => {
           .select({
             id: players.id,
             name: players.name,
+            sex: players.sex,
             photoUrl: players.photoUrl,
             positions: players.positions,
             level: players.level,
@@ -57,24 +59,26 @@ const publicRoutes: FastifyPluginAsync = async (fastify) => {
     "/teams",
     {},
     async (request, reply) => {
-      const { page = "1", pageSize = "12", region } = request.query as {
+      const { page = "1", pageSize = "12", region, lineupSex } = request.query as {
         page?: string
         pageSize?: string
         region?: string
+        lineupSex?: "male" | "female"
       }
       const pageNum = Math.max(1, parseInt(page, 10))
       const size = Math.min(50, Math.max(1, parseInt(pageSize, 10)))
       const offset = (pageNum - 1) * size
 
-      const conditions = region
-        ? [eq(teams.hidden, false), ilike(teams.region, `%${region}%`)]
-        : [eq(teams.hidden, false)]
+      const conditions = [eq(teams.hidden, false)]
+      if (region) conditions.push(ilike(teams.region, `%${region}%`))
+      if (lineupSex) conditions.push(eq(teams.lineupSex, lineupSex))
 
       const [rows, [countRow]] = await Promise.all([
         fastify.db
           .select({
             id: teams.id,
             name: teams.name,
+            lineupSex: teams.lineupSex,
             logoUrl: teams.logoUrl,
             level: teams.level,
             region: teams.region,
@@ -117,24 +121,30 @@ const publicRoutes: FastifyPluginAsync = async (fastify) => {
     "/players",
     {},
     async (request, reply) => {
-      const { page = "1", pageSize = "12", region } = request.query as {
+      const { page = "1", pageSize = "12", region, sex } = request.query as {
         page?: string
         pageSize?: string
         region?: string
+        sex?: "male" | "female"
       }
       const pageNum = Math.max(1, parseInt(page, 10))
       const size = Math.min(50, Math.max(1, parseInt(pageSize, 10)))
       const offset = (pageNum - 1) * size
 
-      const conditions = region
-        ? [eq(players.hidden, false), ilike(players.region, `%${region}%`)]
-        : [eq(players.hidden, false)]
+      const conditions = [eq(players.hidden, false)]
+      if (region) conditions.push(ilike(players.region, `%${region}%`))
+      if (sex === "male") {
+        conditions.push(sql`${players.sex} IN ('male', 'trans_male')`)
+      } else if (sex === "female") {
+        conditions.push(sql`${players.sex} IN ('female', 'trans_female')`)
+      }
 
       const [rows, [countRow]] = await Promise.all([
         fastify.db
           .select({
             id: players.id,
             name: players.name,
+            sex: players.sex,
             photoUrl: players.photoUrl,
             positions: players.positions,
             level: players.level,

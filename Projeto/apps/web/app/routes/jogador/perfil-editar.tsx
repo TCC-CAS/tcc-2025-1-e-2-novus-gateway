@@ -11,8 +11,9 @@ import {
   type CareerEntry,
   POSITIONS,
   PLAYER_LEVELS,
+  PLAYER_SEXES,
 } from "~shared/contracts";
-import type { PlayerLevel, Position } from "~shared/contracts";
+import type { PlayerLevel, PlayerSex, Position } from "~shared/contracts";
 import { playersApi, uploadApi, ApiError } from "~/lib/api-client";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -39,6 +40,14 @@ const POSITION_LABELS: Record<string, string> = {
 };
 
 const DAYS_OF_WEEK = ["SEG", "TER", "QUA", "QUI", "SEX", "SÁB", "DOM"] as const;
+
+const PLAYER_SEX_LABELS: Record<PlayerSex, string> = {
+  male: "MASCULINO",
+  female: "FEMININO",
+  trans_male: "HOMEM TRANS",
+  trans_female: "MULHER TRANS",
+  rather_not_say: "PREFIRO NÃO DIZER",
+};
 
 function parseSkillsInput(value: string) {
   return value
@@ -86,6 +95,7 @@ export default function JogadorPerfilEditar() {
     if (profile) {
       form.reset({
         name: profile.name,
+        sex: profile.sex ?? "rather_not_say",
         positions: profile.positions ?? [],
         bio: profile.bio ?? "",
         skills: profile.skills ?? [],
@@ -276,6 +286,29 @@ export default function JogadorPerfilEditar() {
                 {...form.register("phone")}
                 className="h-14 rounded-none border-2 border-foreground bg-muted/50 px-4 text-lg focus-visible:ring-0 focus-visible:border-primary transition-colors font-mono"
               />
+            </div>
+
+            <div className="space-y-3">
+              <Label className="font-display text-xl tracking-wide uppercase">
+                SEXO
+              </Label>
+              <Select
+                value={form.watch("sex") ?? "rather_not_say"}
+                onValueChange={(v) =>
+                  form.setValue("sex", v as PlayerSex, { shouldValidate: true })
+                }
+              >
+                <SelectTrigger className="h-14 rounded-none border-2 border-foreground bg-muted/50 px-4 text-lg uppercase font-bold tracking-widest focus:ring-0 focus:border-primary transition-colors">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="rounded-none border-2 border-foreground">
+                  {PLAYER_SEXES.map((sex) => (
+                    <SelectItem key={sex} value={sex} className="font-bold tracking-widest uppercase hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground cursor-pointer rounded-none text-xs">
+                      {PLAYER_SEX_LABELS[sex]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-3">
