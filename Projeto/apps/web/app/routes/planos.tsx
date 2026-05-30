@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router";
-import { useAuth, useAuthActions } from "~/lib/auth/auth-context";
+import { useAuth } from "~/lib/auth/auth-context";
 import { usePlan } from "~/lib/plan";
 import { subscriptionApi, ApiError } from "~/lib/api-client";
 import { Button } from "~/components/ui/button";
@@ -15,7 +15,6 @@ import {
   Star,
   Flame,
   ArrowLeft,
-  ArrowDown,
   MessageCircle,
   Search,
   Video,
@@ -173,7 +172,6 @@ const FAQ_ITEMS = [
 
 export default function Planos() {
   const { user, role } = useAuth();
-  const { setUser } = useAuthActions();
   const { planId: effectivePlanId, usage, refreshUsage } = usePlan();
   const [view, setView] = useState<"player" | "team">(
     role === "team" ? "team" : "player"
@@ -217,21 +215,6 @@ export default function Planos() {
       toast.error("Erro ao cancelar. Tente novamente.");
     } finally {
       setCanceling(false);
-    }
-  };
-
-  const handleDowngrade = async () => {
-    if (!user) return;
-    setUpgrading("free");
-    try {
-      await subscriptionApi.upgrade({ planId: "free" });
-      setUser({ ...user, planId: "free" });
-      await refreshUsage();
-      toast.success("Plano alterado para LIVRE!");
-    } catch {
-      toast.error("Erro ao alterar plano. Tente novamente.");
-    } finally {
-      setUpgrading(null);
     }
   };
 
@@ -319,29 +302,16 @@ export default function Planos() {
                       </div>
                     )}
                   </div>
-                  {isPaid && (
-                    <div className="flex flex-col gap-2 sm:flex-row">
-                      {!isCanceled && (
-                        <Button
-                          variant="outline"
-                          className="gap-2 rounded-none border-2 border-foreground font-bold uppercase tracking-widest hover:bg-foreground hover:text-background"
-                          onClick={handleCancel}
-                          disabled={canceling}
-                        >
-                          <XCircle className="size-4" />
-                          {canceling ? "CANCELANDO..." : "CANCELAR"}
-                        </Button>
-                      )}
-                      <Button
-                        variant="outline"
-                        className="gap-2 rounded-none border-2 border-foreground font-bold uppercase tracking-widest hover:bg-foreground hover:text-background"
-                        onClick={handleDowngrade}
-                        disabled={upgrading === "free"}
-                      >
-                        <ArrowDown className="size-4" />
-                        {upgrading === "free" ? "VOLTANDO..." : "VOLTAR AO GRÁTIS"}
-                      </Button>
-                    </div>
+                  {isPaid && !isCanceled && (
+                    <Button
+                      variant="outline"
+                      className="gap-2 rounded-none border-2 border-foreground font-bold uppercase tracking-widest hover:bg-foreground hover:text-background"
+                      onClick={handleCancel}
+                      disabled={canceling}
+                    >
+                      <XCircle className="size-4" />
+                      {canceling ? "CANCELANDO..." : "CANCELAR ASSINATURA"}
+                    </Button>
                   )}
                 </div>
               </div>
@@ -502,28 +472,18 @@ export default function Planos() {
                         PLANO ATUAL
                       </div>
                     ) : plan.price === 0 ? (
-                      <Button
-                        className="h-14 w-full gap-2 rounded-none border-2 border-foreground bg-foreground text-background font-display text-xl tracking-widest transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_var(--color-primary)] uppercase"
-                        disabled={upgrading === "free"}
-                        onClick={() => {
-                          if (user && isPaid) {
-                            handleDowngrade();
-                          }
-                        }}
-                      >
-                        {user && isPaid ? (
-                          <>
-                            <ArrowDown className="size-5" />
-                            {upgrading === "free" ? "VOLTANDO..." : "VOLTAR AO GRÁTIS"}
-                          </>
-                        ) : !user ? (
-                          <Link to="/cadastro" className="flex items-center gap-2">
-                            COMEÇAR GRÁTIS
-                          </Link>
-                        ) : (
-                          "PLANO ATUAL"
-                        )}
-                      </Button>
+                      !user ? (
+                        <Button
+                          asChild
+                          className="h-14 w-full rounded-none border-2 border-foreground bg-foreground text-background font-display text-xl tracking-widest transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_var(--color-primary)] uppercase"
+                        >
+                          <Link to="/cadastro">COMEÇAR GRÁTIS</Link>
+                        </Button>
+                      ) : (
+                        <div className="flex h-14 items-center justify-center border-2 border-foreground/30 font-display text-xl tracking-widest text-muted-foreground uppercase">
+                          PLANO ATUAL
+                        </div>
+                      )
                     ) : (
                       <Button
                         className={`h-14 w-full gap-2 rounded-none border-2 font-display text-xl tracking-widest transition-all hover:-translate-y-1 uppercase ${
