@@ -47,6 +47,12 @@ type CardPlayer = {
   cardTier?: "none" | "gold" | "legendary"
 }
 
+const PLAYER_SEX_LABELS: Record<string, string> = {
+  male: "MASCULINO",
+  female: "FEMININO",
+  rather_not_say: "NÃO INFORMADO",
+}
+
 function PlayerCardSkeleton() {
   return (
     <div className="border-2 border-foreground bg-muted animate-pulse">
@@ -125,6 +131,14 @@ function PlayerCard({ player }: { player: CardPlayer }) {
             tier === "legendary" ? "text-yellow-300" : "text-background",
           )}>
             {player.name}
+          </p>
+          <p className={cn(
+            "mt-1 inline-flex border px-1.5 py-0.5 font-display text-[9px] font-black uppercase tracking-widest",
+            tier === "legendary"
+              ? "border-yellow-300/35 bg-yellow-300/15 text-yellow-200"
+              : "border-background/25 bg-background/15 text-background/80",
+          )}>
+            {PLAYER_SEX_LABELS[player.sex ?? "rather_not_say"] ?? PLAYER_SEX_LABELS.rather_not_say}
           </p>
           {(player.city || player.region) && (
             <p className="flex items-center gap-1 text-background/65 text-[10px] font-bold tracking-wide mt-0.5">

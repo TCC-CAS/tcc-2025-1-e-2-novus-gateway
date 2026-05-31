@@ -53,13 +53,15 @@ export const emailService: EmailService = {
     await resend.emails.send({
       from: fromEmail,
       to,
-      subject: `Bem-vindo ao VárzeaPro, ${name}!`,
-      html: emailBase(`BEM-VINDO, ${name}!`, `
-        <p style="color:#555;font-size:16px;line-height:1.6;margin:0 0 24px;">
-          Sua conta no VárzeaPro foi criada com sucesso. Agora é hora de montar seu perfil e entrar em campo.
-        </p>
-        ${emailButton(`${frontendUrl}/onboarding`, "CONFIGURAR PERFIL")}
-      `),
+      subject: `Bem-vindo(a) ao VárzeaPro, ${name}!`,
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="text-transform: uppercase; letter-spacing: 2px;">BEM-VINDO(A), ${name}!</h1>
+          <p>Sua conta no VárzeaPro foi criada com sucesso.</p>
+          <p>Complete seu perfil para começar a encontrar times e jogadores.</p>
+          <a href="${process.env.CORS_ORIGIN || "http://localhost:5173"}/onboarding" style="display: inline-block; padding: 12px 24px; background: #000; color: #fff; text-decoration: none; text-transform: uppercase; letter-spacing: 1px;">CONFIGURAR PERFIL</a>
+        </div>
+      `,
     })
   },
 

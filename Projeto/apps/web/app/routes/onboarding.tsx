@@ -222,7 +222,7 @@ export default function Onboarding() {
                 </div>
                 <div>
                   <h1 className="font-display text-5xl tracking-wide text-foreground uppercase">
-                    BEM-VINDO, {user.name}!
+                    BEM-VINDO(A), {user.name}!
                   </h1>
                   <p className="mt-6 text-lg font-medium text-muted-foreground max-w-md mx-auto">
                     Vamos montar seu perfil de jogador. Preencha o que quiser
@@ -538,7 +538,7 @@ export default function Onboarding() {
                 </div>
                 <div>
                   <h1 className="font-display text-5xl tracking-wide text-foreground uppercase">
-                    BEM-VINDO, {user.name}!
+                    BEM-VINDO(A), {user.name}!
                   </h1>
                   <p className="mt-6 text-lg font-medium text-muted-foreground max-w-md mx-auto">
                     Vamos configurar o perfil do seu time. Preencha o que quiser

@@ -55,7 +55,7 @@ export default function TimePerfil() {
           >
             <Link to={`/times/${profile.id}`}>
               <Eye className="size-4" />
-              <span className="hidden sm:inline">VISÃO PUBLICA</span>
+              <span className="hidden sm:inline">VISÃO PÚBLICA</span>
             </Link>
           </Button>
           <Button

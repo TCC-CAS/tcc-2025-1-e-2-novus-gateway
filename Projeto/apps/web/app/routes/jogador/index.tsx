@@ -505,7 +505,7 @@ export default function JogadorHome() {
           </div>
           <div className="min-w-0">
             <p className="font-display text-xs tracking-widest uppercase text-muted-foreground mb-1">
-              BEM-VINDO DE VOLTA
+              BEM-VINDO(A) DE VOLTA
             </p>
             <h1 className="font-display text-4xl sm:text-5xl tracking-wide text-foreground uppercase leading-none truncate">
               {profileLoading ? (
