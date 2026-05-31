@@ -12,6 +12,7 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Field, FieldGroup, FieldSet } from "~/components/ui/field";
 import { Label } from "~/components/ui/label";
+import { GlobalHeader } from "~/components/global-header";
 
 export function meta() {
   return [{ title: "Entrar - VárzeaPro" }];
@@ -66,7 +67,7 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col overflow-x-hidden bg-background selection:bg-primary selection:text-primary-foreground md:flex-row">
+    <div className="flex min-h-dvh flex-col overflow-x-hidden bg-background selection:bg-primary selection:text-primary-foreground">
       {/* Decorative Global Noise */}
       <div
         className="pointer-events-none fixed inset-0 z-50 opacity-[0.015] mix-blend-overlay"
@@ -76,8 +77,10 @@ export default function Login() {
         }}
       ></div>
 
+      <GlobalHeader />
+      <div className="flex flex-1 flex-col md:flex-row pb-16 md:pb-0">
       {/* LEFT SIDE: BRUTALIST BRANDING & MOOD */}
-      <aside className="relative flex flex-col justify-between overflow-hidden border-b-8 border-primary bg-foreground p-8 md:w-1/2 md:border-b-0 md:border-r-12 md:p-12 lg:w-[45%]">
+      <aside className="relative hidden md:flex flex-col justify-between overflow-hidden border-b-8 border-primary bg-foreground p-8 md:w-1/2 md:border-b-0 md:border-r-12 md:p-12 lg:w-[45%]">
         <div className="relative z-10 flex items-center justify-between">
           <Link
             to="/"
@@ -109,7 +112,7 @@ export default function Login() {
       </aside>
 
       {/* RIGHT SIDE: BENTO BOX FORM */}
-      <main className="relative flex flex-1 items-center justify-center p-8 md:p-12">
+      <main className="relative flex flex-1 items-start justify-center p-8 md:items-center md:p-12">
         <div className="w-full max-w-md bg-background p-8 border-4 border-foreground shadow-[8px_8px_0px_0px_var(--color-foreground)] dark:shadow-[8px_8px_0px_0px_var(--color-foreground)] transition-shadow hover:shadow-[12px_12px_0px_0px_var(--color-primary)]">
           <div className="mb-10 text-center">
             <h2 className="font-display text-5xl tracking-wide text-foreground">
@@ -194,6 +197,7 @@ export default function Login() {
           </p>
         </div>
       </main>
+      </div>
     </div>
   );
 }

@@ -443,7 +443,7 @@ export default function JogadoresPublicos() {
                 <h2 className="font-display text-[8vw] md:text-[4vw] leading-[0.9] text-background font-black uppercase">CRIE SEU PERFIL</h2>
                 <p className="mt-4 text-background/60 font-medium">Conecte-se a times e jogadores da sua região — grátis.</p>
               </div>
-              <Button asChild size="lg" className="h-auto rounded-none bg-primary border-2 border-primary px-10 py-5 font-display text-2xl tracking-widest text-primary-foreground transition-all hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_var(--color-background)]">
+              <Button asChild size="lg" className="h-auto rounded-none bg-primary border-2 border-primary px-5 py-4 font-display text-lg tracking-widest text-primary-foreground transition-all hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_var(--color-background)] sm:px-10 sm:py-5 sm:text-2xl">
                 <Link to="/cadastro">CRIAR CONTA GRÁTIS</Link>
               </Button>
             </div>

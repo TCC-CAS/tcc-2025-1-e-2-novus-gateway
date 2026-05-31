@@ -58,7 +58,7 @@ export default function Index() {
                   <Button
                     size="lg"
                     asChild
-                    className="h-auto rounded-none bg-primary px-8 py-5 font-display text-3xl tracking-widest text-primary-foreground transition-transform hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_var(--color-foreground)] dark:hover:shadow-[6px_6px_0px_0px_var(--color-foreground)] sm:px-12"
+                    className="h-auto rounded-none bg-primary px-5 py-4 font-display text-xl tracking-widest text-primary-foreground transition-transform hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_var(--color-foreground)] dark:hover:shadow-[6px_6px_0px_0px_var(--color-foreground)] sm:px-12 sm:py-5 sm:text-3xl"
                   >
                     <Link to="/cadastro">COMEÇAR AGORA</Link>
                   </Button>
@@ -66,7 +66,7 @@ export default function Index() {
                     size="lg"
                     variant="outline"
                     asChild
-                    className="h-auto rounded-none border-2 border-foreground bg-transparent px-8 py-5 font-display text-3xl tracking-widest text-foreground transition-all hover:-translate-y-1 hover:bg-foreground hover:text-background sm:px-12"
+                    className="h-auto rounded-none border-2 border-foreground bg-transparent px-5 py-4 font-display text-xl tracking-widest text-foreground transition-all hover:-translate-y-1 hover:bg-foreground hover:text-background sm:px-12 sm:py-5 sm:text-3xl"
                   >
                     <Link to="/login">JÁ TENHO CONTA</Link>
                   </Button>
@@ -353,7 +353,7 @@ export default function Index() {
             <Button
               size="lg"
               asChild
-              className="mt-14 h-auto rounded-none border-4 border-foreground bg-foreground px-12 py-6 font-display text-4xl tracking-widest text-background transition-all hover:scale-105 hover:bg-transparent hover:text-foreground"
+              className="mt-14 h-auto rounded-none border-4 border-foreground bg-foreground px-6 py-4 font-display text-xl tracking-widest text-background transition-all hover:scale-105 hover:bg-transparent hover:text-foreground sm:px-12 sm:py-6 sm:text-4xl"
             >
               <Link to="/cadastro">CRIAR CONTA GRÁTIS</Link>
             </Button>

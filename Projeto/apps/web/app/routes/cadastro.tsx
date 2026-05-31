@@ -20,6 +20,7 @@ import {
 } from "~/components/ui/select";
 import { cn } from "~/lib/utils";
 import { Users, User } from "lucide-react";
+import { GlobalHeader } from "~/components/global-header";
 
 function formatCpf(value: string): string {
   return value.replace(/\D/g, "").slice(0, 11)
@@ -109,7 +110,7 @@ export default function Cadastro() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col overflow-x-hidden bg-background selection:bg-primary selection:text-primary-foreground md:flex-row-reverse">
+    <div className="flex min-h-dvh flex-col overflow-x-hidden bg-background selection:bg-primary selection:text-primary-foreground">
       {/* Decorative Global Noise */}
       <div
         className="pointer-events-none fixed inset-0 z-50 opacity-[0.015] mix-blend-overlay"
@@ -119,8 +120,10 @@ export default function Cadastro() {
         }}
       ></div>
 
+      <GlobalHeader />
+      <div className="flex flex-1 flex-col md:flex-row-reverse pb-16 md:pb-0">
       {/* RIGHT SIDE: BRUTALIST BRANDING & MOOD */}
-      <aside className="relative flex flex-col justify-between overflow-hidden border-b-8 border-foreground bg-primary p-8 md:w-1/2 md:border-b-0 md:border-l-12 md:p-12 lg:w-[45%]">
+      <aside className="relative hidden md:flex flex-col justify-between overflow-hidden border-b-8 border-foreground bg-primary p-8 md:w-1/2 md:border-b-0 md:border-l-12 md:p-12 lg:w-[45%]">
         <div className="relative z-10 flex items-center justify-between">
           <Link
             to="/"
@@ -152,7 +155,7 @@ export default function Cadastro() {
       </aside>
 
       {/* LEFT SIDE: BENTO BOX FORM */}
-      <main className="flex flex-1 items-center justify-center p-6 md:p-12">
+      <main className="flex flex-1 items-start justify-center p-6 md:items-center md:p-12">
         <div className="w-full max-w-lg bg-background p-8 border-4 border-foreground shadow-[-8px_8px_0px_0px_var(--color-foreground)] dark:shadow-[-8px_8px_0px_0px_var(--color-foreground)] transition-shadow hover:shadow-[-12px_12px_0px_0px_var(--color-primary)]">
           <div className="mb-10 lg:text-left text-center">
             <h2 className="font-display text-5xl tracking-wide text-foreground">
@@ -472,6 +475,7 @@ export default function Cadastro() {
           </p>
         </div>
       </main>
+      </div>
     </div>
   );
 }
