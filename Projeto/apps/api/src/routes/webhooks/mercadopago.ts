@@ -2,11 +2,15 @@ import type { FastifyPluginAsync } from "fastify"
 import { createHmac, timingSafeEqual } from "crypto"
 import { eq } from "drizzle-orm"
 import { MercadoPagoConfig, Payment, PreApproval } from "mercadopago"
+import type { NodePgDatabase } from "drizzle-orm/node-postgres"
+import * as schema from "../../db/schema/index.js"
 import { subscriptions } from "../../db/schema/subscriptions.js"
 import { users } from "../../db/schema/users.js"
 import { ok } from "../../lib/response.js"
 import { nanoid } from "nanoid"
 import type { PlanId } from "../../../../../shared/contracts/subscription.js"
+
+type Db = NodePgDatabase<typeof schema>
 
 function verifySignature(
   secret: string,
@@ -25,7 +29,7 @@ function verifySignature(
 }
 
 async function activateSubscription(
-  db: any,
+  db: Db,
   { userId, planId, preapprovalId }: { userId: string; planId: PlanId; preapprovalId?: string }
 ): Promise<void> {
   const now = new Date()
@@ -64,7 +68,7 @@ async function activateSubscription(
   })
 }
 
-async function deactivateSubscription(db: any, { userId }: { userId: string }): Promise<void> {
+async function deactivateSubscription(db: Db, { userId }: { userId: string }): Promise<void> {
   const now = new Date()
   await db.transaction(async (tx: any) => {
     await tx
@@ -104,7 +108,14 @@ const webhookRoutes: FastifyPluginAsync = async (fastify) => {
           return ok({ received: true })
         }
 
-        const { userId, planId } = JSON.parse(externalRef) as { userId: string; planId: PlanId }
+        let parsedPreapproval: { userId: string; planId: PlanId }
+        try {
+          parsedPreapproval = JSON.parse(externalRef) as { userId: string; planId: PlanId }
+        } catch {
+          request.log.error({ preapprovalId: resourceId }, "Malformed external_reference JSON — skipping")
+          return ok({ received: true })
+        }
+        const { userId, planId } = parsedPreapproval
 
         if (preapproval.status === "authorized") {
           await activateSubscription(fastify.db, { userId, planId, preapprovalId: resourceId })
@@ -172,7 +183,14 @@ const webhookRoutes: FastifyPluginAsync = async (fastify) => {
         return ok({ received: true })
       }
 
-      const { userId, planId } = JSON.parse(externalRef) as { userId: string; planId: PlanId }
+      let parsed: { userId: string; planId: PlanId }
+      try {
+        parsed = JSON.parse(externalRef) as { userId: string; planId: PlanId }
+      } catch {
+        request.log.error({ paymentId }, "Malformed external_reference JSON — skipping")
+        return ok({ received: true })
+      }
+      const { userId, planId } = parsed
 
       const [existingSub] = await fastify.db
         .select({ status: subscriptions.status, planId: subscriptions.planId })
@@ -184,14 +202,18 @@ const webhookRoutes: FastifyPluginAsync = async (fastify) => {
       const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
 
       if (existingSub?.status === "active" && existingSub.planId === planId) {
-        await fastify.db
-          .update(subscriptions)
-          .set({ currentPeriodStart: now, currentPeriodEnd: periodEnd, updatedAt: now })
-          .where(eq(subscriptions.userId, userId))
+        await fastify.db.transaction(async (tx: any) => {
+          await tx
+            .update(subscriptions)
+            .set({ currentPeriodStart: now, currentPeriodEnd: periodEnd, updatedAt: now })
+            .where(eq(subscriptions.userId, userId))
+        })
         request.log.info({ paymentId, userId, planId }, "Subscription period extended via payment webhook")
-      } else {
+      } else if (!existingSub) {
         await activateSubscription(fastify.db, { userId, planId })
-        request.log.info({ paymentId, userId, planId }, "Subscription activated via payment webhook")
+        request.log.info({ paymentId, userId, planId }, "Subscription activated via payment webhook (fallback)")
+      } else {
+        request.log.warn({ paymentId, userId, existingPlanId: existingSub.planId, planId }, "Payment planId mismatch or non-active sub — skipping")
       }
     } catch (err) {
       fastify.log.error({ err, paymentId }, "Payment webhook processing failed")
