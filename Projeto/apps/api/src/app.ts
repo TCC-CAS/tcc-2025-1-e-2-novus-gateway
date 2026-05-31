@@ -3,6 +3,7 @@ import { serializerCompiler, validatorCompiler, ZodTypeProvider } from "fastify-
 import { registerErrorHandler } from "./lib/errors.js"
 import { requireSession, requireRole } from "./hooks/require-auth.js"
 import { ImageStorage } from "./lib/images/storage.js"
+import { startExpireSubscriptionsCron } from "./jobs/expire-subscriptions.js"
 
 const IMAGE_URL_FIELDS = new Set([
   "photoUrl", "logoUrl", "avatarUrl",
@@ -105,6 +106,14 @@ export async function buildApp() {
   fastify.get("/api/admin/test", { preHandler: [requireRole("admin")] }, async (request, reply) => {
     return { data: { message: "admin access granted" } }
   })
+
+  // Start cron job to expire paused subscriptions (skip in test env)
+  if (process.env.NODE_ENV !== "test") {
+    fastify.addHook("onReady", async () => {
+      const interval = startExpireSubscriptionsCron(fastify.db, fastify.log)
+      fastify.addHook("onClose", async () => clearInterval(interval))
+    })
+  }
 
   return fastify
 }

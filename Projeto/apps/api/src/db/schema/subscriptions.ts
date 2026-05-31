@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean, pgEnum } from "drizzle-orm/pg-core"
+import { pgTable, text, timestamp, boolean, pgEnum, varchar } from "drizzle-orm/pg-core"
 import { users } from "./users.js"
 import { planIdEnum } from "./users.js"
 
@@ -12,6 +12,7 @@ export const subscriptions = pgTable("subscriptions", {
   currentPeriodStart: timestamp("current_period_start", { withTimezone: true }).notNull(),
   currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }).notNull(),
   cancelAtPeriodEnd: boolean("cancel_at_period_end").notNull().default(false),
+  mercadopagoPreapprovalId: varchar("mercadopago_preapproval_id", { length: 255 }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 })
