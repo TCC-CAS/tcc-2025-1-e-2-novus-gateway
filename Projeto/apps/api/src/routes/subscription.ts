@@ -318,6 +318,7 @@ const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
       const [sub] = await fastify.db
         .select({
           planId: subscriptions.planId,
+          status: subscriptions.status,
           cancelAtPeriodEnd: subscriptions.cancelAtPeriodEnd,
           currentPeriodEnd: subscriptions.currentPeriodEnd,
           mercadopagoPreapprovalId: subscriptions.mercadopagoPreapprovalId,
@@ -329,6 +330,12 @@ const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
       if (!sub) {
         return reply.status(404).send({
           error: { code: "NO_SUBSCRIPTION", message: "Nenhuma assinatura encontrada" },
+        })
+      }
+
+      if (sub.status === "canceled") {
+        return reply.status(400).send({
+          error: { code: "ALREADY_CANCELED", message: "Assinatura cancelada. Não é possível pausar." },
         })
       }
 

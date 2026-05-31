@@ -356,11 +356,13 @@ export default function Planos() {
                     {isPermanentlyCanceled && (
                       <Button
                         className="gap-2 rounded-none border-2 border-primary bg-primary px-6 font-bold uppercase tracking-widest text-primary-foreground hover:bg-primary/90"
-                        onClick={() => handleCheckout(currentPlanId as PlanId)}
-                        disabled={upgrading === currentPlanId}
+                        onClick={() => {
+                          const planSection = document.getElementById("plan-cards")
+                          planSection?.scrollIntoView({ behavior: "smooth" })
+                        }}
                       >
                         <Zap className="size-4" />
-                        ASSINAR NOVAMENTE
+                        ESCOLHER PLANO
                       </Button>
                     )}
 
@@ -539,6 +541,7 @@ export default function Planos() {
 
           {/* Plan Cards */}
           <div
+            id="plan-cards"
             className={`mx-auto grid gap-8 ${
               plans.length === 2
                 ? "max-w-3xl grid-cols-1 sm:grid-cols-2"

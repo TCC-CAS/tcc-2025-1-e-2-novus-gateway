@@ -94,6 +94,33 @@ const webhookRoutes: FastifyPluginAsync = async (fastify) => {
       return ok({ received: true })
     }
 
+    // Verify signature when secret is configured (applies to all webhook types)
+    const webhookSecret = process.env.MERCADOPAGO_WEBHOOK_SECRET
+    if (webhookSecret) {
+      const xSignature = request.headers["x-signature"] as string | undefined
+      const xRequestId = request.headers["x-request-id"] as string | undefined
+
+      if (!xSignature || !xRequestId) {
+        return reply.status(400).send({ error: { code: "MISSING_SIGNATURE", message: "Missing webhook signature" } })
+      }
+
+      const parts = Object.fromEntries(
+        xSignature.split(",").map((p) => p.split("=") as [string, string])
+      )
+      const ts = parts["ts"]
+      const v1 = parts["v1"]
+
+      if (!ts || !v1 || !verifySignature(webhookSecret, resourceId, xRequestId, ts, v1)) {
+        request.log.warn({ resourceId }, "Webhook signature verification failed")
+        return reply.status(401).send({ error: { code: "INVALID_SIGNATURE", message: "Webhook signature mismatch" } })
+      }
+
+      const age = Date.now() / 1000 - parseInt(ts, 10)
+      if (age > 300) {
+        return reply.status(400).send({ error: { code: "STALE_EVENT", message: "Webhook event too old" } })
+      }
+    }
+
     const client = new MercadoPagoConfig({
       accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN || "",
     })
@@ -142,33 +169,6 @@ const webhookRoutes: FastifyPluginAsync = async (fastify) => {
 
     const paymentId = resourceId
 
-    // Verify signature when secret is configured
-    const webhookSecret = process.env.MERCADOPAGO_WEBHOOK_SECRET
-    if (webhookSecret) {
-      const xSignature = request.headers["x-signature"] as string | undefined
-      const xRequestId = request.headers["x-request-id"] as string | undefined
-
-      if (!xSignature || !xRequestId) {
-        return reply.status(400).send({ error: { code: "MISSING_SIGNATURE", message: "Missing webhook signature" } })
-      }
-
-      const parts = Object.fromEntries(
-        xSignature.split(",").map((p) => p.split("=") as [string, string])
-      )
-      const ts = parts["ts"]
-      const v1 = parts["v1"]
-
-      if (!ts || !v1 || !verifySignature(webhookSecret, paymentId, xRequestId, ts, v1)) {
-        request.log.warn({ paymentId }, "Webhook signature verification failed")
-        return reply.status(401).send({ error: { code: "INVALID_SIGNATURE", message: "Webhook signature mismatch" } })
-      }
-
-      const age = Date.now() / 1000 - parseInt(ts, 10)
-      if (age > 300) {
-        return reply.status(400).send({ error: { code: "STALE_EVENT", message: "Webhook event too old" } })
-      }
-    }
-
     try {
       const payment = await new Payment(client).get({ id: paymentId })
 
@@ -193,13 +193,14 @@ const webhookRoutes: FastifyPluginAsync = async (fastify) => {
       const { userId, planId } = parsed
 
       const [existingSub] = await fastify.db
-        .select({ status: subscriptions.status, planId: subscriptions.planId })
+        .select({ status: subscriptions.status, planId: subscriptions.planId, currentPeriodEnd: subscriptions.currentPeriodEnd })
         .from(subscriptions)
         .where(eq(subscriptions.userId, userId))
         .limit(1)
 
       const now = new Date()
-      const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+      const baseDate = existingSub?.currentPeriodEnd && existingSub.currentPeriodEnd > now ? existingSub.currentPeriodEnd : now
+      const periodEnd = new Date(baseDate.getTime() + 30 * 24 * 60 * 60 * 1000)
 
       if (existingSub?.status === "active" && existingSub.planId === planId) {
         await fastify.db.transaction(async (tx: any) => {
