@@ -26,6 +26,8 @@ import {
   ChevronDown,
   XCircle,
   AlertTriangle,
+  Pause,
+  Settings,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -171,67 +173,81 @@ const FAQ_ITEMS = [
 ];
 
 export default function Planos() {
-  const { user, role } = useAuth();
-  const { planId: effectivePlanId, usage, refreshUsage } = usePlan();
+  const { user, role } = useAuth()
+  const { planId: effectivePlanId, usage, refreshUsage } = usePlan()
   const [view, setView] = useState<"player" | "team">(
     role === "team" ? "team" : "player"
-  );
-  const [upgrading, setUpgrading] = useState<string | null>(null);
-  const [canceling, setCanceling] = useState(false);
-  const [reactivating, setReactivating] = useState(false);
-  const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
+  )
+  const [upgrading, setUpgrading] = useState<string | null>(null)
+  const [managingModal, setManagingModal] = useState<"idle" | "options" | "pause-confirm" | "cancel-confirm">("idle")
+  const [pausing, setPausing] = useState(false)
+  const [canceling, setCanceling] = useState(false)
+  const [reactivating, setReactivating] = useState(false)
+  const [expandedFaq, setExpandedFaq] = useState<number | null>(null)
 
-  const plans = getPlansForRole(view);
-  const features = view === "player" ? PLAYER_FEATURES : TEAM_FEATURES;
-  // effectivePlanId comes from usage response (subscriptions table), which is
-  // the server-side source of truth — updated immediately after any plan change.
-  const currentPlanId = effectivePlanId;
-  const isPaid = currentPlanId !== "free";
-  const isCanceled = usage?.cancelAtPeriodEnd ?? false;
+  const plans = getPlansForRole(view)
+  const features = view === "player" ? PLAYER_FEATURES : TEAM_FEATURES
+  const currentPlanId = effectivePlanId
+  const isPaid = currentPlanId !== "free"
+  const isPaused = usage?.cancelAtPeriodEnd ?? false
+  const isPermanentlyCanceled = usage?.status === "canceled"
 
-  const planLabel = PLAN_CONFIGS[currentPlanId]?.name ?? "LIVRE";
+  const planLabel = PLAN_CONFIGS[currentPlanId]?.name ?? "LIVRE"
 
   const handleCheckout = async (planId: PlanId) => {
-    if (!user) return;
-    setUpgrading(planId);
+    if (!user) return
+    setUpgrading(planId)
     try {
-      const { initPoint } = await subscriptionApi.checkout({ planId });
-      window.location.href = initPoint;
+      const { initPoint } = await subscriptionApi.checkout({ planId })
+      window.location.href = initPoint
     } catch (err) {
       toast.error(
         err instanceof ApiError ? err.message : "Erro ao iniciar checkout. Tente novamente."
-      );
-      setUpgrading(null);
+      )
+      setUpgrading(null)
     }
-  };
+  }
 
-  const handleReactivate = async () => {
-    if (!user) return;
-    setReactivating(true);
+  const handlePause = async () => {
+    setPausing(true)
     try {
-      await subscriptionApi.reactivate();
-      await refreshUsage();
-      toast.success("Assinatura reativada!");
-    } catch {
-      toast.error("Erro ao reativar. Tente novamente.");
+      await subscriptionApi.pause()
+      await refreshUsage()
+      setManagingModal("idle")
+      toast.success("Assinatura pausada. Acesso mantido até o fim do período.")
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Erro ao pausar. Tente novamente.")
     } finally {
-      setReactivating(false);
+      setPausing(false)
     }
-  };
+  }
 
   const handleCancel = async () => {
-    if (!user) return;
-    setCanceling(true);
+    setCanceling(true)
     try {
-      await subscriptionApi.cancel();
-      await refreshUsage();
-      toast.success("Assinatura será cancelada ao final do período.");
-    } catch {
-      toast.error("Erro ao cancelar. Tente novamente.");
+      await subscriptionApi.cancel()
+      await refreshUsage()
+      setManagingModal("idle")
+      toast.success("Assinatura cancelada.")
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Erro ao cancelar. Tente novamente.")
     } finally {
-      setCanceling(false);
+      setCanceling(false)
     }
-  };
+  }
+
+  const handleReactivate = async () => {
+    setReactivating(true)
+    try {
+      await subscriptionApi.reactivate()
+      await refreshUsage()
+      toast.success("Assinatura reativada!")
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Erro ao reativar. Tente novamente.")
+    } finally {
+      setReactivating(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background selection:bg-primary selection:text-primary-foreground">
@@ -299,7 +315,15 @@ export default function Planos() {
           {/* Current subscription status — only for authenticated users */}
           {user && (
             <div className="mx-auto mb-12 max-w-3xl">
-              <div className={`border-4 p-6 ${isCanceled ? "border-amber-500 bg-amber-500/10" : "border-primary bg-primary/5"}`}>
+              <div className={`border-4 p-6 ${
+                isPermanentlyCanceled
+                  ? "border-destructive bg-destructive/5"
+                  : isPaused
+                  ? "border-amber-500 bg-amber-500/10"
+                  : isPaid
+                  ? "border-primary bg-primary/5"
+                  : "border-foreground/20 bg-muted/5"
+              }`}>
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="font-bold text-sm uppercase tracking-widest text-muted-foreground">
@@ -308,17 +332,39 @@ export default function Planos() {
                     <p className="mt-1 font-display text-3xl tracking-wide text-foreground">
                       {planLabel}
                     </p>
-                    {isCanceled && (
+
+                    {isPaused && !isPermanentlyCanceled && (
                       <div className="mt-2 flex items-center gap-2 text-amber-600 dark:text-amber-400">
-                        <AlertTriangle className="size-4" />
+                        <Pause className="size-4" />
                         <span className="text-sm font-bold uppercase tracking-widest">
-                          Cancelado — válido até {usage?.periodResetAt ? new Date(usage.periodResetAt).toLocaleDateString("pt-BR") : "o fim do período"}
+                          Pausada — válida até {usage?.periodResetAt ? new Date(usage.periodResetAt).toLocaleDateString("pt-BR") : "o fim do período"}
+                        </span>
+                      </div>
+                    )}
+
+                    {isPermanentlyCanceled && (
+                      <div className="mt-2 flex items-center gap-2 text-destructive">
+                        <XCircle className="size-4" />
+                        <span className="text-sm font-bold uppercase tracking-widest">
+                          Cancelada permanentemente
                         </span>
                       </div>
                     )}
                   </div>
-                  {isPaid && (
-                    isCanceled ? (
+
+                  <div className="flex flex-col gap-2 sm:items-end">
+                    {isPermanentlyCanceled && (
+                      <Button
+                        className="gap-2 rounded-none border-2 border-primary bg-primary px-6 font-bold uppercase tracking-widest text-primary-foreground hover:bg-primary/90"
+                        onClick={() => handleCheckout(currentPlanId as PlanId)}
+                        disabled={upgrading === currentPlanId}
+                      >
+                        <Zap className="size-4" />
+                        ASSINAR NOVAMENTE
+                      </Button>
+                    )}
+
+                    {isPaused && !isPermanentlyCanceled && (
                       <Button
                         variant="outline"
                         className="gap-2 rounded-none border-2 border-primary font-bold uppercase tracking-widest hover:bg-primary hover:text-primary-foreground"
@@ -328,20 +374,138 @@ export default function Planos() {
                         <Zap className="size-4" />
                         {reactivating ? "REATIVANDO..." : "REATIVAR ASSINATURA"}
                       </Button>
-                    ) : (
+                    )}
+
+                    {isPaid && !isPaused && !isPermanentlyCanceled && (
                       <Button
                         variant="outline"
                         className="gap-2 rounded-none border-2 border-foreground font-bold uppercase tracking-widest hover:bg-foreground hover:text-background"
+                        onClick={() => setManagingModal("options")}
+                      >
+                        <Settings className="size-4" />
+                        GERENCIAR
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal — options */}
+              {managingModal === "options" && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+                  <div className="w-full max-w-md border-4 border-foreground bg-background p-8 shadow-[8px_8px_0px_0px_var(--color-primary)]">
+                    <h2 className="font-display text-2xl tracking-wide text-foreground uppercase">
+                      Gerenciar Assinatura
+                    </h2>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      Plano <strong>{planLabel}</strong> — o que deseja fazer?
+                    </p>
+
+                    <div className="mt-6 space-y-3">
+                      <Button
+                        className="h-auto w-full flex-col items-start gap-1 rounded-none border-2 border-primary bg-primary px-6 py-4 text-left text-primary-foreground hover:bg-primary/90"
+                        onClick={() => setManagingModal("pause-confirm")}
+                      >
+                        <span className="flex items-center gap-2 font-display text-xl tracking-wide uppercase">
+                          <Pause className="size-5" />
+                          Pausar assinatura
+                        </span>
+                        <span className="text-sm font-normal text-primary-foreground/80">
+                          Mantém seu acesso até o fim do período. Pode reativar a qualquer momento.
+                        </span>
+                      </Button>
+
+                      <button
+                        type="button"
+                        className="w-full text-left text-sm font-bold uppercase tracking-widest text-destructive underline underline-offset-4 hover:text-destructive/80"
+                        onClick={() => setManagingModal("cancel-confirm")}
+                      >
+                        Cancelar definitivamente
+                      </button>
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      className="mt-6 w-full rounded-none border-2 border-foreground/30 font-bold uppercase tracking-widest"
+                      onClick={() => setManagingModal("idle")}
+                    >
+                      Voltar
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Modal — pause confirm */}
+              {managingModal === "pause-confirm" && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+                  <div className="w-full max-w-md border-4 border-amber-500 bg-background p-8 shadow-[8px_8px_0px_0px_theme(colors.amber.500)]">
+                    <div className="flex items-center gap-3">
+                      <Pause className="size-8 text-amber-500" />
+                      <h2 className="font-display text-2xl tracking-wide text-foreground uppercase">
+                        Pausar Assinatura
+                      </h2>
+                    </div>
+                    <p className="mt-4 text-sm text-muted-foreground">
+                      Seu acesso ao plano <strong>{planLabel}</strong> será mantido até{" "}
+                      <strong>{usage?.periodResetAt ? new Date(usage.periodResetAt).toLocaleDateString("pt-BR") : "o fim do período"}</strong>.
+                      Você pode reativar a qualquer momento.
+                    </p>
+                    <div className="mt-6 flex gap-3">
+                      <Button
+                        className="flex-1 rounded-none border-2 border-amber-500 bg-amber-500 font-bold uppercase tracking-widest text-white hover:bg-amber-600"
+                        onClick={handlePause}
+                        disabled={pausing}
+                      >
+                        {pausing ? "PAUSANDO..." : "CONFIRMAR PAUSA"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="rounded-none border-2 border-foreground/30 font-bold uppercase tracking-widest"
+                        onClick={() => setManagingModal("options")}
+                        disabled={pausing}
+                      >
+                        Voltar
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Modal — cancel confirm */}
+              {managingModal === "cancel-confirm" && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+                  <div className="w-full max-w-md border-4 border-destructive bg-background p-8 shadow-[8px_8px_0px_0px_var(--color-destructive)]">
+                    <div className="flex items-center gap-3">
+                      <AlertTriangle className="size-8 text-destructive" />
+                      <h2 className="font-display text-2xl tracking-wide text-foreground uppercase">
+                        Cancelar Definitivamente?
+                      </h2>
+                    </div>
+                    <p className="mt-4 text-sm text-muted-foreground">
+                      Esta ação é <strong>irreversível</strong>. Você perderá o acesso ao plano{" "}
+                      <strong>{planLabel}</strong> imediatamente e não poderá reativar esta assinatura.
+                      Para usar novamente, precisará assinar do zero.
+                    </p>
+                    <div className="mt-6 flex gap-3">
+                      <Button
+                        variant="outline"
+                        className="flex-1 rounded-none border-2 border-foreground/30 font-bold uppercase tracking-widest"
+                        onClick={() => setManagingModal("options")}
+                        disabled={canceling}
+                      >
+                        Voltar
+                      </Button>
+                      <Button
+                        className="rounded-none border-2 border-destructive bg-destructive font-bold uppercase tracking-widest text-white hover:bg-destructive/90"
                         onClick={handleCancel}
                         disabled={canceling}
                       >
-                        <XCircle className="size-4" />
-                        {canceling ? "CANCELANDO..." : "CANCELAR ASSINATURA"}
+                        {canceling ? "CANCELANDO..." : "SIM, CANCELAR"}
                       </Button>
-                    )
-                  )}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
 

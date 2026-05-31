@@ -237,6 +237,11 @@ export const subscriptionApi = {
       "/subscription/cancel",
       { method: "POST" }
     ),
+  pause: () =>
+    request<{ success: boolean; message: string; planId: string; currentPeriodEnd: string }>(
+      "/subscription/pause",
+      { method: "POST" }
+    ),
   reactivate: () =>
     request<{ success: boolean; message: string; planId: string }>(
       "/subscription/reactivate",
