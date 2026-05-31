@@ -18,7 +18,7 @@ import {
 import { POSITIONS, PLAYER_LEVELS } from "~shared/contracts";
 import { TEAM_LEVELS, TEAM_LINEUP_SEXES } from "~shared/contracts";
 import type { Position, PlayerLevel, TeamLevel, TeamLineupSex } from "~shared/contracts";
-import { playersApi, teamsApi, uploadApi } from "~/lib/api-client";
+import { ApiError, playersApi, teamsApi, uploadApi } from "~/lib/api-client";
 import { Check, ChevronLeft, ChevronRight, Trophy, User, Shield } from "lucide-react";
 
 export function meta() {
@@ -83,6 +83,7 @@ export default function Onboarding() {
 
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [isFinishing, setIsFinishing] = useState(false);
 
   useEffect(() => {
     if (!user || !role) {
@@ -95,6 +96,9 @@ export default function Onboarding() {
   const totalSteps = steps.length;
 
   async function handleFinish() {
+    if (isFinishing) return;
+    setIsFinishing(true);
+
     try {
       if (isPlayer) {
         await playersApi.upsert({
@@ -133,13 +137,20 @@ export default function Onboarding() {
         } else {
           await uploadApi.logo(photoFile);
         }
-      } catch {
-        // Photo upload is optional — don't block completion
+      } catch (error) {
+        const message =
+          error instanceof ApiError
+            ? error.message
+            : "Não foi possível validar a imagem. Escolha outra foto ou pule esta etapa.";
+        toast.error(message);
+        setIsFinishing(false);
+        return;
       }
     }
 
     toast.success("Perfil configurado! Verifique seu email para ativar todas as funcionalidades.");
     navigate(getHomeForRole(role!), { replace: true });
+    setIsFinishing(false);
   }
 
   function toggleInArray(
@@ -181,9 +192,10 @@ export default function Onboarding() {
           <button
             type="button"
             onClick={handleFinish}
+            disabled={isFinishing}
             className="font-bold tracking-widest text-sm uppercase text-foreground hover:text-primary-foreground transition-colors underline decoration-2 underline-offset-4"
           >
-            PULAR ETAPAS
+            {isFinishing ? "VALIDANDO..." : "PULAR ETAPAS"}
           </button>
         </div>
       </header>
@@ -809,11 +821,12 @@ export default function Onboarding() {
                 <ChevronRight className="size-5" />
               </Button>
             ) : (
-              <Button
+                <Button
                 onClick={handleFinish}
+                disabled={isFinishing}
                 className="h-auto rounded-none border-2 border-primary bg-primary py-3 px-8 font-display text-xl tracking-widest text-primary-foreground transition-all hover:-translate-y-1 hover:shadow-[5px_5px_0px_0px_var(--color-foreground)] dark:hover:shadow-[5px_5px_0px_0px_var(--color-foreground)] uppercase animate-pulse"
               >
-                IR PARA O CAMPO
+                {isFinishing ? "VALIDANDO..." : "IR PARA O CAMPO"}
               </Button>
             )}
           </div>
