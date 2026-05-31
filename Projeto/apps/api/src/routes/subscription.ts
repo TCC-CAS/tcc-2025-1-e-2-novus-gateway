@@ -174,7 +174,7 @@ const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
     }
   )
 
-  // POST /cancel — cancel subscription at period end (D-21)
+  // POST /cancel — permanent cancel (irreversível)
   fastify.withTypeProvider<ZodTypeProvider>().post(
     "/cancel",
     { preHandler: [requireSession] },
@@ -184,8 +184,143 @@ const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
       const [sub] = await fastify.db
         .select({
           planId: subscriptions.planId,
+          status: subscriptions.status,
+          mercadopagoPreapprovalId: subscriptions.mercadopagoPreapprovalId,
+        })
+        .from(subscriptions)
+        .where(eq(subscriptions.userId, userId))
+        .limit(1)
+
+      if (!sub) {
+        return reply.status(404).send({
+          error: { code: "NO_SUBSCRIPTION", message: "Nenhuma assinatura encontrada" },
+        })
+      }
+
+      if (sub.status === "canceled") {
+        return reply.status(400).send({
+          error: { code: "ALREADY_CANCELED", message: "Assinatura já está cancelada" },
+        })
+      }
+
+      const paymentMode = process.env.PAYMENT_MODE || "mock"
+      if (paymentMode !== "mock" && sub.mercadopagoPreapprovalId) {
+        try {
+          const client = new MercadoPagoConfig({
+            accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN || "",
+          })
+          await new PreApproval(client).update({
+            id: sub.mercadopagoPreapprovalId,
+            body: { status: "cancelled" } as any,
+          })
+        } catch (err) {
+          request.log.error({ err, userId }, "Failed to cancel preapproval on MP")
+          return reply.status(502).send({
+            error: { code: "PAYMENT_PROVIDER_ERROR", message: "Falha ao cancelar assinatura no Mercado Pago" },
+          })
+        }
+      }
+
+      const now = new Date()
+      await fastify.db.transaction(async (tx) => {
+        await tx
+          .update(subscriptions)
+          .set({ status: "canceled", planId: "free", cancelAtPeriodEnd: false, updatedAt: now })
+          .where(eq(subscriptions.userId, userId))
+        await tx
+          .update(users)
+          .set({ planId: "free", updatedAt: now })
+          .where(eq(users.id, userId))
+      })
+
+      return ok({
+        success: true,
+        message: "Assinatura cancelada permanentemente",
+        planId: sub.planId,
+      })
+    }
+  )
+
+  // POST /reactivate — undo pause (only works if not permanently canceled)
+  fastify.withTypeProvider<ZodTypeProvider>().post(
+    "/reactivate",
+    { preHandler: [requireSession] },
+    async (request, reply) => {
+      const userId = request.session!.user.id
+
+      const [sub] = await fastify.db
+        .select({
+          planId: subscriptions.planId,
+          status: subscriptions.status,
+          cancelAtPeriodEnd: subscriptions.cancelAtPeriodEnd,
+          mercadopagoPreapprovalId: subscriptions.mercadopagoPreapprovalId,
+        })
+        .from(subscriptions)
+        .where(eq(subscriptions.userId, userId))
+        .limit(1)
+
+      if (!sub) {
+        return reply.status(404).send({
+          error: { code: "NO_SUBSCRIPTION", message: "Nenhuma assinatura encontrada" },
+        })
+      }
+
+      if (sub.status === "canceled") {
+        return reply.status(400).send({
+          error: {
+            code: "SUBSCRIPTION_PERMANENTLY_CANCELED",
+            message: "Assinatura cancelada permanentemente. Assine novamente para reativar.",
+          },
+        })
+      }
+
+      if (!sub.cancelAtPeriodEnd) {
+        return reply.status(400).send({
+          error: { code: "NOT_PAUSED", message: "Assinatura não está pausada" },
+        })
+      }
+
+      const paymentMode = process.env.PAYMENT_MODE || "mock"
+      if (paymentMode !== "mock" && sub.mercadopagoPreapprovalId) {
+        try {
+          const client = new MercadoPagoConfig({
+            accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN || "",
+          })
+          await new PreApproval(client).update({
+            id: sub.mercadopagoPreapprovalId,
+            body: { status: "authorized" } as any,
+          })
+        } catch (err) {
+          request.log.error({ err, userId }, "Failed to reactivate preapproval on MP")
+          return reply.status(502).send({
+            error: { code: "PAYMENT_PROVIDER_ERROR", message: "Falha ao reativar assinatura no Mercado Pago" },
+          })
+        }
+      }
+
+      const now = new Date()
+      await fastify.db
+        .update(subscriptions)
+        .set({ cancelAtPeriodEnd: false, updatedAt: now })
+        .where(eq(subscriptions.userId, userId))
+
+      return ok({ success: true, message: "Assinatura reativada", planId: sub.planId })
+    }
+  )
+
+  // POST /pause — pause subscription at period end (reversível via /reactivate)
+  fastify.withTypeProvider<ZodTypeProvider>().post(
+    "/pause",
+    { preHandler: [requireSession] },
+    async (request, reply) => {
+      const userId = request.session!.user.id
+
+      const [sub] = await fastify.db
+        .select({
+          planId: subscriptions.planId,
           cancelAtPeriodEnd: subscriptions.cancelAtPeriodEnd,
           currentPeriodEnd: subscriptions.currentPeriodEnd,
+          mercadopagoPreapprovalId: subscriptions.mercadopagoPreapprovalId,
         })
         .from(subscriptions)
         .where(eq(subscriptions.userId, userId))
@@ -199,8 +334,32 @@ const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
 
       if (sub.cancelAtPeriodEnd) {
         return reply.status(400).send({
-          error: { code: "ALREADY_CANCELED", message: "Assinatura já está cancelada" },
+          error: { code: "ALREADY_PAUSED", message: "Assinatura já está pausada" },
         })
+      }
+
+      if (sub.planId === "free") {
+        return reply.status(400).send({
+          error: { code: "FREE_PLAN", message: "Plano gratuito não pode ser pausado" },
+        })
+      }
+
+      const paymentMode = process.env.PAYMENT_MODE || "mock"
+      if (paymentMode !== "mock" && sub.mercadopagoPreapprovalId) {
+        try {
+          const client = new MercadoPagoConfig({
+            accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN || "",
+          })
+          await new PreApproval(client).update({
+            id: sub.mercadopagoPreapprovalId,
+            body: { status: "paused" } as any,
+          })
+        } catch (err) {
+          request.log.error({ err, userId }, "Failed to pause preapproval on MP")
+          return reply.status(502).send({
+            error: { code: "PAYMENT_PROVIDER_ERROR", message: "Falha ao pausar assinatura no Mercado Pago" },
+          })
+        }
       }
 
       const now = new Date()
@@ -211,45 +370,10 @@ const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
 
       return ok({
         success: true,
-        message: "Assinatura será cancelada ao final do período",
+        message: "Assinatura pausada. Acesso mantido até o fim do período.",
         planId: sub.planId,
         currentPeriodEnd: sub.currentPeriodEnd.toISOString(),
       })
-    }
-  )
-
-  // POST /reactivate — undo cancel before period end
-  fastify.withTypeProvider<ZodTypeProvider>().post(
-    "/reactivate",
-    { preHandler: [requireSession] },
-    async (request, reply) => {
-      const userId = request.session!.user.id
-
-      const [sub] = await fastify.db
-        .select({ planId: subscriptions.planId, cancelAtPeriodEnd: subscriptions.cancelAtPeriodEnd })
-        .from(subscriptions)
-        .where(eq(subscriptions.userId, userId))
-        .limit(1)
-
-      if (!sub) {
-        return reply.status(404).send({
-          error: { code: "NO_SUBSCRIPTION", message: "Nenhuma assinatura encontrada" },
-        })
-      }
-
-      if (!sub.cancelAtPeriodEnd) {
-        return reply.status(400).send({
-          error: { code: "NOT_CANCELED", message: "Assinatura não está cancelada" },
-        })
-      }
-
-      const now = new Date()
-      await fastify.db
-        .update(subscriptions)
-        .set({ cancelAtPeriodEnd: false, updatedAt: now })
-        .where(eq(subscriptions.userId, userId))
-
-      return ok({ success: true, message: "Assinatura reativada", planId: sub.planId })
     }
   )
 

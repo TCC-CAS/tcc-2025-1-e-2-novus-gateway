@@ -180,4 +180,238 @@ describe("Subscription routes", () => {
       expect(usage.conversationsLimit).toBeGreaterThan(10)
     })
   })
+
+  // SUB-03: POST /api/subscription/pause
+  describe("POST /api/subscription/pause (SUB-03)", () => {
+    it("SUB-03a: returns 400 FREE_PLAN when trying to pause free subscription", async () => {
+      const freshPlayer = await signUpAndGetCookie(app, "player")
+      // Create free sub via usage call
+      await app.inject({
+        method: "GET",
+        url: "/api/subscription/usage",
+        headers: { cookie: freshPlayer.sessionCookie },
+      })
+      const res = await app.inject({
+        method: "POST",
+        url: "/api/subscription/pause",
+        headers: { cookie: freshPlayer.sessionCookie },
+      })
+      expect(res.statusCode).toBe(400)
+      expect(res.json().error.code).toBe("FREE_PLAN")
+    })
+
+    it("SUB-03b: player with paid plan can pause — returns 200 with currentPeriodEnd", async () => {
+      const freshPlayer = await signUpAndGetCookie(app, "player")
+      await app.inject({
+        method: "POST",
+        url: "/api/subscription/upgrade",
+        headers: { cookie: freshPlayer.sessionCookie },
+        payload: { planId: "craque" },
+      })
+      const res = await app.inject({
+        method: "POST",
+        url: "/api/subscription/pause",
+        headers: { cookie: freshPlayer.sessionCookie },
+      })
+      expect(res.statusCode).toBe(200)
+      const body = res.json()
+      expect(body.data.success).toBe(true)
+      expect(typeof body.data.currentPeriodEnd).toBe("string")
+      expect(body.data.planId).toBe("craque")
+    })
+
+    it("SUB-03c: pausing twice returns 400 ALREADY_PAUSED", async () => {
+      const freshPlayer = await signUpAndGetCookie(app, "player")
+      await app.inject({
+        method: "POST",
+        url: "/api/subscription/upgrade",
+        headers: { cookie: freshPlayer.sessionCookie },
+        payload: { planId: "craque" },
+      })
+      await app.inject({
+        method: "POST",
+        url: "/api/subscription/pause",
+        headers: { cookie: freshPlayer.sessionCookie },
+      })
+      const res = await app.inject({
+        method: "POST",
+        url: "/api/subscription/pause",
+        headers: { cookie: freshPlayer.sessionCookie },
+      })
+      expect(res.statusCode).toBe(400)
+      expect(res.json().error.code).toBe("ALREADY_PAUSED")
+    })
+
+    it("SUB-03d: after pause, /usage reflects cancelAtPeriodEnd: true", async () => {
+      const freshPlayer = await signUpAndGetCookie(app, "player")
+      await app.inject({
+        method: "POST",
+        url: "/api/subscription/upgrade",
+        headers: { cookie: freshPlayer.sessionCookie },
+        payload: { planId: "craque" },
+      })
+      await app.inject({
+        method: "POST",
+        url: "/api/subscription/pause",
+        headers: { cookie: freshPlayer.sessionCookie },
+      })
+      const res = await app.inject({
+        method: "GET",
+        url: "/api/subscription/usage",
+        headers: { cookie: freshPlayer.sessionCookie },
+      })
+      expect(res.statusCode).toBe(200)
+      expect(res.json().data.cancelAtPeriodEnd).toBe(true)
+    })
+
+    it("SUB-03e: returns 401 without auth", async () => {
+      const res = await app.inject({ method: "POST", url: "/api/subscription/pause" })
+      expect(res.statusCode).toBe(401)
+    })
+  })
+
+  // SUB-04: POST /api/subscription/cancel (permanente)
+  describe("POST /api/subscription/cancel (SUB-04)", () => {
+    it("SUB-04a: cancels paid subscription permanently — returns 200", async () => {
+      const freshPlayer = await signUpAndGetCookie(app, "player")
+      await app.inject({
+        method: "POST",
+        url: "/api/subscription/upgrade",
+        headers: { cookie: freshPlayer.sessionCookie },
+        payload: { planId: "craque" },
+      })
+      const res = await app.inject({
+        method: "POST",
+        url: "/api/subscription/cancel",
+        headers: { cookie: freshPlayer.sessionCookie },
+      })
+      expect(res.statusCode).toBe(200)
+      expect(res.json().data.success).toBe(true)
+    })
+
+    it("SUB-04b: after cancel, /usage reflects planId: free", async () => {
+      const freshPlayer = await signUpAndGetCookie(app, "player")
+      await app.inject({
+        method: "POST",
+        url: "/api/subscription/upgrade",
+        headers: { cookie: freshPlayer.sessionCookie },
+        payload: { planId: "craque" },
+      })
+      await app.inject({
+        method: "POST",
+        url: "/api/subscription/cancel",
+        headers: { cookie: freshPlayer.sessionCookie },
+      })
+      const res = await app.inject({
+        method: "GET",
+        url: "/api/subscription/usage",
+        headers: { cookie: freshPlayer.sessionCookie },
+      })
+      expect(res.statusCode).toBe(200)
+      expect(res.json().data.planId).toBe("free")
+    })
+
+    it("SUB-04c: canceling twice returns 400 ALREADY_CANCELED", async () => {
+      const freshPlayer = await signUpAndGetCookie(app, "player")
+      await app.inject({
+        method: "POST",
+        url: "/api/subscription/upgrade",
+        headers: { cookie: freshPlayer.sessionCookie },
+        payload: { planId: "craque" },
+      })
+      await app.inject({
+        method: "POST",
+        url: "/api/subscription/cancel",
+        headers: { cookie: freshPlayer.sessionCookie },
+      })
+      const res = await app.inject({
+        method: "POST",
+        url: "/api/subscription/cancel",
+        headers: { cookie: freshPlayer.sessionCookie },
+      })
+      expect(res.statusCode).toBe(400)
+      expect(res.json().error.code).toBe("ALREADY_CANCELED")
+    })
+
+    it("SUB-04d: returns 401 without auth", async () => {
+      const res = await app.inject({ method: "POST", url: "/api/subscription/cancel" })
+      expect(res.statusCode).toBe(401)
+    })
+  })
+
+  // SUB-05: POST /api/subscription/reactivate
+  describe("POST /api/subscription/reactivate (SUB-05)", () => {
+    it("SUB-05a: reactivates a paused subscription — cancelAtPeriodEnd becomes false", async () => {
+      const freshPlayer = await signUpAndGetCookie(app, "player")
+      await app.inject({
+        method: "POST",
+        url: "/api/subscription/upgrade",
+        headers: { cookie: freshPlayer.sessionCookie },
+        payload: { planId: "craque" },
+      })
+      await app.inject({
+        method: "POST",
+        url: "/api/subscription/pause",
+        headers: { cookie: freshPlayer.sessionCookie },
+      })
+      const res = await app.inject({
+        method: "POST",
+        url: "/api/subscription/reactivate",
+        headers: { cookie: freshPlayer.sessionCookie },
+      })
+      expect(res.statusCode).toBe(200)
+      expect(res.json().data.success).toBe(true)
+
+      const usage = await app.inject({
+        method: "GET",
+        url: "/api/subscription/usage",
+        headers: { cookie: freshPlayer.sessionCookie },
+      })
+      expect(usage.json().data.cancelAtPeriodEnd).toBe(false)
+    })
+
+    it("SUB-05b: reactivating permanently canceled returns 400 SUBSCRIPTION_PERMANENTLY_CANCELED", async () => {
+      const freshPlayer = await signUpAndGetCookie(app, "player")
+      await app.inject({
+        method: "POST",
+        url: "/api/subscription/upgrade",
+        headers: { cookie: freshPlayer.sessionCookie },
+        payload: { planId: "craque" },
+      })
+      await app.inject({
+        method: "POST",
+        url: "/api/subscription/cancel",
+        headers: { cookie: freshPlayer.sessionCookie },
+      })
+      const res = await app.inject({
+        method: "POST",
+        url: "/api/subscription/reactivate",
+        headers: { cookie: freshPlayer.sessionCookie },
+      })
+      expect(res.statusCode).toBe(400)
+      expect(res.json().error.code).toBe("SUBSCRIPTION_PERMANENTLY_CANCELED")
+    })
+
+    it("SUB-05c: reactivating non-paused sub returns 400 NOT_PAUSED", async () => {
+      const freshPlayer = await signUpAndGetCookie(app, "player")
+      await app.inject({
+        method: "POST",
+        url: "/api/subscription/upgrade",
+        headers: { cookie: freshPlayer.sessionCookie },
+        payload: { planId: "craque" },
+      })
+      const res = await app.inject({
+        method: "POST",
+        url: "/api/subscription/reactivate",
+        headers: { cookie: freshPlayer.sessionCookie },
+      })
+      expect(res.statusCode).toBe(400)
+      expect(res.json().error.code).toBe("NOT_PAUSED")
+    })
+
+    it("SUB-05d: returns 401 without auth", async () => {
+      const res = await app.inject({ method: "POST", url: "/api/subscription/reactivate" })
+      expect(res.statusCode).toBe(401)
+    })
+  })
 })
