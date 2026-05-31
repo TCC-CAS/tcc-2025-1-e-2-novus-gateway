@@ -4,14 +4,16 @@ import { useQuery } from "@tanstack/react-query"
 import { searchApi } from "~/lib/api-client"
 import { useAuth } from "~/lib/auth/auth-context"
 import { usePlan } from "~/lib/plan/plan-context"
-import { POSITIONS, TEAM_LEVELS } from "~shared/contracts"
-import type { TeamSummary, PlayerSummary } from "~shared/contracts"
+import { POSITIONS, SEX_FILTERS, TEAM_LEVELS, TEAM_LINEUP_SEXES } from "~shared/contracts"
+import type { TeamSummary, PlayerSummary, SexFilter, TeamLineupSex } from "~shared/contracts"
 import { Button } from "~/components/ui/button"
 import { Input } from "~/components/ui/input"
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select"
@@ -58,6 +60,24 @@ const TEAM_LEVEL_LABELS: Record<string, string> = {
   recreativo: "RECREATIVO",
   "semi-profissional": "SEMI-PROFISSIONAL",
   outro: "OUTRO",
+}
+
+const PLAYER_SEX_LABELS: Record<string, string> = {
+  male: "MASCULINO",
+  female: "FEMININO",
+  trans_male: "HOMEM TRANS",
+  trans_female: "MULHER TRANS",
+  rather_not_say: "NÃO INFORMADO",
+}
+
+const SEX_FILTER_LABELS: Record<SexFilter, string> = {
+  male: "MASCULINO",
+  female: "FEMININO",
+}
+
+const LINEUP_SEX_LABELS: Record<TeamLineupSex, string> = {
+  male: "MASCULINO",
+  female: "FEMININO",
 }
 
 /* ─── Skeletons ─────────────────────────────────────────────────────────────── */
@@ -170,12 +190,17 @@ function TeamCard({ team }: { team: TeamSummary }) {
       </div>
 
       <div className="p-3">
-        <p className={cn(
-          "font-display font-black uppercase text-base tracking-wide leading-tight truncate transition-colors duration-200 group-hover:text-primary",
-          isPremium && "text-foreground",
-        )}>
-          {team.name}
-        </p>
+        <div className="flex items-start justify-between gap-2">
+          <p className={cn(
+            "min-w-0 flex-1 font-display font-black uppercase text-base tracking-wide leading-tight truncate transition-colors duration-200 group-hover:text-primary",
+            isPremium && "text-foreground",
+          )}>
+            {team.name}
+          </p>
+          <span className="shrink-0 border border-foreground/30 bg-muted px-1.5 py-0.5 font-display text-[9px] font-black uppercase tracking-widest text-muted-foreground">
+            {LINEUP_SEX_LABELS[team.lineupSex ?? "male"] ?? LINEUP_SEX_LABELS.male}
+          </span>
+        </div>
         {team.region && (
           <p className="flex items-center gap-1 text-muted-foreground text-sm font-bold tracking-wide mt-0.5">
             <MapPin className="size-3 shrink-0" />
@@ -313,6 +338,9 @@ function PlayerCard({ player }: { player: PlayerSummary }) {
           <p className="font-display text-lg leading-tight tracking-wide font-black uppercase truncate drop-shadow-sm text-background">
             {player.name}
           </p>
+          <p className="mt-1 inline-flex border border-background/25 bg-background/15 px-1.5 py-0.5 font-display text-[10px] font-black uppercase tracking-widest text-background/80">
+            {PLAYER_SEX_LABELS[player.sex ?? "rather_not_say"] ?? PLAYER_SEX_LABELS.rather_not_say}
+          </p>
           {player.region && (
             <p className="flex items-center gap-1 text-background/65 text-sm font-bold tracking-wide mt-0.5">
               <MapPin className="size-3 shrink-0" />
@@ -406,22 +434,24 @@ function TimesTab() {
   const { planId } = usePlan()
   const [name, setName] = useState("")
   const [level, setLevel] = useState<string | undefined>(undefined)
+  const [lineupSex, setLineupSex] = useState<TeamLineupSex | undefined>(undefined)
   const [region, setRegion] = useState("")
   const [openPosition, setOpenPosition] = useState<string | undefined>(undefined)
   const [page, setPage] = useState(1)
 
-  const hasFilters = !!(name || level || region || openPosition)
+  const hasFilters = !!(name || level || lineupSex || region || openPosition)
 
   function resetFilters() {
-    setName(""); setLevel(undefined); setRegion(""); setOpenPosition(undefined); setPage(1)
+    setName(""); setLevel(undefined); setLineupSex(undefined); setRegion(""); setOpenPosition(undefined); setPage(1)
   }
 
   const { data, isLoading } = useQuery({
-    queryKey: ["buscar-times", { name, level, region, openPosition, page }],
+    queryKey: ["buscar-times", { name, level, lineupSex, region, openPosition, page }],
     queryFn: () =>
       searchApi.teams({
         name: name || undefined,
         level: level as any,
+        lineupSex,
         region: region || undefined,
         openPosition: openPosition || undefined,
         page,
@@ -449,27 +479,50 @@ function TimesTab() {
           className="w-[160px] h-10 rounded-none border-2 border-foreground bg-muted/50 font-bold tracking-widest text-xs focus:ring-0 focus-visible:ring-0 focus:border-primary placeholder:normal-case placeholder:font-normal"
         />
 
-        <Select value={level ?? "all"} onValueChange={(v) => { setLevel(v === "all" ? undefined : v); setPage(1) }}>
+        <Select value={level} onValueChange={(v) => { setLevel(v === "all" ? undefined : v); setPage(1) }}>
           <SelectTrigger className="w-[160px] h-10 rounded-none border-2 border-foreground bg-muted/50 font-bold tracking-widest text-xs uppercase focus:ring-0 focus:border-primary">
             <SelectValue placeholder="NÍVEL" />
           </SelectTrigger>
           <SelectContent className="rounded-none border-4 border-foreground">
-            <SelectItem value="all" className="font-bold tracking-widest uppercase text-xs">TODOS</SelectItem>
-            {TEAM_LEVELS.map((l) => (
-              <SelectItem key={l} value={l} className="font-bold tracking-widest uppercase text-xs">{TEAM_LEVEL_LABELS[l] ?? l.toUpperCase()}</SelectItem>
-            ))}
+            <SelectGroup>
+              <SelectLabel className="font-display font-black tracking-widest uppercase">NÍVEL</SelectLabel>
+              <SelectItem value="all" className="font-bold tracking-widest uppercase text-xs">TODOS</SelectItem>
+              {TEAM_LEVELS.map((l) => (
+                <SelectItem key={l} value={l} className="font-bold tracking-widest uppercase text-xs">{TEAM_LEVEL_LABELS[l] ?? l.toUpperCase()}</SelectItem>
+              ))}
+            </SelectGroup>
           </SelectContent>
         </Select>
 
-        <Select value={openPosition ?? "all"} onValueChange={(v) => { setOpenPosition(v === "all" ? undefined : v); setPage(1) }}>
+        <Select value={lineupSex} onValueChange={(v) => { setLineupSex(v === "all" ? undefined : (v as TeamLineupSex)); setPage(1) }}>
+          <SelectTrigger className="w-[150px] h-10 rounded-none border-2 border-foreground bg-muted/50 font-bold tracking-widest text-xs uppercase focus:ring-0 focus:border-primary">
+            <SelectValue placeholder="ELENCO" />
+          </SelectTrigger>
+          <SelectContent className="rounded-none border-4 border-foreground">
+            <SelectGroup>
+              <SelectLabel className="font-display font-black tracking-widest uppercase">ELENCO</SelectLabel>
+              <SelectItem value="all" className="font-bold tracking-widest uppercase text-xs">TODOS</SelectItem>
+              {TEAM_LINEUP_SEXES.map((value) => (
+                <SelectItem key={value} value={value} className="font-bold tracking-widest uppercase text-xs">
+                  {LINEUP_SEX_LABELS[value]}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+
+        <Select value={openPosition} onValueChange={(v) => { setOpenPosition(v === "all" ? undefined : v); setPage(1) }}>
           <SelectTrigger className="w-[160px] h-10 rounded-none border-2 border-foreground bg-muted/50 font-bold tracking-widest text-xs uppercase focus:ring-0 focus:border-primary">
             <SelectValue placeholder="POSIÇÃO ABERTA" />
           </SelectTrigger>
           <SelectContent className="rounded-none border-4 border-foreground">
-            <SelectItem value="all" className="font-bold tracking-widest uppercase text-xs">TODAS</SelectItem>
-            {POSITIONS.map((pos) => (
-              <SelectItem key={pos} value={pos} className="font-bold tracking-widest uppercase text-xs">{POSITION_LABELS[pos] ?? pos.toUpperCase()}</SelectItem>
-            ))}
+            <SelectGroup>
+              <SelectLabel className="font-display font-black tracking-widest uppercase">POSIÇÃO ABERTA</SelectLabel>
+              <SelectItem value="all" className="font-bold tracking-widest uppercase text-xs">TODAS</SelectItem>
+              {POSITIONS.map((pos) => (
+                <SelectItem key={pos} value={pos} className="font-bold tracking-widest uppercase text-xs">{POSITION_LABELS[pos] ?? pos.toUpperCase()}</SelectItem>
+              ))}
+            </SelectGroup>
           </SelectContent>
         </Select>
 
@@ -549,22 +602,24 @@ function JogadoresTab() {
   const [position, setPosition] = useState<string | undefined>(undefined)
   const [region, setRegion] = useState("")
   const [level, setLevel] = useState<string | undefined>(undefined)
+  const [sex, setSex] = useState<SexFilter | undefined>(undefined)
   const [page, setPage] = useState(1)
 
-  const hasFilters = !!(name || position || region || level)
+  const hasFilters = !!(name || position || region || level || sex)
 
   function resetFilters() {
-    setName(""); setPosition(undefined); setRegion(""); setLevel(undefined); setPage(1)
+    setName(""); setPosition(undefined); setRegion(""); setLevel(undefined); setSex(undefined); setPage(1)
   }
 
   const { data, isLoading } = useQuery({
-    queryKey: ["buscar-jogadores", { name, position, region, level, page }],
+    queryKey: ["buscar-jogadores", { name, position, region, level, sex, page }],
     queryFn: () =>
       searchApi.players({
         name: name || undefined,
         position: position as any,
         region: region || undefined,
         level: level as any,
+        sex,
         page,
         pageSize: 12,
         order: "desc",
@@ -590,27 +645,50 @@ function JogadoresTab() {
           className="w-[160px] h-10 rounded-none border-2 border-foreground bg-muted/50 font-bold tracking-widest text-xs focus:ring-0 focus-visible:ring-0 focus:border-primary placeholder:normal-case placeholder:font-normal"
         />
 
-        <Select value={position ?? "all"} onValueChange={(v) => { setPosition(v === "all" ? undefined : v); setPage(1) }}>
+        <Select value={position} onValueChange={(v) => { setPosition(v === "all" ? undefined : v); setPage(1) }}>
           <SelectTrigger className="w-[140px] h-10 rounded-none border-2 border-foreground bg-muted/50 font-bold tracking-widest text-xs uppercase focus:ring-0 focus:border-primary">
             <SelectValue placeholder="POSIÇÃO" />
           </SelectTrigger>
           <SelectContent className="rounded-none border-4 border-foreground">
-            <SelectItem value="all" className="font-bold tracking-widest uppercase text-xs">TODAS</SelectItem>
-            {POSITIONS.map((pos) => (
-              <SelectItem key={pos} value={pos} className="font-bold tracking-widest uppercase text-xs">{POSITION_LABELS[pos] ?? pos.toUpperCase()}</SelectItem>
-            ))}
+            <SelectGroup>
+              <SelectLabel className="font-display font-black tracking-widest uppercase">POSIÇÃO</SelectLabel>
+              <SelectItem value="all" className="font-bold tracking-widest uppercase text-xs">TODAS</SelectItem>
+              {POSITIONS.map((pos) => (
+                <SelectItem key={pos} value={pos} className="font-bold tracking-widest uppercase text-xs">{POSITION_LABELS[pos] ?? pos.toUpperCase()}</SelectItem>
+              ))}
+            </SelectGroup>
           </SelectContent>
         </Select>
 
-        <Select value={level ?? "all"} onValueChange={(v) => { setLevel(v === "all" ? undefined : v); setPage(1) }}>
+        <Select value={level} onValueChange={(v) => { setLevel(v === "all" ? undefined : v); setPage(1) }}>
           <SelectTrigger className="w-[140px] h-10 rounded-none border-2 border-foreground bg-muted/50 font-bold tracking-widest text-xs uppercase focus:ring-0 focus:border-primary">
             <SelectValue placeholder="NÍVEL" />
           </SelectTrigger>
           <SelectContent className="rounded-none border-4 border-foreground">
-            <SelectItem value="all" className="font-bold tracking-widest uppercase text-xs">TODOS</SelectItem>
-            {PLAYER_LEVELS.map((l) => (
-              <SelectItem key={l.value} value={l.value} className="font-bold tracking-widest uppercase text-xs">{l.label}</SelectItem>
-            ))}
+            <SelectGroup>
+              <SelectLabel className="font-display font-black tracking-widest uppercase">NÍVEL</SelectLabel>
+              <SelectItem value="all" className="font-bold tracking-widest uppercase text-xs">TODOS</SelectItem>
+              {PLAYER_LEVELS.map((l) => (
+                <SelectItem key={l.value} value={l.value} className="font-bold tracking-widest uppercase text-xs">{l.label}</SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+
+        <Select value={sex} onValueChange={(v) => { setSex(v === "all" ? undefined : (v as SexFilter)); setPage(1) }}>
+          <SelectTrigger className="w-[140px] h-10 rounded-none border-2 border-foreground bg-muted/50 font-bold tracking-widest text-xs uppercase focus:ring-0 focus:border-primary">
+            <SelectValue placeholder="SEXO" />
+          </SelectTrigger>
+          <SelectContent className="rounded-none border-4 border-foreground">
+            <SelectGroup>
+              <SelectLabel className="font-display font-black tracking-widest uppercase">SEXO</SelectLabel>
+              <SelectItem value="all" className="font-bold tracking-widest uppercase text-xs">TODOS</SelectItem>
+              {SEX_FILTERS.map((value) => (
+                <SelectItem key={value} value={value} className="font-bold tracking-widest uppercase text-xs">
+                  {SEX_FILTER_LABELS[value]}
+                </SelectItem>
+              ))}
+            </SelectGroup>
           </SelectContent>
         </Select>
 

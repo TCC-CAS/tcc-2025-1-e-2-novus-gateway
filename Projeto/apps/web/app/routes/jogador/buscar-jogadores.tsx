@@ -11,7 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select"
-import { POSITIONS } from "~shared/contracts"
+import { POSITIONS, SEX_FILTERS } from "~shared/contracts"
+import type { SexFilter } from "~shared/contracts"
 import { Filter, ArrowRight, MapPin, User } from "lucide-react"
 import { OptimizedImage } from "~/components/optimized-image"
 
@@ -35,19 +36,31 @@ const POSITION_LABELS: Record<string, string> = {
   atacante: "ATACANTE",
 }
 
+const PLAYER_SEX_LABELS: Record<string, string> = {
+  male: "MASCULINO",
+  female: "FEMININO"
+}
+
+const SEX_FILTER_LABELS: Record<SexFilter, string> = {
+  male: "MASCULINO",
+  female: "FEMININO",
+}
+
 export default function JogadorBuscarJogadores() {
   const [position, setPosition] = useState<string | undefined>(undefined)
   const [region, setRegion] = useState("")
   const [level, setLevel] = useState<string | undefined>(undefined)
+  const [sex, setSex] = useState<SexFilter | undefined>(undefined)
   const [page, setPage] = useState(1)
 
   const { data, isLoading } = useQuery({
-    queryKey: ["community-players", { position, region, level, page }],
+    queryKey: ["community-players", { position, region, level, sex, page }],
     queryFn: () =>
       searchApi.communityPlayers({
         position: position || undefined,
         region: region || undefined,
         level: level || undefined,
+        sex,
         page,
       }),
   })
@@ -89,6 +102,20 @@ export default function JogadorBuscarJogadores() {
               <SelectItem value="__all__">TODOS NÍVEIS</SelectItem>
               {PLAYER_LEVELS.map((l) => (
                 <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={sex ?? "__all__"} onValueChange={(v) => { setSex(v === "__all__" ? undefined : (v as SexFilter)); setPage(1) }}>
+            <SelectTrigger className="w-40 h-8 text-xs">
+              <SelectValue placeholder="SEXO" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">TODOS SEXOS</SelectItem>
+              {SEX_FILTERS.map((value) => (
+                <SelectItem key={value} value={value}>
+                  {SEX_FILTER_LABELS[value]}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -140,6 +167,9 @@ export default function JogadorBuscarJogadores() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-black uppercase text-sm truncate">{player.name}</p>
+                  <p className="mt-0.5 inline-flex border border-foreground/30 bg-muted px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    {PLAYER_SEX_LABELS[player.sex ?? "rather_not_say"] ?? PLAYER_SEX_LABELS.rather_not_say}
+                  </p>
                   {player.positions.length > 0 && (
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {player.positions.map((p) => POSITION_LABELS[p] ?? p).join(", ")}

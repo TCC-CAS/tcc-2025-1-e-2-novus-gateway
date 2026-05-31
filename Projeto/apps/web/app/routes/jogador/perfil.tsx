@@ -15,6 +15,14 @@ import {
 } from "lucide-react";
 import { OptimizedImage } from "~/components/optimized-image";
 
+const PLAYER_SEX_LABELS: Record<string, string> = {
+  male: "MASCULINO",
+  female: "FEMININO",
+  trans_male: "HOMEM TRANS",
+  trans_female: "MULHER TRANS",
+  rather_not_say: "NÃO INFORMADO",
+};
+
 export function meta() {
   return [{ title: "Meu perfil - VárzeaPro" }];
 }
@@ -78,7 +86,7 @@ export default function JogadorPerfil() {
           >
             <Link to={`/jogadores/${profile.id}`}>
               <Eye className="size-4" />
-              <span className="hidden sm:inline">VISÃO PUBLICA</span>
+              <span className="hidden sm:inline">VISÃO PÚBLICA</span>
             </Link>
           </Button>
           <Button
@@ -119,6 +127,9 @@ export default function JogadorPerfil() {
               </h2>
 
               <div className="mt-6 flex flex-wrap gap-2">
+                <span className="border-2 border-foreground bg-muted px-3 py-1.5 font-display text-lg tracking-widest text-foreground uppercase shadow-[2px_2px_0px_0px_var(--color-primary)] dark:shadow-[2px_2px_0px_0px_var(--color-primary)]">
+                  {PLAYER_SEX_LABELS[profile.sex ?? "rather_not_say"] ?? PLAYER_SEX_LABELS.rather_not_say}
+                </span>
                 {(profile.positions ?? []).map((p) => (
                   <span
                     key={p}

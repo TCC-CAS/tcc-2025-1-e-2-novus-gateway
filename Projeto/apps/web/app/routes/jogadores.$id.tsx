@@ -17,6 +17,13 @@ export function meta() {
   return [{ title: "Perfil do jogador - VárzeaPro" }]
 }
 
+const PLAYER_SEX_LABELS: Record<string, string> = {
+  male: "MASCULINO",
+  female: "FEMININO",
+  trans_male: "HOMEM TRANS",
+  trans_female: "MULHER TRANS",
+  rather_not_say: "NÃO INFORMADO",
+}
 
 export default function JogadorPublicProfile() {
   const { id } = useParams()
@@ -185,6 +192,9 @@ export default function JogadorPublicProfile() {
                       {profile.name}
                     </h1>
                     <div className="mt-5 flex flex-wrap gap-2">
+                      <span className="border-2 border-background/30 bg-background/10 px-3 py-1 font-display text-sm font-black tracking-widest text-background uppercase">
+                        {PLAYER_SEX_LABELS[profile.sex ?? "rather_not_say"] ?? PLAYER_SEX_LABELS.rather_not_say}
+                      </span>
                       {profile.positions.length > 0
                         ? profile.positions.map((pos) => (
                             <span
