@@ -5,7 +5,8 @@ import { eq, or, and, desc } from "drizzle-orm"
 import { nanoid } from "nanoid"
 import { requireSession } from "../hooks/require-auth.js"
 import { ok } from "../lib/response.js"
-import { connections, players, teams } from "../db/schema/index.js"
+import { connections, players, teams, users } from "../db/schema/index.js"
+import { emailService } from "../lib/email/index.js"
 
 const connectionsRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /connections — list my connections and pending requests
@@ -149,6 +150,17 @@ const connectionsRoutes: FastifyPluginAsync = async (fastify) => {
         .set({ status, updatedAt: new Date() })
         .where(eq(connections.id, id))
         .returning()
+
+      if (status === "accepted") {
+        const requester = await fastify.db
+          .select({ email: users.email })
+          .from(users)
+          .where(eq(users.id, conn.requesterId))
+          .then((r) => r[0])
+        if (requester) {
+          void emailService.sendConnectionAccepted(requester.email, request.session!.user.name)
+        }
+      }
 
       return ok({ id: updated.id, status: updated.status, updatedAt: updated.updatedAt.toISOString() })
     }

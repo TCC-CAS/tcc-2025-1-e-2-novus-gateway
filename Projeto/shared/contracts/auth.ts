@@ -78,5 +78,6 @@ export const SessionUserSchema = z.object({
   name: z.string(),
   role: RoleSchema,
   planId: z.enum(["free", "craque", "fenomeno", "profissional"]).default("free"),
+  emailVerified: z.boolean().default(false),
 });
 export type SessionUser = z.infer<typeof SessionUserSchema>;

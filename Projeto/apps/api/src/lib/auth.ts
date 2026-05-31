@@ -40,10 +40,12 @@ export function createAuth(db: PostgresJsDatabase<typeof schema>) {
     },
     plugins: [],
     emailVerification: {
-      sendVerificationEmail: async ({ user, url, token }) => {
-        void emailService.sendEmailVerification(user.email, url)
+      sendVerificationEmail: async ({ user, url }) => {
+        const frontendUrl = process.env.FRONTEND_URL || process.env.CORS_ORIGIN || "http://localhost:5173"
+        const verifyUrl = url.replace(/callbackURL=[^&]*/g, `callbackURL=${encodeURIComponent(frontendUrl)}`)
+        void emailService.sendEmailVerification(user.email, verifyUrl)
       },
-      sendOnSignUp: false,
+      sendOnSignUp: true,
       autoSignInAfterVerification: true,
       expiresIn: 3600,
     },

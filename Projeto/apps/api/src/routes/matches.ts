@@ -5,7 +5,8 @@ import { nanoid } from "nanoid"
 import { z } from "zod"
 import { requireRole } from "../hooks/require-auth.js"
 import { ok } from "../lib/response.js"
-import { matches, teams, matchInvites, players } from "../db/schema/index.js"
+import { matches, teams, matchInvites, players, users } from "../db/schema/index.js"
+import { emailService } from "../lib/email/index.js"
 import {
   CreateMatchRequestSchema,
   UpdateMatchRequestSchema,
@@ -505,6 +506,23 @@ const matchesRoutes: FastifyPluginAsync = async (fastify) => {
         .innerJoin(teams, eq(matches.teamId, teams.id))
         .where(eq(matches.id, invite.matchId))
         .then((r) => r[0])
+
+      if (status === "accepted" && matchRow) {
+        const teamUser = await fastify.db
+          .select({ email: users.email })
+          .from(teams)
+          .innerJoin(users, eq(teams.userId, users.id))
+          .where(eq(teams.id, matchRow.teamId))
+          .then((r) => r[0])
+        if (teamUser) {
+          void emailService.sendMatchInviteAccepted(
+            teamUser.email,
+            request.session!.user.name,
+            matchRow.matchDate,
+            matchRow.teamName
+          )
+        }
+      }
 
       return reply.send(ok({
         id: updated.id,

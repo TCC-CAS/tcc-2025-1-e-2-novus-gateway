@@ -11,6 +11,7 @@ export default [
   route("cadastro", "routes/cadastro.tsx"),
   route("onboarding", "routes/onboarding.tsx"),
   route("recuperar-senha", "routes/recuperar-senha.tsx"),
+  route("redefinir-senha", "routes/redefinir-senha.tsx"),
   route("planos", "routes/planos.tsx"),
   route("pagamento-sucesso", "routes/pagamento-sucesso.tsx"),
   route("termos", "routes/termos.tsx"),
