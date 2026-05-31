@@ -110,6 +110,20 @@ export default function Index() {
               </p>
             </div>
 
+            {/* Video explainer */}
+            <div className="mb-16 border-4 border-primary overflow-hidden">
+              <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full block"
+              >
+                <source src="/varzeapro-demo-vertical.webm" media="(max-width: 768px)" type="video/webm" />
+                <source src="/varzeapro-demo.webm" type="video/webm" />
+              </video>
+            </div>
+
             <div className="grid gap-6 md:grid-cols-3 md:grid-rows-2">
               {/* Card 1 */}
               <div className="group relative flex flex-col justify-between overflow-hidden bg-background p-10 transition-transform hover:-translate-y-2 md:col-span-2 md:row-span-2">
