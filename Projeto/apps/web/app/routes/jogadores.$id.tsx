@@ -70,11 +70,12 @@ export default function JogadorPublicProfile() {
     mutationFn: () =>
       isFavorited ? favoritesApi.remove(profile!.userId) : favoritesApi.add(profile!.userId),
     onMutate: async () => {
+      const wasAlreadyFavorited = isFavorited
       await queryClient.cancelQueries({ queryKey: ["favorites"] })
       const previous = queryClient.getQueryData(["favorites"])
       queryClient.setQueryData(["favorites"], (old: typeof favorites) => {
         if (!old) return old
-        const newData = isFavorited
+        const newData = wasAlreadyFavorited
           ? old.data.filter((f) => f.targetUser.id !== profile?.userId)
           : [
               {
@@ -90,16 +91,16 @@ export default function JogadorPublicProfile() {
               },
               ...old.data,
             ]
-        return { ...old, data: newData, meta: { ...old.meta, total: old.meta.total + (isFavorited ? -1 : 1) } }
+        return { ...old, data: newData, meta: { ...old.meta, total: old.meta.total + (wasAlreadyFavorited ? -1 : 1) } }
       })
-      return { previous }
+      return { previous, wasAlreadyFavorited }
     },
     onError: (_err, _vars, context) => {
       queryClient.setQueryData(["favorites"], context?.previous)
       toast.error("Erro ao atualizar favoritos.")
     },
-    onSuccess: () => {
-      toast.success(isFavorited ? "Favorito removido." : "Jogador favoritado!")
+    onSuccess: (_data, _vars, context) => {
+      toast.success(context?.wasAlreadyFavorited ? "Favorito removido." : "Jogador favoritado!")
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["favorites"] })
