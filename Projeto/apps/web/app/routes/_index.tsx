@@ -30,7 +30,7 @@ export default function Index() {
 
       <main className="flex-1">
         {/* HERO SECTION */}
-        <section className="relative flex min-h-screen items-center justify-center overflow-hidden border-b-[12px] border-primary px-6 pb-20 pt-40 sm:px-12">
+        <section className="relative flex min-h-screen items-center justify-center overflow-hidden border-b-[12px] border-primary px-6 pb-20 pt-10 md:pt-40 sm:px-12">
           {/* Geometric Abstract Shapes */}
           <div className="absolute right-0 top-1/4 -z-10 h-[50vh] w-[50vw] rotate-12 bg-primary/20 blur-[150px]"></div>
           <div className="absolute -left-1/4 bottom-0 -z-10 h-[40vh] w-[40vw] -rotate-12 bg-accent/20 blur-[120px]"></div>

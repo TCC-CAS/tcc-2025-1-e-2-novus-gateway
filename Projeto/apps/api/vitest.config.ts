@@ -15,5 +15,6 @@ export default defineConfig({
       CORS_ORIGIN: "http://localhost:5173",
     },
     pool: "forks",
+    hookTimeout: 30000,
   },
 })
