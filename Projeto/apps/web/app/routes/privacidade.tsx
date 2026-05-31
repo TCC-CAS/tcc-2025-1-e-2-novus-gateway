@@ -27,7 +27,7 @@ export default function Privacidade() {
               </span>
             </h1>
             <p className="mt-6 font-bold tracking-widest text-muted-foreground text-xs uppercase">
-              Última atualização: 2025
+              Última atualização: 31 de maio de 2026
             </p>
           </div>
 
@@ -51,6 +51,9 @@ export default function Privacidade() {
               <p>O VárzeaPro coleta dados pessoais com a finalidade de:</p>
               <BulletList items={[
                 { text: "possibilitar a criação e manutenção de perfis de jogadores e times;" },
+                { text: "segmentar o motor de busca tática de acordo com a identidade de gênero/modalidade esportiva, direcionando atletas para elencos masculinos, femininos ou de categorias mistas (\"Prefiro não dizer\");" },
+                { text: "indexar informações em um motor de busca pública, permitindo que visitantes não cadastrados visualizem dados básicos dos perfis para fomentar a atratividade e utilidade do ecossistema;" },
+                { text: "viabilizar a rede de relacionamentos da plataforma através do sistema de \"Conexões\" mútuas e da montagem e exibição pública do \"Elenco\" das agremiações;" },
                 { text: "permitir comunicação entre usuários via mensagens;" },
                 { text: "exibir informações esportivas relevantes (posições, habilidades, localização geral etc.);" },
                 { text: "aprimorar continuamente o sistema, seu desempenho e usabilidade;" },
@@ -66,10 +69,12 @@ export default function Privacidade() {
               <p>O VárzeaPro pode coletar os seguintes dados, conforme o uso:</p>
               <SubSection title="2.1 Dados cadastrais">
                 <BulletList items={[
-                  { text: "Nome completo" },
-                  { text: "E-mail" },
+                  { text: "Nome completo (ou nome do responsável legal, no caso de perfis de Times)" },
+                  { text: "Cadastro de Pessoas Físicas (CPF) válido (obrigatório para atletas e para o responsável legal do Time)" },
+                  { text: "E-mail de contato" },
                   { text: "Senha (armazenada de forma criptografada)" },
                   { text: "Data de nascimento" },
+                  { text: "Gênero/Modalidade de atuação (Masculino, Feminino ou Prefiro não dizer)" },
                   { text: "Cidade e região aproximada" },
                 ]} />
               </SubSection>
@@ -80,13 +85,15 @@ export default function Privacidade() {
                   { text: "Disponibilidade de horários" },
                   { text: "Fotos e vídeos esportivos (mídias)" },
                   { text: "Histórico esportivo informado voluntariamente" },
+                  { text: "Histórico de conexões aceitas e estabelecidas" },
                 ]} />
                 <p className="mt-4 text-sm font-bold uppercase tracking-widest text-muted-foreground">(para times)</p>
                 <BulletList items={[
-                  { text: "Nome do time" },
-                  { text: "Responsável" },
-                  { text: "Local de atuação" },
+                  { text: "Nome oficial da agremiação" },
+                  { text: "Nome completo e CPF do Responsável Legal pelo clube" },
+                  { text: "Localização geográfica exata de atuação (Bairro/Cidade)" },
                   { text: "Vagas e posições desejadas" },
+                  { text: "Lista de jogadores vinculados ao \"Elenco\" público do time" },
                 ]} />
               </SubSection>
               <SubSection title="2.3 Dados gerados automaticamente">
@@ -117,15 +124,18 @@ export default function Privacidade() {
               <SubSection title="3.1 Consentimento do titular (Art. 7º, I, LGPD)">
                 <p>O consentimento é utilizado como base legal para:</p>
                 <BulletList items={[
-                  { text: "criação da conta do usuário (Jogador ou Time);" },
+                  { text: "criação da conta do usuário (Jogador ou Time) e coleta inicial do gênero e CPF;" },
                   { text: "envio de fotos, vídeos e demais mídias esportivas;" },
+                  { text: "disponibilização de dados básicos do perfil no motor de busca pública para visualização por Visitantes não autenticados;" },
                   { text: "uso de localização aproximada para melhorar a busca de jogadores/times;" },
                   { text: "exibição pública do perfil esportivo dentro da plataforma;" },
                   { text: "recebimento de notificações internas." },
                 ]} />
                 <p>
                   O consentimento é livre, informado e inequívoco, podendo ser revogado a qualquer
-                  momento pelo usuário, nos termos do Art. 8º da LGPD.
+                  momento pelo usuário, nos termos do Art. 8º da LGPD. Em caso de revogação,
+                  determinados serviços podem deixar de funcionar, mas o usuário continuará tendo
+                  acesso aos seus direitos previstos na legislação.
                 </p>
               </SubSection>
               <SubSection title="3.2 Cumprimento de obrigação legal ou regulatória (Art. 7º, II, LGPD)">
@@ -138,8 +148,15 @@ export default function Privacidade() {
                 ]} />
               </SubSection>
               <SubSection title="3.3 Execução de contrato e procedimentos preliminares (Art. 7º, V, LGPD)">
-                <p>São tratados dados necessários para:</p>
+                <p>
+                  Ainda que o VárzeaPro seja um projeto acadêmico, a relação estabelecida entre
+                  plataforma e usuário caracteriza uma relação contratual para fins da LGPD. Assim,
+                  são tratados dados necessários para:
+                </p>
                 <BulletList items={[
+                  { text: "a utilização do CPF como chave única de validação para impedir a duplicidade de contas e fraudes cadastrais;" },
+                  { text: "a entrega dos limites operacionais atrelados a cada plano (Livre, Craque, Fenômeno para atletas; Pelada e Profissional para clubes);" },
+                  { text: "o funcionamento das mensagens diretas (\"Resenha\") e do ecossistema de conexões;" },
                   { text: "permitir o funcionamento de perfis e interações;" },
                   { text: "possibilitar a comunicação interna entre jogadores e times;" },
                   { text: "administrar convites para partidas, treinos e competições;" },
@@ -188,8 +205,10 @@ export default function Privacidade() {
               <p>Os dados do usuário podem ser compartilhados apenas nos seguintes casos:</p>
               <SubSection title="5.1 Internamente entre usuários">
                 <BulletList items={[
-                  { text: "Times podem visualizar dados de jogadores (perfil esportivo)." },
-                  { text: "Jogadores podem visualizar informações sobre times." },
+                  { strong: "Visitantes (Não logados):", text: "Podem visualizar informações públicas e resumidas de perfis (nome, foto, região, posição e elenco do time) por meio do motor de busca aberta da plataforma." },
+                  { strong: "Usuários Cadastrados:", text: "Podem explorar perfis detalhados de atletas e equipes através dos filtros de busca tática segmentados por região, nível e modalidade de gênero." },
+                  { strong: "Usuários Conectados:", text: "Estabelecem um vínculo de rede que autoriza a visualização mútua de portfólios estendidos, galerias completas de mídia e troca de mensagens diretas." },
+                  { strong: "Membros do Elenco:", text: "Os atletas vinculados a um clube terão seus nomes e perfis associados publicamente à listagem de elenco da respectiva agremiação." },
                 ]} />
               </SubSection>
               <SubSection title="5.2 Terceiros essenciais à operação">

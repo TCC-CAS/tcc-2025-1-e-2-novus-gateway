@@ -25,7 +25,7 @@ export default function Termos() {
               <span className="text-primary">DE USO</span>
             </h1>
             <p className="mt-6 font-bold tracking-widest text-muted-foreground text-xs uppercase">
-              Última atualização: 2025
+              Última atualização: 31 de maio de 2026
             </p>
           </div>
 
@@ -59,20 +59,20 @@ export default function Termos() {
                 esportiva de forma acessível e transparente.
               </p>
               <p>
-                O sistema permite a criação de perfis completos de jogadores, contendo informações
-                pessoais, características esportivas, posições de atuação, disponibilidade, fotos e
-                vídeos que auxiliam na demonstração do desempenho do atleta. Para os times, a plataforma
-                possibilita a divulgação de vagas, necessidades específicas de posições e detalhes sobre
-                treinos, competições e agendas de partidas, oferecendo ferramentas que simplificam a
-                busca por novos integrantes.
+                O sistema permite a criação de perfis completos de jogadores e de agremiações esportivas.
+                Visando democratizar a visibilidade no esporte amador, a plataforma disponibiliza um motor
+                de busca público, permitindo que visitantes não cadastrados pesquisem e visualizem perfis
+                básicos de atletas e times. Além disso, o VárzeaPro estrutura o mercado respeitando a
+                diversidade de gênero, oferecendo ambientes de busca e conexão segmentados para o futebol
+                masculino, feminino e modalidades mistas ("Prefiro não dizer").
               </p>
               <p>
-                O VárzeaPro disponibiliza recursos de troca de mensagens internas, permitindo que
-                jogadores e equipes se comuniquem diretamente, negociem participações em partidas,
-                esclareçam dúvidas e estabeleçam vínculos esportivos. A plataforma também permite a
-                publicação de mídias — fotos e vídeos relacionados à prática do futebol — que contribuem
-                para a construção de portfólios esportivos e ajudam times a avaliar melhor o perfil de
-                cada atleta.
+                Para estreitar os laços da comunidade, a plataforma atua como uma rede social esportiva,
+                permitindo que os usuários estabeleçam "Conexões" mútuas. Jogadores conectados podem
+                compartilhar galerias de mídia detalhadas, enquanto as agremiações contam com o recurso
+                de "Elenco", permitindo adicionar atletas ao seu plantel e torná-lo visível publicamente.
+                O VárzeaPro também disponibiliza recursos de troca de mensagens internas (Resenha) para
+                negociações e organização de partidas.
               </p>
               <p>
                 É importante destacar que o VárzeaPro não atua como intermediador financeiro, não
@@ -110,9 +110,12 @@ export default function Termos() {
               <p>Para garantir clareza e compreensão uniforme, aplicam-se neste Termo as seguintes definições:</p>
               <BulletList items={[
                 { strong: "USUÁRIO:", text: "qualquer pessoa física ou jurídica que acessa ou utiliza a plataforma, cadastrada ou não." },
+                { strong: "VISITANTE:", text: "pessoa que acessa a plataforma para utilizar o motor de busca público de jogadores e times, sem a necessidade de realizar o login ou cadastro." },
                 { strong: "JOGADOR:", text: "usuário que cria perfil esportivo individual para divulgar suas informações e buscar oportunidades no futebol amador." },
                 { strong: "TIME:", text: "usuário responsável por gerenciar perfis de equipes amadoras e divulgar vagas, treinos e convites." },
                 { strong: "PLATAFORMA:", text: "ambiente digital VárzeaPro acessível via aplicativo e/ou site, incluindo banco de dados, interface, serviços e funcionalidades." },
+                { strong: "CONEXÃO:", text: "vínculo digital estabelecido mutuamente entre usuários (jogadores e/ou times) dentro da plataforma, liberando o acesso a informações detalhadas, histórico e mídias restritas." },
+                { strong: "ELENCO:", text: "funcionalidade pública gerida pelo perfil \"Time\", que lista os jogadores vinculados àquela agremiação no momento." },
                 { strong: "MÍDIA:", text: "qualquer conteúdo visual (fotos, vídeos) enviado pelo usuário ao sistema." },
                 { strong: "CONTA:", text: "registro criado pelo usuário para acessar recursos exclusivos da plataforma." },
                 { strong: "DADOS PESSOAIS:", text: "informações capazes de identificar ou tornar identificável o usuário, conforme definido pela LGPD." },
@@ -127,17 +130,27 @@ export default function Termos() {
                 as ações realizadas em sua conta.
               </p>
               <SubSection title="4.1">
+                <p>
+                  Para utilizar os recursos avançados e interativos do VárzeaPro, o usuário deve criar
+                  uma conta, fornecendo dados verdadeiros, completos e atualizados.
+                </p>
+                <BulletList items={[
+                  { strong: "Para Jogadores:", text: "É obrigatório o fornecimento do número de CPF válido para fins de identificação e unicidade da conta, além da seleção da categoria de atuação (Masculino, Feminino ou Prefiro não dizer) para correta indexação no motor de busca." },
+                  { strong: "Para Times:", text: "É obrigatória a indicação de um \"Responsável Legal\" pela agremiação, mediante o fornecimento do nome completo e do CPF deste gestor, que responderá pelas atividades do time na plataforma." },
+                ]} />
+              </SubSection>
+              <SubSection title="4.2">
                 <p>Para utilizar os recursos do VárzeaPro, o usuário deve criar uma conta, fornecendo dados verdadeiros, completos e atualizados.</p>
               </SubSection>
-              <SubSection title="4.2 O usuário é integralmente responsável por:">
+              <SubSection title="4.3 O usuário é integralmente responsável por:">
                 <BulletList items={[
                   { text: "manter a confidencialidade de sua senha;" },
                   { text: "garantir que o uso da conta seja pessoal e intransferível;" },
-                  { text: "zelar pela veracidade das informações cadastradas;" },
+                  { text: "zelar pela veracidade das informações cadastradas (incluindo identidade, CPF e gênero);" },
                   { text: "utilizar a plataforma em conformidade com este Termo e com a legislação vigente." },
                 ]} />
               </SubSection>
-              <SubSection title="4.3 É proibido:">
+              <SubSection title="4.4 É proibido:">
                 <BulletList items={[
                   { text: "criar perfis falsos ou com identidade de terceiros;" },
                   { text: "utilizar linguagem ofensiva, discriminatória ou inadequada;" },
@@ -145,24 +158,24 @@ export default function Termos() {
                   { text: "manipular avaliações, descrições esportivas ou interações para obter vantagem indevida." },
                 ]} />
               </SubSection>
-              <SubSection title="4.4">
+              <SubSection title="4.5">
                 <p>O VárzeaPro não se responsabiliza por perfis falsos, mas realiza ações preventivas de moderação.</p>
               </SubSection>
-              <SubSection title="4.5">
+              <SubSection title="4.6">
                 <p>O VárzeaPro poderá suspender ou excluir contas que descumprirem este Termo.</p>
               </SubSection>
             </Section>
 
             <Section number="5" title="MODELO DE MONETIZAÇÃO">
               <p>
-                A plataforma VárzeaPro foi projetada para operar sob o modelo Freemium, assegurando que
-                os Jogadores tenham acesso 100% gratuito e que os Times possam utilizar o serviço com
-                clareza sobre os custos.
+                A plataforma VárzeaPro opera sob o modelo de negócios Freemium, oferecendo
+                funcionalidades gratuitas e planos de assinatura Premium opcionais para ambos os públicos
+                (Jogadores e Times).
               </p>
               <BulletList items={[
-                { text: "O cadastro de novos usuários e a busca por perfis de jogadores são totalmente gratuitos." },
-                { text: "Os Times podem iniciar até cinco contatos mensais gratuitamente; a partir desse limite, os contatos adicionais exigem a assinatura de um plano pago (mensal ou anual)." },
-                { text: "O modelo prevê, como fontes de receita complementares, a exibição de publicidade local e o estabelecimento de parcerias com marcas esportivas." },
+                { strong: "Gratuidade Básica:", text: "O cadastro de usuários, a criação do perfil, a funcionalidade de busca pública e o estabelecimento de conexões são totalmente gratuitos. Usuários dos planos de entrada (plano \"Livre\" para jogadores e plano \"Pelada\" para times) possuem limites preestabelecidos para envio de mensagens, volume de mídias na galeria e anúncios de vagas." },
+                { strong: "Assinaturas para Jogadores:", text: "Atletas que desejam maior visibilidade podem optar pela contratação de pacotes pagos (planos \"Craque\" e \"Fenômeno\"), que ampliam os limites de interação, habilitam o upload de vídeos (highlights), inserem selos de verificação e destacam o perfil nos resultados de busca dos times." },
+                { strong: "Assinaturas para Times:", text: "Agremiações com alta demanda de recrutamento podem assinar o pacote pago (\"Profissional\"), que destrava limites expandidos para envio de mensagens, criação de convites, vagas no elenco e acesso a filtros táticos avançados e recomendações." },
                 { text: "Essa estrutura de receita visa garantir a sustentabilidade financeira do projeto, cobrindo os custos operacionais de hospedagem, manutenção e marketing." },
               ]} />
             </Section>
@@ -174,9 +187,11 @@ export default function Termos() {
               </p>
               <p className="font-bold tracking-widest text-sm uppercase text-foreground mt-4 mb-2">São finalidades permitidas:</p>
               <BulletList items={[
-                { text: "criar e manter perfis esportivos;" },
-                { text: "buscar jogadores, times e oportunidades;" },
-                { text: "interagir por meio do sistema de mensagens;" },
+                { text: "criar e manter perfis esportivos públicos;" },
+                { text: "pesquisar jogadores e times de forma pública, mesmo sem autenticação;" },
+                { text: "estabelecer conexões (networking esportivo) para acompanhamento de atletas e equipes;" },
+                { text: "gerenciar publicamente o elenco (roster) da agremiação;" },
+                { text: "interagir por meio do sistema de mensagens e convites de jogos;" },
                 { text: "divulgar mídias esportivas e conteúdos relacionados à várzea." },
               ]} />
               <p className="font-bold tracking-widest text-sm uppercase text-foreground mt-6 mb-2">É vedado o uso da plataforma para:</p>
