@@ -13,6 +13,8 @@ export default [
   route("recuperar-senha", "routes/recuperar-senha.tsx"),
   route("planos", "routes/planos.tsx"),
   route("pagamento-sucesso", "routes/pagamento-sucesso.tsx"),
+  route("termos", "routes/termos.tsx"),
+  route("privacidade", "routes/privacidade.tsx"),
   // Public listing + profile routes — accessible without login
   route("jogadores", "routes/jogadores.tsx"),
   route("jogadores/:id", "routes/jogadores.$id.tsx"),

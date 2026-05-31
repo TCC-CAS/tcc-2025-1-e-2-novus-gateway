@@ -11,6 +11,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
 import type { Route } from "./+types/root";
 import { Toaster } from "./components/ui/sonner";
+import { CookieBanner } from "./components/cookie-banner";
 import { AuthProvider } from "./lib/auth/auth-context";
 import { PlanProvider } from "./lib/plan";
 import "./app.css";
@@ -66,6 +67,7 @@ export default function App() {
           <PlanProvider>
             <Outlet />
             <Toaster richColors />
+            <CookieBanner />
           </PlanProvider>
         </AuthProvider>
       </ThemeProvider>
