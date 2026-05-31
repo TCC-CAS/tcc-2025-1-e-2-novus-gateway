@@ -3,6 +3,7 @@ import { ZodTypeProvider } from "fastify-type-provider-zod"
 import { z } from "zod"
 import { eq, desc, or, and } from "drizzle-orm"
 import { nanoid } from "nanoid"
+import { fromNodeHeaders } from "better-auth/node"
 import { requireSession, requireRole } from "../hooks/require-auth.js"
 import { ok } from "../lib/response.js"
 import { players, users, teams, connections } from "../db/schema/index.js"
@@ -132,9 +133,11 @@ const playersRoutes: FastifyPluginAsync = async (fastify) => {
       schema: { params: z.object({ id: z.string() }) },
     },
     async (request, reply) => {
-      const session = request.session
+      const session = await fastify.auth.api.getSession({
+        headers: fromNodeHeaders(request.headers),
+      })
       const viewerUserId = session?.user.id
-      const viewerRole = session?.user.role as "player" | "team" | "admin" | undefined
+      const viewerRole = (session?.user as { role?: string } | undefined)?.role as "player" | "team" | "admin" | undefined
 
       const profile = await fastify.db.query.players.findFirst({
         where: eq(players.id, request.params.id),

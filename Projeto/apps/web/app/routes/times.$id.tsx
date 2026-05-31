@@ -241,7 +241,7 @@ export default function TimePublicProfile() {
                     </a>
                   )}
                   {user && !isOwnProfile && (
-                    <ConnectionButton targetUserId={profile.userId} />
+                    <ConnectionButton targetUserId={profile.userId} profileQueryKey={["team", id]} />
                   )}
                   <div className="flex gap-2">
                     {user && !isOwnProfile && (
@@ -463,7 +463,7 @@ export default function TimePublicProfile() {
           {(canContact || (user && !isOwnProfile) || (!!profile.whatsapp && isConnected)) && (
             <div className="sm:hidden border-t-4 border-foreground bg-background px-4 py-4 space-y-3">
               {user && !isOwnProfile && (
-                <ConnectionButton targetUserId={profile.userId} className="w-full justify-center" />
+                <ConnectionButton targetUserId={profile.userId} profileQueryKey={["team", id]} className="w-full justify-center" />
               )}
               {canContact && (
                 <Button
