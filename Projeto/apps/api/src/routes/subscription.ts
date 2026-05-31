@@ -466,7 +466,7 @@ const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
 
       // MercadoPago mode — PreApproval (assinatura recorrente)
       const planConfig = PLAN_CONFIGS[planId as keyof typeof PLAN_CONFIGS]
-      const unitPrice = process.env.MERCADOPAGO_TEST_PRICE === "true" ? 1.00 : planConfig.price
+      const unitPrice = process.env.MERCADOPAGO_TEST_PRICE === "true" ? 4.99 : planConfig.price
       const client = new MercadoPagoConfig({
         accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN || "",
       })
