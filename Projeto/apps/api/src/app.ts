@@ -109,7 +109,7 @@ export async function buildApp() {
 
   // Start cron job to expire paused subscriptions (skip in test env)
   if (process.env.NODE_ENV !== "test") {
-    fastify.ready().then(() => {
+    fastify.addHook("onReady", async () => {
       const interval = startExpireSubscriptionsCron(fastify.db, fastify.log)
       fastify.addHook("onClose", async () => clearInterval(interval))
     })
