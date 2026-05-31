@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { toast } from "sonner";
 import { useAuth } from "~/lib/auth/auth-context";
 import { usePlan } from "~/lib/plan";
+import { authApi } from "~/lib/api-client";
 import { PasswordSchema, getPlansForRole, isUnlimited, PLAN_CONFIGS } from "~shared/contracts";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -18,6 +19,8 @@ import {
   Crown,
   Lock,
   Loader2,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 
 export function meta() {
@@ -30,6 +33,22 @@ export default function Configuracoes() {
   const role = user?.role === "team" ? "team" : "player";
   const plans = getPlansForRole(role);
   const currentPlan = plans.find((p) => p.id === planId) ?? plans[0];
+
+  // Email verification resend state
+  const [isSendingVerification, setIsSendingVerification] = useState(false);
+
+  async function handleResendVerification() {
+    if (!user?.email) return;
+    setIsSendingVerification(true);
+    try {
+      await authApi.resendVerificationEmail(user.email);
+      toast.success("E-mail de verificação reenviado!");
+    } catch {
+      toast.error("Erro ao reenviar. Tente novamente.");
+    } finally {
+      setIsSendingVerification(false);
+    }
+  }
 
   // Password change state
   const [currentPassword, setCurrentPassword] = useState("");
@@ -129,6 +148,28 @@ export default function Configuracoes() {
               <div className="border-2 border-foreground bg-muted/30 p-4 font-mono text-lg lowercase tracking-tight">
                 {user?.email}
               </div>
+              {user?.emailVerified ? (
+                <div className="flex items-center gap-2 text-sm font-bold tracking-wide text-green-600 dark:text-green-400 uppercase">
+                  <CheckCircle2 className="size-4" />
+                  E-mail verificado
+                </div>
+              ) : (
+                <div className="flex items-center justify-between gap-4 border-2 border-yellow-500 bg-yellow-50 dark:bg-yellow-950/30 p-3">
+                  <div className="flex items-center gap-2 text-sm font-bold tracking-wide text-yellow-700 dark:text-yellow-300 uppercase">
+                    <AlertCircle className="size-4 shrink-0" />
+                    E-mail não verificado
+                  </div>
+                  <Button
+                    type="button"
+                    disabled={isSendingVerification}
+                    onClick={handleResendVerification}
+                    className="h-8 shrink-0 rounded-none border border-yellow-600 bg-transparent px-3 text-xs font-bold tracking-widest text-yellow-700 dark:text-yellow-300 uppercase hover:bg-yellow-100 dark:hover:bg-yellow-900/40 transition-colors disabled:opacity-50"
+                    variant="ghost"
+                  >
+                    {isSendingVerification ? <Loader2 className="size-3 animate-spin" /> : "Reenviar link"}
+                  </Button>
+                </div>
+              )}
             </div>
 
             {/* Password Change */}

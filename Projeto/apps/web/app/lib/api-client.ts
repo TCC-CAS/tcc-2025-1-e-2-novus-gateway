@@ -59,7 +59,7 @@ export class ApiError extends Error {
   }
 }
 
-type BetterAuthUser = { id: string; email: string; name: string; role: string; planId?: string }
+type BetterAuthUser = { id: string; email: string; name: string; role: string; planId?: string; emailVerified?: boolean }
 
 // --- Auth ---
 export const authApi = {
@@ -73,11 +73,25 @@ export const authApi = {
       "/auth/sign-up/email",
       { method: "POST", body: JSON.stringify(body) }
     ),
-  forgotPassword: (body: { email: string }) =>
-    request<{ success: boolean; message: string }>(
-      "/auth/forgot-password",
+  forgotPassword: (body: { email: string }) => {
+    const origin = typeof window !== "undefined" ? window.location.origin : ""
+    return request<{ success: boolean; message: string }>(
+      "/auth/request-password-reset",
+      { method: "POST", body: JSON.stringify({ ...body, redirectTo: `${origin}/redefinir-senha` }) }
+    )
+  },
+  resetPassword: (body: { token: string; newPassword: string }) =>
+    request<{ status: string }>(
+      "/auth/reset-password",
       { method: "POST", body: JSON.stringify(body) }
     ),
+  resendVerificationEmail: (email: string) => {
+    const origin = typeof window !== "undefined" ? window.location.origin : ""
+    return request<{ status: boolean }>(
+      "/auth/send-verification-email",
+      { method: "POST", body: JSON.stringify({ email, callbackURL: origin }) }
+    )
+  },
 };
 
 // --- Players ---

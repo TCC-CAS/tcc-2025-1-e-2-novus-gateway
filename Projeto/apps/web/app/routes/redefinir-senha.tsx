@@ -1,11 +1,9 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  ForgotPasswordRequestSchema,
-  type ForgotPasswordRequest,
-} from "~shared/contracts";
+import { z } from "zod";
+import { PasswordSchema } from "~shared/contracts";
 import { authApi, ApiError } from "~/lib/api-client";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -14,28 +12,46 @@ import { Label } from "~/components/ui/label";
 import { GlobalHeader } from "~/components/global-header";
 
 export function meta() {
-  return [{ title: "Recuperar senha - VárzeaPro" }];
+  return [{ title: "Redefinir senha - VárzeaPro" }];
 }
 
-export default function RecuperarSenha() {
-  const [sent, setSent] = useState(false);
+const ResetPasswordSchema = z
+  .object({
+    newPassword: PasswordSchema,
+    confirmPassword: z.string().min(1, "Confirme sua senha"),
+  })
+  .refine((d) => d.newPassword === d.confirmPassword, {
+    message: "As senhas não coincidem",
+    path: ["confirmPassword"],
+  });
+
+type ResetPasswordForm = z.infer<typeof ResetPasswordSchema>;
+
+export default function RedefinirSenha() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const token = searchParams.get("token");
+
+  const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<ForgotPasswordRequest>({
-    resolver: zodResolver(ForgotPasswordRequestSchema),
-    defaultValues: { email: "" },
+  const form = useForm<ResetPasswordForm>({
+    resolver: zodResolver(ResetPasswordSchema),
+    defaultValues: { newPassword: "", confirmPassword: "" },
   });
 
-  async function onSubmit(data: ForgotPasswordRequest) {
+  async function onSubmit(data: ResetPasswordForm) {
+    if (!token) return;
     setError(null);
     setIsSubmitting(true);
     try {
-      await authApi.forgotPassword(data);
-      setSent(true);
+      await authApi.resetPassword({ token, newPassword: data.newPassword });
+      setDone(true);
+      setTimeout(() => navigate("/login"), 3000);
     } catch (e) {
       if (e instanceof ApiError) setError(e.message);
-      else setError("Erro ao enviar. Tente novamente.");
+      else setError("Erro ao redefinir senha. Tente novamente.");
     } finally {
       setIsSubmitting(false);
     }
@@ -68,17 +84,17 @@ export default function RecuperarSenha() {
 
           <div className="relative z-10 mt-20 md:mt-0">
             <div className="mb-6 inline-block bg-primary px-3 py-1 font-display text-xl tracking-widest text-primary-foreground">
-              RECUPERAR CONTA
+              NOVA SENHA
             </div>
             <h1 className="font-display text-[15vw] leading-[0.8] tracking-tight text-background md:text-[8vw] lg:text-[10vw]">
-              PERDEU <br />
+              VOLTA <br />
               <span className="text-transparent [-webkit-text-stroke:2px_var(--color-background)] dark:[-webkit-text-stroke:2px_var(--color-background)]">
-                A CHAVE?
+                PRO CAMPO
               </span>
             </h1>
             <p className="mt-8 max-w-sm border-l-4 border-primary pl-4 text-lg font-medium text-background/80">
-              Sem problema. Informe seu e-mail e te mandamos um link pra você
-              voltar pro campo em segundos.
+              Escolha uma senha forte e volte a jogar. Lembre-se: letras,
+              números e símbolos.
             </p>
           </div>
 
@@ -90,29 +106,45 @@ export default function RecuperarSenha() {
           <div className="w-full max-w-md bg-background p-8 border-4 border-foreground shadow-[8px_8px_0px_0px_var(--color-foreground)] dark:shadow-[8px_8px_0px_0px_var(--color-foreground)] transition-shadow hover:shadow-[12px_12px_0px_0px_var(--color-primary)]">
             <div className="mb-10 text-center">
               <h2 className="font-display text-5xl tracking-wide text-foreground">
-                RECUPERAR
+                NOVA SENHA
               </h2>
               <p className="mt-2 text-sm font-bold tracking-widest text-muted-foreground uppercase">
-                Acesso à sua conta
+                Escolha uma senha forte
               </p>
             </div>
 
-            {sent ? (
-              <div className="space-y-6 text-center">
-                <div className="bg-primary/10 border-2 border-primary p-6">
-                  <p className="font-display text-2xl tracking-wide text-foreground uppercase">
-                    E-mail enviado!
+            {!token ? (
+              <div className="space-y-6">
+                <div className="bg-destructive/10 border-2 border-destructive p-4 text-center">
+                  <p className="font-bold tracking-wide text-destructive uppercase text-sm">
+                    Link inválido ou expirado
                   </p>
-                  <p className="text-sm font-medium text-muted-foreground mt-2">
-                    Se o e-mail existir, você receberá um link para redefinir
-                    sua senha.
+                  <p className="mt-2 text-muted-foreground text-sm">
+                    Solicite um novo link de recuperação.
                   </p>
                 </div>
                 <Button
                   asChild
                   className="h-auto w-full rounded-none border-2 border-primary bg-primary py-5 font-display text-xl tracking-widest text-primary-foreground transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_var(--color-foreground)] dark:hover:shadow-[4px_4px_0px_0px_var(--color-foreground)] uppercase"
                 >
-                  <Link to="/login">VOLTAR PARA ENTRAR</Link>
+                  <Link to="/recuperar-senha">Solicitar novo link</Link>
+                </Button>
+              </div>
+            ) : done ? (
+              <div className="space-y-6 text-center">
+                <div className="bg-primary/10 border-2 border-primary p-6">
+                  <p className="font-display text-2xl tracking-wide text-foreground uppercase">
+                    Senha redefinida!
+                  </p>
+                  <p className="text-sm font-medium text-muted-foreground mt-2">
+                    Redirecionando para o login...
+                  </p>
+                </div>
+                <Button
+                  asChild
+                  className="h-auto w-full rounded-none border-2 border-primary bg-primary py-5 font-display text-xl tracking-widest text-primary-foreground transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_var(--color-foreground)] dark:hover:shadow-[4px_4px_0px_0px_var(--color-foreground)] uppercase"
+                >
+                  <Link to="/login">Entrar agora</Link>
                 </Button>
               </div>
             ) : (
@@ -121,22 +153,44 @@ export default function RecuperarSenha() {
                   <FieldGroup className="space-y-5">
                     <Field className="space-y-2">
                       <Label
-                        htmlFor="email"
+                        htmlFor="newPassword"
                         className="font-display text-xl tracking-wide uppercase"
                       >
-                        Seu E-mail
+                        Nova Senha
                       </Label>
                       <Input
-                        id="email"
-                        type="email"
-                        autoComplete="email"
+                        id="newPassword"
+                        type="password"
+                        autoComplete="new-password"
                         disabled={isSubmitting}
                         className="h-14 rounded-none border-2 border-foreground bg-muted/50 px-4 text-lg focus-visible:ring-0 focus-visible:border-primary transition-colors"
-                        {...form.register("email")}
+                        {...form.register("newPassword")}
                       />
-                      {form.formState.errors.email && (
+                      {form.formState.errors.newPassword && (
                         <p className="font-bold tracking-wide text-destructive text-sm mt-1">
-                          {form.formState.errors.email.message}
+                          {form.formState.errors.newPassword.message}
+                        </p>
+                      )}
+                    </Field>
+
+                    <Field className="space-y-2">
+                      <Label
+                        htmlFor="confirmPassword"
+                        className="font-display text-xl tracking-wide uppercase"
+                      >
+                        Confirmar Senha
+                      </Label>
+                      <Input
+                        id="confirmPassword"
+                        type="password"
+                        autoComplete="new-password"
+                        disabled={isSubmitting}
+                        className="h-14 rounded-none border-2 border-foreground bg-muted/50 px-4 text-lg focus-visible:ring-0 focus-visible:border-primary transition-colors"
+                        {...form.register("confirmPassword")}
+                      />
+                      {form.formState.errors.confirmPassword && (
+                        <p className="font-bold tracking-wide text-destructive text-sm mt-1">
+                          {form.formState.errors.confirmPassword.message}
                         </p>
                       )}
                     </Field>
@@ -158,14 +212,14 @@ export default function RecuperarSenha() {
                     disabled={isSubmitting}
                     className="h-auto w-full rounded-none border-2 border-primary bg-primary py-5 font-display text-2xl tracking-widest text-primary-foreground transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_var(--color-foreground)] dark:hover:shadow-[4px_4px_0px_0px_var(--color-foreground)] uppercase"
                   >
-                    {isSubmitting ? "Enviando..." : "Enviar Link"}
+                    {isSubmitting ? "Salvando..." : "Salvar Nova Senha"}
                   </Button>
                   <Button
                     asChild
                     variant="outline"
                     className="h-auto w-full rounded-none border-2 border-foreground bg-transparent py-4 font-display text-xl tracking-widest text-foreground transition-all hover:bg-foreground hover:text-background uppercase"
                   >
-                    <Link to="/login">Lembrei, voltar</Link>
+                    <Link to="/login">Voltar para login</Link>
                   </Button>
                 </div>
               </form>
