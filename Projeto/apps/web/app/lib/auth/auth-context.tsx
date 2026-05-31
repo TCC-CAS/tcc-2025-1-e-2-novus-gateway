@@ -17,6 +17,7 @@ import {
 } from "~/lib/auth/permissions";
 import { clearStoredUser, getStoredUser, setStoredUser } from "~/lib/auth/session";
 import { clearSessionCookie, setSessionCookie } from "~/lib/auth/route-guards";
+import { queryClient } from "~/lib/query-client";
 import type { Role } from "~shared/contracts";
 
 type AuthState = {
@@ -50,6 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     clearStoredUser();
     clearSessionCookie();
     setUserState(null);
+    queryClient.clear();
   }, []);
 
   const setUser = useCallback((u: SessionUser | null) => {

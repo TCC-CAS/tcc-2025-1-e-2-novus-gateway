@@ -7,10 +7,11 @@ import { cn } from "~/lib/utils"
 
 type Props = {
   targetUserId: string
+  profileQueryKey?: unknown[]
   className?: string
 }
 
-export function ConnectionButton({ targetUserId, className }: Props) {
+export function ConnectionButton({ targetUserId, profileQueryKey, className }: Props) {
   const queryClient = useQueryClient()
 
   const { data, isLoading } = useQuery({
@@ -37,7 +38,7 @@ export function ConnectionButton({ targetUserId, className }: Props) {
       toast.success(action === "accepted" ? "Conexão aceita!" : "Solicitação recusada")
       queryClient.invalidateQueries({ queryKey: ["connection-status", targetUserId] })
       queryClient.invalidateQueries({ queryKey: ["my-connections"] })
-      queryClient.invalidateQueries({ queryKey: ["player", targetUserId] })
+      if (profileQueryKey) queryClient.invalidateQueries({ queryKey: profileQueryKey })
     },
     onError: () => toast.error("Erro ao responder solicitação"),
   })
@@ -48,7 +49,7 @@ export function ConnectionButton({ targetUserId, className }: Props) {
       toast.success("Conexão removida")
       queryClient.invalidateQueries({ queryKey: ["connection-status", targetUserId] })
       queryClient.invalidateQueries({ queryKey: ["my-connections"] })
-      queryClient.invalidateQueries({ queryKey: ["player", targetUserId] })
+      if (profileQueryKey) queryClient.invalidateQueries({ queryKey: profileQueryKey })
     },
     onError: () => toast.error("Erro ao remover conexão"),
   })

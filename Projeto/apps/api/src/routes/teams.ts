@@ -3,6 +3,7 @@ import { ZodTypeProvider } from "fastify-type-provider-zod"
 import { z } from "zod"
 import { eq, and, or } from "drizzle-orm"
 import { nanoid } from "nanoid"
+import { fromNodeHeaders } from "better-auth/node"
 import { requireSession, requireRole } from "../hooks/require-auth.js"
 import { ok } from "../lib/response.js"
 import { teams, players, teamMembers, users, connections } from "../db/schema/index.js"
@@ -81,7 +82,10 @@ const teamsRoutes: FastifyPluginAsync = async (fastify) => {
       schema: { params: z.object({ id: z.string() }) },
     },
     async (request, reply) => {
-      const viewerUserId = request.session?.user.id
+      const session = await fastify.auth.api.getSession({
+        headers: fromNodeHeaders(request.headers),
+      })
+      const viewerUserId = session?.user.id
 
       const profile = await fastify.db.query.teams.findFirst({
         where: eq(teams.id, request.params.id),
