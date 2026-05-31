@@ -59,6 +59,7 @@ export default function Cadastro() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const form = useForm<SignUpRequest>({
     resolver: zodResolver(SignUpRequestSchema),
@@ -77,6 +78,10 @@ export default function Cadastro() {
   const role = form.watch("role");
 
   async function onSubmit(data: SignUpRequest) {
+    if (!termsAccepted) {
+      toast.error("Você deve aceitar os Termos de Uso e a Política de Privacidade.")
+      return
+    }
     setIsSubmitting(true);
     try {
       const res = await authApi.signUp({
@@ -399,10 +404,58 @@ export default function Cadastro() {
               </FieldGroup>
             </FieldSet>
 
+            {/* TERMS ACCEPTANCE */}
+            <button
+              type="button"
+              onClick={() => setTermsAccepted(!termsAccepted)}
+              className={cn(
+                "flex w-full items-start gap-3 border-2 p-4 text-left transition-all",
+                termsAccepted
+                  ? "border-primary bg-primary/10"
+                  : "border-foreground bg-muted/30 hover:border-primary"
+              )}
+            >
+              <span
+                className={cn(
+                  "mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-none border-2 transition-colors",
+                  termsAccepted
+                    ? "border-primary bg-primary"
+                    : "border-foreground bg-background"
+                )}
+              >
+                {termsAccepted && (
+                  <svg viewBox="0 0 10 10" className="h-3 w-3 text-primary-foreground" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M1.5 5L4 7.5L8.5 2.5" />
+                  </svg>
+                )}
+              </span>
+              <p className="text-xs font-bold tracking-wide text-muted-foreground uppercase leading-relaxed">
+                Li e aceito os{" "}
+                <Link
+                  to="/termos"
+                  target="_blank"
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-foreground underline decoration-2 underline-offset-4 hover:text-primary transition-colors"
+                >
+                  Termos de Uso
+                </Link>{" "}
+                e a{" "}
+                <Link
+                  to="/privacidade"
+                  target="_blank"
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-foreground underline decoration-2 underline-offset-4 hover:text-primary transition-colors"
+                >
+                  Política de Privacidade
+                </Link>
+                .
+              </p>
+            </button>
+
             <Button
               type="submit"
-              disabled={isSubmitting}
-              className="mt-8 h-auto w-full rounded-none border-2 border-primary bg-primary py-5 font-display text-2xl tracking-widest text-primary-foreground transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_var(--color-foreground)] dark:hover:shadow-[4px_4px_0px_0px_var(--color-foreground)]"
+              disabled={isSubmitting || !termsAccepted}
+              className="mt-8 h-auto w-full rounded-none border-2 border-primary bg-primary py-5 font-display text-2xl tracking-widest text-primary-foreground transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_var(--color-foreground)] dark:hover:shadow-[4px_4px_0px_0px_var(--color-foreground)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
             >
               {isSubmitting ? "CADASTRANDO..." : "CADASTRAR"}
             </Button>

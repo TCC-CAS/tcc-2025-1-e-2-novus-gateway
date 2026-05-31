@@ -366,6 +366,20 @@ export default function Index() {
           <p className="font-display text-3xl tracking-widest text-foreground">
             VÁRZEA<span className="text-primary">PRO</span>
           </p>
+          <div className="flex items-center gap-6">
+            <Link
+              to="/termos"
+              className="font-bold tracking-widest text-muted-foreground uppercase text-sm hover:text-foreground transition-colors"
+            >
+              TERMOS DE USO
+            </Link>
+            <Link
+              to="/privacidade"
+              className="font-bold tracking-widest text-muted-foreground uppercase text-sm hover:text-foreground transition-colors"
+            >
+              PRIVACIDADE
+            </Link>
+          </div>
           <p className="font-bold tracking-widest text-muted-foreground uppercase text-sm">
             © {new Date().getFullYear()} VárzeaPro. Todos os direitos
             reservados.
