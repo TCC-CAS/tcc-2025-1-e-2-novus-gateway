@@ -3,7 +3,7 @@ import { ZodTypeProvider } from "fastify-type-provider-zod"
 import { z } from "zod"
 import { eq, or, sql } from "drizzle-orm"
 import { nanoid } from "nanoid"
-import { MercadoPagoConfig, Preference } from "mercadopago"
+import { MercadoPagoConfig, PreApproval } from "mercadopago"
 import { requireSession } from "../hooks/require-auth.js"
 import { ok } from "../lib/response.js"
 import { subscriptions } from "../db/schema/subscriptions.js"
@@ -333,54 +333,42 @@ const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
         })
       }
 
-      // MercadoPago mode
+      // MercadoPago mode — PreApproval (assinatura recorrente)
       const planConfig = PLAN_CONFIGS[planId as keyof typeof PLAN_CONFIGS]
       const unitPrice = process.env.MERCADOPAGO_TEST_PRICE === "true" ? 1.00 : planConfig.price
       const client = new MercadoPagoConfig({
         accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN || "",
       })
-      const preference = new Preference(client)
 
       const successUrl = `${frontendUrl}/pagamento-sucesso?planId=${planId}`
-      const failureUrl = `${frontendUrl}/planos?status=failure`
-      const pendingUrl = `${frontendUrl}/planos?status=pending`
 
       try {
-        const result = await preference.create({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const result = await new PreApproval(client).create({
           body: {
-            items: [
-              {
-                id: planId,
-                title: `VarzeaPro ${planConfig.name}`,
-                quantity: 1,
-                unit_price: unitPrice,
-                currency_id: "BRL",
-              },
-            ],
-            payer: { email },
-            back_urls: {
-              success: successUrl,
-              failure: failureUrl,
-              pending: pendingUrl,
+            reason: `VarzeaPro ${planConfig.name}`,
+            payer_email: email,
+            auto_recurring: {
+              frequency: 1,
+              frequency_type: "months",
+              transaction_amount: unitPrice,
+              currency_id: "BRL",
             },
-            // auto_return only works with HTTPS back_urls (MP rejects localhost)
-            ...(successUrl.startsWith("https://") ? { auto_return: "approved" as const } : {}),
+            back_url: successUrl,
             external_reference: JSON.stringify({ userId, planId }),
             notification_url: process.env.MERCADOPAGO_WEBHOOK_URL || "",
-          },
+            status: "pending",
+          } as any,
         })
 
-        const isTestToken = (process.env.MERCADOPAGO_ACCESS_TOKEN || "").startsWith("TEST-")
         return ok({
-          initPoint: isTestToken
-            ? (result.sandbox_init_point ?? result.init_point)
-            : (result.init_point ?? result.sandbox_init_point),
-          preferenceId: result.id,
+          initPoint: result.init_point ?? "",
+          preferenceId: result.id ?? "",
         })
       } catch (error) {
-        request.log.error({ error }, "MercadoPago preference creation failed")
+        request.log.error({ error }, "MercadoPago PreApproval creation failed")
         return reply.status(502).send({
-          error: { code: "PAYMENT_PROVIDER_ERROR", message: "Falha ao criar preferência de pagamento" },
+          error: { code: "PAYMENT_PROVIDER_ERROR", message: "Falha ao criar assinatura recorrente" },
         })
       }
     }
