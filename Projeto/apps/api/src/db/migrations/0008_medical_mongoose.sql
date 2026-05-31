@@ -1,1 +1,0 @@
-ALTER TABLE "subscriptions" ADD COLUMN "mercadopago_preapproval_id" varchar(255);
