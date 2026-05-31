@@ -447,10 +447,14 @@ export default function Planos() {
                         Pausar Assinatura
                       </h2>
                     </div>
-                    <p className="mt-4 text-sm text-muted-foreground">
-                      Seu acesso ao plano <strong>{planLabel}</strong> será mantido até{" "}
-                      <strong>{usage?.periodResetAt ? new Date(usage.periodResetAt).toLocaleDateString("pt-BR") : "o fim do período"}</strong>.
-                      Você pode reativar a qualquer momento.
+                    <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+                      Acesso ao plano <strong>{planLabel}</strong> mantido até{" "}
+                      <strong>
+                        {usage?.periodResetAt
+                          ? new Date(usage.periodResetAt).toLocaleDateString("pt-BR")
+                          : "o fim do período"}
+                      </strong>
+                      . Pode reativar a qualquer momento.
                     </p>
                     <div className="mt-6 flex gap-3">
                       <Button
