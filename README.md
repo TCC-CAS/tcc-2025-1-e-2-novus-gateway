@@ -12,8 +12,6 @@
 ![LGPD](https://img.shields.io/badge/conformidade-LGPD-blue)
 ![ONU ODS](https://img.shields.io/badge/ODS-1%20%7C%203%20%7C%205%20%7C%208%20%7C%2010%20%7C%2011%20%7C%2017-orange)
 ![Status](https://img.shields.io/badge/status-concluido-e3b341?style=flat-square)
-<img width="1280" height="720" alt="output" src="https://github.com/user-attachments/assets/c95e9f5f-4f80-4c62-b280-c265299300ec" />
-
 ---
 
 ## 📄 Título e Descrição
@@ -55,6 +53,14 @@ O sistema foi arquitetado visando segurança e escalabilidade, utilizando tecnol
 * ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white) **PostgreSQL:** Banco de dados relacional que mantém a integridade referencial dos elencos, regras de planos de assinatura e conexões de rede.
 * ![AWS](https://img.shields.io/badge/Amazon_AWS-FF9900?style=for-the-badge&logo=amazonaws&logoColor=white) **AWS Cloud:** Infraestrutura em nuvem preparada para *Auto Scaling* em dias de alta de tráfego, como agendamento de jogos aos finais de semana.
 * ![BCrypt](https://img.shields.io/badge/Criptografia-BCrypt-red?style=for-the-badge) **BCrypt:** Garantia de criptografia de ponta e senhas seguras (Hash).
+
+---
+
+## Exemplos de Uso
+
+Abaixo, um vídeo apresentando o funcionamento central do software VárzeaPro.
+
+<img width="1280" height="720" alt="output" src="https://github.com/user-attachments/assets/c95e9f5f-4f80-4c62-b280-c265299300ec" />
 
 ---
 
