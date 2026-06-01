@@ -1,0 +1,6 @@
+name: varzeapro-infra
+description: VarzeaPro AWS infrastructure (EC2 + S3 + IAM)
+runtime:
+  name: nodejs
+  options:
+    typescript: true

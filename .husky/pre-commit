@@ -1,0 +1,24 @@
+#!/usr/bin/env sh
+
+echo "🔍 [pre-commit] TypeScript check..."
+
+# API
+echo "  → apps/api"
+cd Projeto/apps/api && npx tsc --noEmit
+API_EXIT=$?
+cd ../../..
+
+# Web (typegen primeiro, depois tsc)
+echo "  → apps/web"
+cd Projeto/apps/web && npx react-router typegen 2>/dev/null; npx tsc --noEmit
+WEB_EXIT=$?
+cd ../../..
+
+if [ $API_EXIT -ne 0 ] || [ $WEB_EXIT -ne 0 ]; then
+  echo ""
+  echo "❌ TypeScript errors found. Fix them before committing."
+  echo "   API exit: $API_EXIT | Web exit: $WEB_EXIT"
+  exit 1
+fi
+
+echo "✅ TypeScript OK"

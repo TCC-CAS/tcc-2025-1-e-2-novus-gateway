@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" fill="none">
+  <!-- Background -->
+  <rect width="192" height="192" fill="oklch(0.52 0.14 160)"/>
+  <!-- Brutalist border accent -->
+  <rect x="8" y="8" width="176" height="176" fill="none" stroke="white" stroke-width="6" opacity="0.3"/>
+  <!-- VP text -->
+  <text
+    x="96"
+    y="140"
+    font-family="'Arial Black', 'Arial', sans-serif"
+    font-size="110"
+    font-weight="900"
+    text-anchor="middle"
+    fill="white"
+    letter-spacing="-6"
+  >VP</text>
+</svg>

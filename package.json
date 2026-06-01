@@ -1,0 +1,15 @@
+{
+  "name": "varzeapro-monorepo",
+  "private": true,
+  "scripts": {
+    "prepare": "husky",
+    "check:api": "cd Projeto/apps/api && npx tsc --noEmit",
+    "check:web": "cd Projeto/apps/web && npx react-router typegen && npx tsc --noEmit",
+    "check:shared": "cd Projeto/shared && npx tsc --noEmit 2>/dev/null || true",
+    "check:all": "npm run check:api && npm run check:web",
+    "test:api": "cd Projeto/apps/api && npm test"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7"
+  }
+}

@@ -1,0 +1,242 @@
+/**
+ * ImageStorage — S3-compatible storage with presigned URL support.
+ *
+ * Provider-agnostic: works with AWS S3, Cloudflare R2, MinIO, and any S3-compatible API.
+ * Configure via environment variables (see env.ts for all options).
+ *
+ * Security:
+ * - Presigned URLs with configurable TTL for GET operations
+ * - Direct SDK upload for PUT (server holds credentials, never exposes them to client)
+ * - UUID-based paths prevent enumeration
+ */
+
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+  HeadObjectCommand,
+  GetObjectCommand,
+  type PutObjectCommandInput,
+} from "@aws-sdk/client-s3"
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
+
+function createS3Client(): S3Client {
+  const endpoint = process.env.S3_ENDPOINT || "https://s3.amazonaws.com"
+  const region = process.env.S3_REGION || "us-east-1"
+  const accessKeyId = process.env.S3_ACCESS_KEY_ID || ""
+  const secretAccessKey = process.env.S3_SECRET_ACCESS_KEY || ""
+  const usePathStyle = process.env.S3_USE_PATH_STYLE === "true"
+
+  // If no credentials are set, the SDK falls back to IAM role / instance profile
+  const credentials =
+    accessKeyId && secretAccessKey
+      ? { accessKeyId, secretAccessKey }
+      : undefined
+
+  return new S3Client({
+    endpoint: endpoint !== "https://s3.amazonaws.com" ? endpoint : undefined,
+    region,
+    credentials,
+    forcePathStyle: usePathStyle,
+  })
+}
+
+// Singleton — reused across requests
+let _client: S3Client | null = null
+function getClient(): S3Client {
+  if (!_client) _client = createS3Client()
+  return _client
+}
+
+export class ImageStorage {
+  private client: S3Client
+  private bucket: string
+  private publicUrl: string
+  private presignedTTL: number
+
+  constructor() {
+    this.client = getClient()
+    this.bucket = process.env.S3_BUCKET || "varzeapro-media"
+    this.publicUrl = process.env.S3_PUBLIC_URL || ""
+    this.presignedTTL = parseInt(process.env.PRESIGNED_URL_TTL_SECONDS ?? "3600", 10)
+  }
+
+  /**
+   * Generate a presigned URL for uploading directly to S3.
+   * Used by gallery uploads where the client uploads directly.
+   */
+  async getSignedUploadUrl(key: string, contentType: string, ttlSeconds?: number): Promise<string> {
+    const command = new PutObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+      ContentType: contentType,
+    })
+    return getSignedUrl(this.client, command, {
+      expiresIn: ttlSeconds ?? this.presignedTTL,
+    })
+  }
+
+  /**
+   * Upload a buffer to S3.
+   * The key should be a structured path like "avatars/{userId}/{uuid}-thumbnail.webp".
+   * Metadata is stored as S3 object metadata for auditing.
+   */
+  async upload(
+    key: string,
+    buffer: Buffer,
+    contentType: string,
+    metadata?: Record<string, string>
+  ): Promise<void> {
+    const params: PutObjectCommandInput = {
+      Bucket: this.bucket,
+      Key: key,
+      Body: buffer,
+      ContentType: contentType,
+      Metadata: metadata,
+      // Objects are private by default — access only via presigned URLs
+    }
+
+    await this.client.send(new PutObjectCommand(params))
+  }
+
+  /**
+   * Generate a presigned URL for downloading an object.
+   * URLs expire after presignedTTL seconds (default 1 hour).
+   */
+  async getSignedUrl(key: string, ttlSeconds?: number): Promise<string> {
+    const command = new GetObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+    })
+
+    const url = await getSignedUrl(this.client, command, {
+      expiresIn: ttlSeconds ?? this.presignedTTL,
+    })
+
+    return url
+  }
+
+  /**
+   * Build a public/CDN URL for an object.
+   * If S3_PUBLIC_URL is configured, uses that as the base (for CDN).
+   * Otherwise generates a presigned URL.
+   */
+  async getUrl(key: string): Promise<string> {
+    if (this.publicUrl) {
+      return `${this.publicUrl.replace(/\/$/, "")}/${key}`
+    }
+    return this.getSignedUrl(key)
+  }
+
+  /**
+   * Retrieve an object as a buffer.
+   * Used for moderation of already-uploaded gallery media.
+   */
+  async getBuffer(key: string): Promise<Buffer | null> {
+    const response = await this.client.send(
+      new GetObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+      })
+    ).catch((error) => {
+      if (error instanceof Error && error.name === "NoSuchKey") return null
+      throw error
+    })
+
+    if (!response?.Body) return null
+
+    const chunks: Buffer[] = []
+    const body = response.Body as AsyncIterable<Uint8Array>
+    for await (const chunk of body) {
+      chunks.push(Buffer.from(chunk))
+    }
+    return Buffer.concat(chunks)
+  }
+
+  /**
+   * Delete an object from S3.
+   * Returns true even if the object doesn't exist (idempotent).
+   */
+  async delete(key: string): Promise<void> {
+    try {
+      await this.client.send(
+        new DeleteObjectCommand({
+          Bucket: this.bucket,
+          Key: key,
+        })
+      )
+    } catch (err) {
+      // If the object doesn't exist, that's fine
+      if (err instanceof Error && err.name === "NoSuchKey") return
+      throw err
+    }
+  }
+
+  /**
+   * Delete all objects under a prefix.
+   * Used when replacing a user's avatar/logo — removes old variants.
+   * Note: S3 has no "delete by prefix" API, but for our use case
+   * we always know the exact keys. This is a safety net.
+   */
+  async deletePrefix(prefix: string): Promise<void> {
+    const { ListObjectsV2Command } = await import("@aws-sdk/client-s3")
+    const listResult = await this.client.send(
+      new ListObjectsV2Command({
+        Bucket: this.bucket,
+        Prefix: prefix,
+      })
+    )
+
+    if (!listResult.Contents || listResult.Contents.length === 0) return
+
+    const { DeleteObjectsCommand } = await import("@aws-sdk/client-s3")
+    await this.client.send(
+      new DeleteObjectsCommand({
+        Bucket: this.bucket,
+        Delete: {
+          Objects: listResult.Contents.map((obj) => ({ Key: obj.Key! })),
+        },
+      })
+    )
+  }
+
+  /**
+   * Resolve a stored value (S3 key or legacy presigned URL) to a fresh presigned URL.
+   * Handles three cases:
+   *   - Plain S3 key (e.g. "avatars/uid/file-medium.webp") → sign it
+   *   - Legacy presigned URL (contains X-Amz-Signature) → extract key, re-sign
+   *   - Public/CDN URL (no X-Amz params) → return as-is
+   */
+  async resolveUrl(stored: string | null | undefined): Promise<string | null> {
+    if (!stored) return null
+    if (stored.startsWith("http://") || stored.startsWith("https://")) {
+      if (stored.includes("X-Amz-Signature=")) {
+        try {
+          const key = decodeURIComponent(new URL(stored).pathname.slice(1))
+          return this.getSignedUrl(key)
+        } catch {
+          return stored
+        }
+      }
+      return stored
+    }
+    return this.getSignedUrl(stored)
+  }
+
+  /**
+   * Check if an object exists.
+   */
+  async exists(key: string): Promise<boolean> {
+    try {
+      await this.client.send(
+        new HeadObjectCommand({
+          Bucket: this.bucket,
+          Key: key,
+        })
+      )
+      return true
+    } catch {
+      return false
+    }
+  }
+}

@@ -1,0 +1,50 @@
+services:
+  postgres:
+    image: postgres:18.3
+    environment:
+      POSTGRES_DB: varzeapro
+      POSTGRES_USER: varzeapro
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U varzeapro"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    restart: always
+
+  api:
+    image: ${API_IMAGE:-ghcr.io/tcc-cas/varzeapro-api:latest}
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://varzeapro:${POSTGRES_PASSWORD}@postgres:5432/varzeapro
+      NODE_ENV: production
+    volumes:
+      - uploads_data:/app/uploads
+    ports:
+      - "3000:3000"
+    restart: always
+
+  web:
+    image: ${WEB_IMAGE:-ghcr.io/tcc-cas/varzeapro-web:latest}
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    depends_on:
+      - api
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-https://api.yourdomain.com}
+    ports:
+      - "3001:3000"
+    restart: always
+
+volumes:
+  postgres_data:
+  uploads_data:

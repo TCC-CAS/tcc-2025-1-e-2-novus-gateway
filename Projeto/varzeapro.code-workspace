@@ -1,0 +1,20 @@
+{
+  "folders": [
+    {
+      "name": "root",
+      "path": "."
+    },
+    {
+      "name": "web",
+      "path": "apps/web"
+    },
+    {
+      "name": "api",
+      "path": "apps/api"
+    }
+  ],
+  "settings": {
+    "typescript.tsdk": "apps/web/node_modules/typescript/lib",
+    "typescript.enablePromptUseWorkspaceTsdk": true
+  }
+}
